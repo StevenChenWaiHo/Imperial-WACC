@@ -7,8 +7,7 @@ import parsley.implicits.character.charLift
 
 object Main {
     def main(args: Array[String]): Unit = {
-        println(Parser.Expression.expr.parse("true"))
-        println(Parser.integer.parse("123"))
+        println(Parser.Expression.parseExp.parse("\"truee\""))
         println("Hello WACC_39!")
 
         lazy val integer = digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)
