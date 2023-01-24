@@ -7,4 +7,5 @@ object AbstractSyntaxTree {
   case class CharLiteral(x: Char) extends Expr
   case class StringLiteral(x: String) extends Expr
   case class PairLiteral() extends Expr
+  case class IdentLiteral(x: String) extends Expr
 }
