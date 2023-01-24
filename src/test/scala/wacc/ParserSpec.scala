@@ -43,8 +43,8 @@ class ParserSpec extends AnyFlatSpec {
   }
 
   /*TODO: This test tests for behaviour which is allowed by the syntax of the language (as defined in the spec) -
-     namely array indices with arbitrary expressions inside - but which is not allowed by the semantics.
-      This should raise an exception during semantic analysis, but it would be pretty easy to modify the parser so that these errors
+     namely array indices with arbitrary expressions inside - but which is not allowed by the semantics of the language.
+      This should raise an exception during semantic analysis, but it might be pretty easy to modify the parser so that these errors
        already get detected at this stage.*/
   "Expression Parser" can "parse array identifiers" in {
     assert(parseExpr.parse("_literal_123[123][true][_literal_321_[321]]") == Success(ArrayElem(List(IntLiteral(123),

@@ -4,6 +4,7 @@ import parsley.{Failure, Parsley, Success}
 import parsley.character.digit
 import parsley.expr.chain
 import parsley.implicits.character.charLift
+import wacc.AbstractSyntaxTree.ArrayElem
 
 
 object Main {
