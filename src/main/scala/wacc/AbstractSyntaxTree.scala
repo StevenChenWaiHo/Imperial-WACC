@@ -6,4 +6,5 @@ object AbstractSyntaxTree {
   case class BoolLiteral(x: Boolean) extends Expr
   case class CharLiteral(x: Char) extends Expr
   case class StringLiteral(x: String) extends Expr
+  case class PairLiteral() extends Expr
 }

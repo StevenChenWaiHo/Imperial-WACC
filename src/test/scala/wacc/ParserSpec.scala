@@ -2,7 +2,7 @@ package wacc
 import org.scalatest.flatspec.AnyFlatSpec
 import parsley.Success
 import Parser.Expression.parseExp
-import wacc.AbstractSyntaxTree.{BoolLiteral, CharLiteral, IntLiteral, StringLiteral}
+import wacc.AbstractSyntaxTree.{BoolLiteral, CharLiteral, IntLiteral, StringLiteral, PairLiteral}
 class ParserSpec extends AnyFlatSpec {
 
   "Expression Parser" can "evaluate positive integers" in {
@@ -27,5 +27,9 @@ class ParserSpec extends AnyFlatSpec {
 
   "Expression Parser" can "evaluate a string" in {
     assert(parseExp.parse("\"+ - ' true false\"") == Success(StringLiteral("+ - ' true false")))
+  }
+
+  "Expression Parser" can "parse null" in {
+    assert(parseExp.parse("null") == Success(PairLiteral()))
   }
 }
