@@ -1,44 +1,58 @@
 package wacc
 import org.scalatest.flatspec.AnyFlatSpec
-import parsley.Success
-import Parser.Expression.parseExp
-import wacc.AbstractSyntaxTree.{BoolLiteral, CharLiteral, IntLiteral, StringLiteral, PairLiteral, IdentLiteral}
+import parsley.{Failure, Success}
+import Parser.Expression.parseExpr
+import wacc.AbstractSyntaxTree._
 class ParserSpec extends AnyFlatSpec {
 
   "Expression Parser" can "evaluate positive integers" in {
-    assert(parseExp.parse("+123") == Success(IntLiteral(123)))
+    assert(parseExpr.parse("+123") == Success(IntLiteral(123)))
   }
 
   "Expression Parser" can "evaluate negative integers" in {
-    assert(parseExp.parse("-123") == Success(IntLiteral(-123)))
+    assert(parseExpr.parse("-123") == Success(IntLiteral(-123)))
   }
 
   "Expression Parser" can "evaluate 'true'" in {
-    assert(parseExp.parse("true") == Success(BoolLiteral(true)))
+    assert(parseExpr.parse("true") == Success(BoolLiteral(true)))
   }
 
   "Expression Parser" can "evaluate 'false'" in {
-    assert(parseExp.parse("false") == Success(BoolLiteral(false)))
+    assert(parseExpr.parse("false") == Success(BoolLiteral(false)))
   }
 
   "Expression Parser" can "evaluate a character" in {
-    assert(parseExp.parse("\'a\'") == Success(CharLiteral('a')))
+    assert(parseExpr.parse("\'a\'") == Success(CharLiteral('a')))
   }
 
   "Expression Parser" can "evaluate a string" in {
-    assert(parseExp.parse("\"+ - ' true false\"") == Success(StringLiteral("+ - ' true false")))
+    assert(parseExpr.parse("\"+ - ' true false\"") == Success(StringLiteral("+ - ' true false")))
   }
 
   "Expression Parser" can "parse null" in {
-    assert(parseExp.parse("null") == Success(PairLiteral()))
+    assert(parseExpr.parse("null") == Success(PairLiteral()))
   }
 
   "Expression Parser" can "parse identifiers" in {
-    assert(parseExp.parse("nully") == Success(IdentLiteral("nully")))
+    assert(parseExpr.parse("nully") == Success(IdentLiteral("nully")))
   }
 
   "Expression Parser" can "parse identifiers containing numbers and uppercase letters, and no others" in {
-    assert(parseExp.parse("_literal_123") == Success(IdentLiteral("_literal_123")))
-    assert(parseExp.parse("_literal_(123") != Success(IdentLiteral("_literal_(123")))
+    assert(parseExpr.parse("_literal_123") == Success(IdentLiteral("_literal_123")))
+    assert(parseExpr.parse("_literal_(123") != Success(IdentLiteral("_literal_(123")))
   }
+
+  /*TODO: This test tests for behaviour which is allowed by the syntax of the language (as defined in the spec) -
+     namely array indices with arbitrary expressions inside - but which is not allowed by the semantics.
+      This should raise an exception during semantic analysis, but it would be pretty easy to modify the parser so that these errors
+       already get detected at this stage.*/
+  "Expression Parser" can "parse array identifiers" in {
+    assert(parseExpr.parse("_literal_123[123][true][_literal_321_[321]]") == Success(ArrayElem(List(IntLiteral(123),
+      BoolLiteral(true), ArrayElem(List(IntLiteral(321)))("_literal_321_")))("_literal_123")))
+  }
+
+  "Expression Parser" can "fail when array indices don't match" in {
+    assert(parseExpr.parse("_literal_123[123][true][_literal_321_[321]").isFailure)
+  }
+
 }
