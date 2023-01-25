@@ -26,7 +26,7 @@ object AbstractSyntaxTree {
   }
 
   object BinaryOp {
-    def apply(op: BinOp): Expr => Expr => BinaryOp = (expr1: Expr) => (expr2: Expr) => BinaryOp(op, expr1, expr2)
+    def apply(op: BinOp): (Expr, Expr) => BinaryOp = (expr1: Expr, expr2: Expr) => BinaryOp(op, expr1, expr2)
   }
 
   /* Enums */

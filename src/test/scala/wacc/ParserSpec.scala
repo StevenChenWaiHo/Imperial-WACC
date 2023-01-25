@@ -42,6 +42,10 @@ class ParserSpec extends AnyFlatSpec {
     assert(parseExpr.parse("_literal_(123") != Success(IdentLiteral("_literal_(123")))
   }
 
+  "Expression Parser" should "not confuse literals and unary operations" in {
+    assert(parseExpr.parse("len_var") == Success(IdentLiteral("len_var")))
+  }
+
   /*TODO: This test tests for behaviour which is allowed by the syntax of the language (as defined in the spec) -
      namely array indices with arbitrary expressions inside - but which is not allowed by the semantics of the language.
       This should raise an exception during semantic analysis, but it might be pretty easy to modify the parser so that these errors
@@ -53,6 +57,10 @@ class ParserSpec extends AnyFlatSpec {
 
   "Expression Parser" can "fail when array indices don't match" in {
     assert(parseExpr.parse("_literal_123[123][true][_literal_321_[321]").isFailure)
+  }
+
+  "Expression Parser" should "parse binary operations greedily" in {
+    assert(parseExpr.parse ("a<=b") == Success(BinaryOp(BinaryOpType.Lte, IdentLiteral("a"), IdentLiteral("b"))))
   }
 
 }
