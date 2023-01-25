@@ -63,4 +63,8 @@ class ParserSpec extends AnyFlatSpec {
     assert(parseExpr.parse ("a<=b") == Success(BinaryOp(BinaryOpType.Lte, IdentLiteral("a"), IdentLiteral("b"))))
   }
 
+  "Expression Parser" should "parse bracketed expressions correctly" in {
+    assert(parseExpr.parse("4*(a<=b)") == Success(BinaryOp(BinaryOpType.Mul)(IntLiteral(4), BinaryOp(BinaryOpType.Lte)(IdentLiteral("a"), IdentLiteral("b")))))
+  }
+
 }

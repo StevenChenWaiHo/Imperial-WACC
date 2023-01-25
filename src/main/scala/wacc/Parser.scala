@@ -31,7 +31,6 @@ object Parser {
     private lazy val maybeArrayElem: Parsley[String => Expr] = {
       choice(some('[' ~> parseExpr <~ ']').map(ArrayElem(_)), pure(IdentLiteral(_)))
     }
-
     private lazy val parseExprAtom: Parsley[Expr] =
       intLiteral <|>
         boolLiteral <|>
@@ -40,16 +39,15 @@ object Parser {
         pairLiteral <|>
         (ident <**> maybeArrayElem) // Both an identifier and an array element can start with an 'ident'
 
-    // TODO:
-    lazy val parseExpr = unfinished___parseExpr
+    // Not the nicest solution, but it works for now...:
+    private def without[A](q: Parsley[A], p: Parsley[A]) = attempt (p <~ notFollowedBy(q))
 
-    private def disallowing[A](p: Parsley[A], q: Parsley[A]) = attempt (p <~ notFollowedBy(q))
-
-    private lazy val unfinished___parseExpr = precedence(
-      Ops[Expr](Prefix)('!' #> UnaryOp(Not), disallowing('-', intLiteral) #> UnaryOp(Neg),
-        disallowing("len", identCont) #> UnaryOp(Len),
-        disallowing("ord", identCont) #> UnaryOp(Ord),
-        disallowing("chr", identCont) #> UnaryOp(Chr)),
+    lazy val parseExpr: Parsley[Expr] = precedence(
+      Ops[Expr](Prefix)('!' #> UnaryOp(Not),
+        without(intLiteral, '-') #> UnaryOp(Neg),
+        without(identCont, "len") #> UnaryOp(Len),
+        without(identCont, "ord") #> UnaryOp(Ord),
+        without(identCont, "chr") #> UnaryOp(Chr)),
       Ops[Expr](InfixL)("*" #> BinaryOp(Mul), "/" #> BinaryOp(Div), "%" #> BinaryOp(Mod)),
       Ops[Expr](InfixL)("+" #> BinaryOp(Add), "-" #> BinaryOp(Sub)),
       Ops[Expr](InfixL)(">=" #> BinaryOp(Gte), ">" #> BinaryOp(Gt)),
@@ -57,6 +55,6 @@ object Parser {
       Ops[Expr](InfixL)("==" #> BinaryOp(Eq), "!=" #> BinaryOp(Neq)),
       Ops[Expr](InfixL)("&&" #> BinaryOp(And)),
       Ops[Expr](InfixL)("||" #> BinaryOp(Or))
-    )(parseExprAtom)
+    )(parseExprAtom <|> ('(' ~> parseExpr <~ ')'))
   }
 }
