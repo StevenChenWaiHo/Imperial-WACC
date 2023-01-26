@@ -51,15 +51,15 @@ object Parser {
     lazy val parseExpr: Parsley[Expr] = fully(_parseExpr)
   }
 
-  object Statement {
-    import wacc.Lexer.implicits._
-    private lazy val declaration
-    private lazy val assignment
-    private lazy val read
-    private lazy val
-
-    private lazy val parseStatementAtom = "skip" <|>
-
-  }
+//  object Statement {
+//    import wacc.Lexer.implicits._
+//    private lazy val declaration
+//    private lazy val assignment
+//    private lazy val read
+//    private lazy val
+//
+//    private lazy val parseStatementAtom = "skip" <|>
+//
+//  }
 
 }
