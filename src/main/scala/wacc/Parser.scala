@@ -10,17 +10,16 @@ import parsley.expr.{InfixL, Ops, Prefix, precedence}
 import parsley.implicits.character.charLift
 
 object Parser {
-  import wacc.Lexer.Lexer._
+  import wacc.Lexer._
 
   object Expression {
-    import wacc.Lexer.Lexer.implicits._
+    import wacc.Lexer.implicits._
 
     private lazy val intLiteral = integer.map(IntLiteral)
     private lazy val boolLiteral = boolean.map(BoolLiteral)
     private lazy val charLiteral = character.map(CharLiteral)
     private lazy val stringLiteral = string.map(StringLiteral)
     private lazy val pairLiteral = emptyPair #> PairLiteral()
-    private lazy val ident = identifier
     private lazy val maybeArrayElem: Parsley[String => Expr] = {
       choice(some('[' ~> _parseExpr <~ ']').map(ArrayElem(_)), pure(IdentLiteral(_)))
     }
@@ -31,9 +30,8 @@ object Parser {
         charLiteral <|>
         stringLiteral <|>
         pairLiteral <|>
-        (ident <**> maybeArrayElem) // Both an identifier and an array element can start with an 'ident'
+        (identifier <**> maybeArrayElem) // Both an identifier and an array element can start with an 'ident'
 
-    // Not the nicest solution, but it works for now...:
     private def without[A](q: Parsley[A], p: Parsley[A]): Parsley[A] = attempt(p <~ notFollowedBy(q))
     private lazy val identCont = stringOfMany('_' <|> letterOrDigit)
 
@@ -52,4 +50,16 @@ object Parser {
 
     lazy val parseExpr: Parsley[Expr] = fully(_parseExpr)
   }
+
+  object Statement {
+    import wacc.Lexer.implicits._
+    private lazy val declaration
+    private lazy val assignment
+    private lazy val read
+    private lazy val
+
+    private lazy val parseStatementAtom = "skip" <|>
+
+  }
+
 }
