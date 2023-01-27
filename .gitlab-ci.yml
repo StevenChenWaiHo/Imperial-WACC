@@ -27,11 +27,14 @@
   # Log the sbt version
   #- sbt sbtVersion
 build-job:
+    stage: build
     script:
       #compile the project
       - sbt ~compile
 test:
+  stage: test
   script:
     # Execute your project's tests
     - sbt clean test
+
 
