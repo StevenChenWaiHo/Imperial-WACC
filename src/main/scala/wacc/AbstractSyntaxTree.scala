@@ -7,7 +7,7 @@ import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 // This should probably be a class which takes in a lookup table
 object AbstractSyntaxTree {
 
-  sealed trait PairLit extends Expr with RValue
+  sealed trait PairLit extends Expr with RVal
   case class PairLiteral() extends PairLit
 
   sealed trait ArrayE extends Expr with LValue
@@ -17,7 +17,7 @@ object AbstractSyntaxTree {
   case class IdentLiteral(val name: String) extends IdentLit
 
 
-  sealed trait Expr extends RValue
+  sealed trait Expr extends RVal
   case class IntLiteral(val x: Int) extends Expr
   case class BoolLiteral(val x: Boolean) extends Expr
   case class CharLiteral(val x: Char) extends Expr
@@ -50,8 +50,8 @@ object AbstractSyntaxTree {
   }
 
   sealed trait Stat
-  case class Declaration(dataType: BaseType, ident: String, rvalue: RValue) extends Stat
-  case class Assignment(lvalue: LValue, rvalue: RValue)
+  case class Declaration(dataType: BaseType, ident: IdentLiteral, rvalue: RVal) extends Stat
+  case class Assignment(lvalue: LValue, rvalue: RVal)
   case class Command(command: CmdT.Cmd, expr: Expr)
   case class IfStat(cond: Expr, stat1: Stat, stat2: Stat)
   case class WhileLoop(cond: Expr, stat: Stat)
@@ -66,14 +66,26 @@ object AbstractSyntaxTree {
     type BaseType = Value
     val Int_T, Bool_T, Char_T, String_T = Value
   }
+  object Declaration {
+    def apply(dataType: BaseType): (IdentLiteral => RVal => Declaration) = (ident: IdentLiteral) => (rvalue: RVal) => Declaration(dataType, ident, rvalue)
+  }
 
-  sealed trait PairElem extends LValue with RValue
-  case class PairValue(exp1: Expr, exp2: Expr) extends PairElem
+
+  sealed trait PairElem extends LValue with RVal
+  case class PairElement(elem: PairElemT.Elem, lvalue: LValue) extends PairElem
+
+  object PairElemT extends Enumeration {
+    type Elem = Value
+    val Fst, Snd = Value
+  }
 
 
-  sealed trait RValue
-  case class ArrayLiteral(elements: List[Expr]) extends RValue
-  case class Call(ident: String, args: List[Expr]) extends RValue
+
+  sealed trait RVal
+  case class ArrayLiteral(elements: List[Expr]) extends RVal
+  case class Call(ident: String, args: List[Expr]) extends RVal
+  case class PairValue(exp1: Expr, exp2: Expr) extends RVal
+
 
 
   sealed trait LValue
