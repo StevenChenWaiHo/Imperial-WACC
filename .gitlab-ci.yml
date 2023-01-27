@@ -26,7 +26,9 @@ before_script:
   - apt-get install sbt -yqq
   # Log the sbt version
   - sbt sbtVersion
-
+stages:
+  -build
+  -test
 build-job:
     script:
       #compile the project
