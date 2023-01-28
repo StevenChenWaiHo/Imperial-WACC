@@ -1,7 +1,7 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.BaseT._
-import wacc.AbstractSyntaxTree.BinaryOpType.{Add, BinOp}
+import wacc.AbstractSyntaxTree.BaseT.BaseType
+import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 
 // This should probably be a class which takes in a lookup table
@@ -11,6 +11,7 @@ object AbstractSyntaxTree {
   case class PairLiteral() extends PairLit
 
   sealed trait ArrayE extends Expr with LVal
+  //TODO: name should probably be an IdentLiteral (make constructor?)
   case class ArrayElem(val name: String, val indices: List[Expr]) extends ArrayE
 
   sealed trait IdentLit extends Expr with LVal
@@ -69,7 +70,6 @@ object AbstractSyntaxTree {
     val Int_T, Bool_T, Char_T, String_T = Value
   }
 
-
   sealed trait PairElem extends LVal with RVal
   case class PairElement(elem: PairElemT.Elem, lvalue: LVal) extends PairElem
 
@@ -78,19 +78,13 @@ object AbstractSyntaxTree {
     val Fst, Snd = Value
   }
 
-
-
   sealed trait RVal
   case class ArrayLiteral(elements: List[Expr]) extends RVal
   case class Call(ident: IdentLiteral, args: List[Expr]) extends RVal
   case class PairValue(exp1: Expr, exp2: Expr) extends RVal
 
-
-
   sealed trait LVal
   case class IdentReference(name: String)
-
-
 }
 
 

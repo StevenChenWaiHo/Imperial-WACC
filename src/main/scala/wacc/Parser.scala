@@ -3,7 +3,7 @@ import AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree.BinaryOpType._
 import parsley.Parsley
-import parsley.combinator.{choice, sepBy1, some}
+import parsley.combinator.{choice, some}
 import parsley.Parsley.{attempt, notFollowedBy, pure}
 import parsley.character.{letterOrDigit, stringOfMany}
 import parsley.expr.{InfixL, Ops, Prefix, precedence}
@@ -15,17 +15,18 @@ object Parser {
   import wacc.Lexer.implicits._
 
   object ArrayParser {
+    import parsley.combinator.sepBy1
     import Parser.ExpressionParser.expression
 
-    lazy val arrayElem: Parsley[String => ArrayElem] = some('[' ~> expression <~ ']').map(ArrayElem(_))
-    lazy val maybeArrayElem: Parsley[String => Expr with LVal] = choice(arrayElem, pure(IdentLiteral(_)))
-    lazy val arrayLiteral = ("[" ~> some(expression) <~ "]").map(ArrayLiteral)
+    lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression <~ "]").map(ArrayElem(_))
+    lazy val maybeArrayElem: Parsley[String => Expr with LVal] = choice(arrayIndices, pure(IdentLiteral(_)))
+    lazy val arrayLiteral = ("[" ~> sepBy1(expression, ",") <~ "]").map(ArrayLiteral)
   }
 
   object PairParser {
     import LValueParser.lValue
 
-    lazy val pairValue = pure(PairValue.tupled) <*> (("(" ~> expression <~ ",") <~> (expression <~ ')'))
+    lazy val pairValue = pure(PairValue.tupled) <*> (("(" ~> expression <~ ",") <~> (expression <~ ")"))
     private lazy val pairElementType = ("fst" #> PairElemT.Fst <|> "snd" #> PairElemT.Snd)
     lazy val pairElement = pure(PairElement.tupled) <*> (pairElementType <~> lValue)
     lazy val pairLiteral = emptyPair #> PairLiteral()
@@ -51,7 +52,7 @@ object Parser {
     private def without[A](q: Parsley[A], p: Parsley[A]): Parsley[A] = attempt(p <~ notFollowedBy(q))
     private lazy val identCont = stringOfMany('_' <|> letterOrDigit)
 
-    private lazy val _parseExpr: Parsley[Expr] = precedence(parseExprAtom, '(' ~> _parseExpr <~ ')')(
+    private lazy val _parseExpr: Parsley[Expr] = precedence(parseExprAtom, "(" ~> _parseExpr <~ ")")(
       Ops[Expr](Prefix)(without(intLiteral, "-") #> UnaryOp(Neg),
         "!" #> UnaryOp(Not), "len" #> UnaryOp(Len),
         "ord" #> UnaryOp(Ord), "chr" #> UnaryOp(Chr)),
@@ -75,13 +76,14 @@ object Parser {
   }
 
   object RValueParser {
+    import parsley.combinator.sepBy
     import ArrayParser.arrayLiteral
     import wacc.Parser.PairParser.{pairValue, pairElement}
     import wacc.Parser.ExpressionParser.expression
 
     private lazy val newPair = "newpair" ~> pairValue
     private lazy val call =  pure(Call.tupled) <*>
-      (("call" ~> identifier.map(IdentLiteral)) <~> (sepBy1(expression, ",")))
+      (("call" ~> identifier.map(IdentLiteral)) <~> (sepBy(expression, ",")))
 
     lazy val rValue: Parsley[RVal] =
       expression <|>
@@ -93,8 +95,7 @@ object Parser {
 
   object StatementParser {
     import parsley.implicits.lift.{Lift1, Lift2, Lift3}
-    import parsley.expr.chain.left1
-    import wacc.Lexer.implicits._
+    import parsley.expr.chain.right1
     import wacc.AbstractSyntaxTree.BaseT._
     import wacc.AbstractSyntaxTree.CmdT._
     import LValueParser.lValue
@@ -107,7 +108,7 @@ object Parser {
     private lazy val skipStat = "skip" #> SkipStat()
     private lazy val identLiteral = IdentLiteral.lift(identifier)
     private lazy val declaration = Declaration.lift(baseType, identLiteral, "=" ~> rValue)
-    private lazy val assignment = Assignment.lift(lValue, rValue)
+    private lazy val assignment = Assignment.lift(lValue, "=" ~> rValue)
     private lazy val read = "read" ~> Read.lift(lValue)
     private lazy val command = Command.lift(commandType, expression)
     private lazy val ifStat =
@@ -125,7 +126,7 @@ object Parser {
         whileLoop <|>
         program
 
-    lazy val statement: Parsley[Stat] = left1(statementAtom, ";" #> StatList)
+    lazy val statement: Parsley[Stat] = right1(statementAtom, ";" #> StatList)
   }
 
 }

@@ -18,7 +18,7 @@ object Lexer {
       hardKeywords = Set(
         "true", "false", "null", "len", "ord", "chr", "skip", "read", "free", "return", "exit",
         "print", "println", "if", "then", "else", "fi", "while", "do", "done", "begin", "end",
-        "int", "bool", "char", "string"
+        "int", "bool", "char", "string", "fst", "snd", "call", "pair", "newpair"
       ),
       hardOperators = Set("!", "*", "/", "%", "+", "-", ">=", ">", "<", "<=", "==", "!=", "&&", "||", ";")
     ),

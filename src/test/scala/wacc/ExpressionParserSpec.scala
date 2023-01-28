@@ -5,7 +5,7 @@ import Parser.ExpressionParser.expression
 import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree.BinaryOpType._
-class ParserSpec extends AnyFlatSpec {
+class ExpressionParserSpec extends AnyFlatSpec {
 
   "Expression Parser" can "parse positive integers" in {
     assert(expression.parse("123") == Success(IntLiteral(123)))
