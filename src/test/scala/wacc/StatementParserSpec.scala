@@ -112,4 +112,15 @@ class StatementParserSpec extends AnyFlatSpec {
           Declaration(BaseT.Int_T, IdentLiteral("skip_int"), IntLiteral(3))))))
     }
   }
+
+  "Statement Parser" can "parse statements" in {
+    for (stat <- statExamples){
+      var parseString =
+        """begin
+          |  %s
+          |end""".stripMargin.format(stat._1)
+      var result = statement.parse(parseString)
+      assert(result == Success(Program(stat._2)))
+    }
+  }
 }
