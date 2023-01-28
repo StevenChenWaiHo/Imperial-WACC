@@ -24,6 +24,16 @@ class StatementParserSpec extends AnyFlatSpec {
     "fst fst_var[12][13]" -> PairElement(PairElemT.Fst, ArrayElem("fst_var", List(IntLiteral(12), IntLiteral(13))))
   )
 
+  private var exprExamples = Set(
+    "3 * 3 " -> BinaryOp(BinaryOpType.Mul, IntLiteral(3), IntLiteral(3))
+  )
+
+  private var statExamples = Set(
+    "skip" -> SkipStat(),
+    "return 12;\nreturn 13" -> StatList(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13)))
+  )
+
+
   "Statement Parser" can "parse skip statements" in {
     assert(statement.parse("skip") == Success(SkipStat()))
   }
@@ -68,9 +78,7 @@ class StatementParserSpec extends AnyFlatSpec {
   }
 
   "Statement Parser" can "parse if statements" in {
-    val expr = ("3 * 3 " -> BinaryOp(BinaryOpType.Mul, IntLiteral(3), IntLiteral(3)))
-    val stats = Set("skip" -> SkipStat(), "return 12;\nreturn 13" -> StatList(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13))))
-    for (stat1 <- stats; stat2 <- stats) {
+    for (stat1 <- statExamples; stat2 <- statExamples; expr <- exprExamples) {
       var parseString =
         """skip;
           |if %s
@@ -82,9 +90,25 @@ class StatementParserSpec extends AnyFlatSpec {
           |int skip_int = 3
           |""".stripMargin.format(expr._1, stat1._1, stat2._1)
       var result = statement.parse(parseString)
-      println(parseString)
       assert(result == Success(StatList(SkipStat(),
         StatList(IfStat(expr._2, stat1._2, stat2._2),
+          Declaration(BaseT.Int_T, IdentLiteral("skip_int"), IntLiteral(3))))))
+    }
+  }
+
+  "Statement Parser" can "parse while loops" in {
+    for (stat <- statExamples; expr <- exprExamples) {
+      var parseString =
+        """skip;
+          |while %s
+          |do
+          |  %s
+          |done;
+          |int skip_int = 3
+          |""".stripMargin.format(expr._1, stat._1)
+      var result = statement.parse(parseString)
+      assert(result == Success(StatList(SkipStat(),
+        StatList(WhileLoop(expr._2, stat._2),
           Declaration(BaseT.Int_T, IdentLiteral("skip_int"), IntLiteral(3))))))
     }
   }
