@@ -112,7 +112,7 @@ object Parser {
     private lazy val read = "read" ~> Read.lift(lValue)
     private lazy val command = Command.lift(commandType, expression)
     private lazy val ifStat =
-      IfStat.lift("if" ~> expression, "then" ~> statement, "else" ~> statement<~ "fi")
+      IfStat.lift("if" ~> expression, "then" ~> statement, "else" ~> statement <~ "fi")
     private lazy val whileLoop = WhileLoop.lift("while" ~> expression, "do" ~> statement<~ "done")
     private lazy val program = Program.lift("begin" ~> statement<~ "end")
 

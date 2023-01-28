@@ -43,7 +43,6 @@ class StatementParserSpec extends AnyFlatSpec {
       |int skip_int = 3
       |""".stripMargin.format(lval._1, rval._1)
       var result = statement.parse(parseString)
-      println(parseString)
       assert(result == Success(StatList(
         SkipStat(),
         StatList(Assignment(lval._2, rval._2),
@@ -68,5 +67,25 @@ class StatementParserSpec extends AnyFlatSpec {
     }
   }
 
-  "Statement Parser"
+  "Statement Parser" can "parse if statements" in {
+    val expr = ("3 * 3 " -> BinaryOp(BinaryOpType.Mul, IntLiteral(3), IntLiteral(3)))
+    val stats = Set("skip" -> SkipStat(), "return 12;\nreturn 13" -> StatList(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13))))
+    for (stat1 <- stats; stat2 <- stats) {
+      var parseString =
+        """skip;
+          |if %s
+          |then
+          |  %s
+          |else
+          |  %s
+          |fi;
+          |int skip_int = 3
+          |""".stripMargin.format(expr._1, stat1._1, stat2._1)
+      var result = statement.parse(parseString)
+      println(parseString)
+      assert(result == Success(StatList(SkipStat(),
+        StatList(IfStat(expr._2, stat1._2, stat2._2),
+          Declaration(BaseT.Int_T, IdentLiteral("skip_int"), IntLiteral(3))))))
+    }
+  }
 }
