@@ -33,12 +33,12 @@ build:
   script:
     - apt-get install -y make
     - make
-    - ./compile
 
 test:
   stage: test
   script:
     # Execute your project's tests
     - sbt clean test
+    - sbt test
 
 
