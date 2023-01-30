@@ -9,6 +9,7 @@ src/antlr
 *~
 
 #ignore files produced after make
-project/
+project/target
+project/project
 target/
 *.jar
