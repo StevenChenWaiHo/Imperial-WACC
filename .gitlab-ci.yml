@@ -37,7 +37,6 @@ build:
     - sbt compile
 
 test:
-  extends: build
   stage: test
   script:
     # Execute your project's tests
