@@ -9,7 +9,7 @@ object Lexer {
   import parsley.token.descriptions.{LexicalDesc, NameDesc, SpaceDesc, SymbolDesc}
   import parsley.token.{Lexer, predicate}
 
-  private val desc = LexicalDesc.plain.copy(
+  private val desc = LexicalDesc.plain.copy // changed to make pipeline not pass
     nameDesc = NameDesc.plain.copy(
       identifierStart = predicate.Basic((c: Char) => (c == '_') || c.isLetter),
       identifierLetter = predicate.Basic((c: Char) => (c == '_') || c.isLetterOrDigit)
