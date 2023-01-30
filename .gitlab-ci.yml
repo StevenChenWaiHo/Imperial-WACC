@@ -29,13 +29,12 @@ image: openjdk:8
     - apt-get install sbt -yqq
     # Log the sbt version
     - sbt sbtVersion
+
 build:
   extends: .before_script_template
   stage: build
   script:
-    - apt-get install -y make
-    - make
-
+    - sbt compile
 
 test:
   extends: build
