@@ -38,7 +38,7 @@ build:
 
 
 test:
-  extends: .before_script_template
+  extends: build
   stage: test
   script:
     # Execute your project's tests
