@@ -3,10 +3,10 @@ import AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree.BinaryOpType._
 import parsley.Parsley
-import parsley.combinator.{choice, some}
-import parsley.Parsley.{attempt, notFollowedBy, pure}
-import parsley.character.{letterOrDigit, stringOfMany}
-import parsley.expr.{InfixL, Ops, Prefix, precedence}
+import parsley.combinator.{choice, many, manyUntil, some}
+import parsley.Parsley.{attempt, lookAhead, notFollowedBy, pure}
+import parsley.character.{endOfLine, letterOrDigit, newline, satisfy, stringOfMany}
+import parsley.expr.{InfixL, Ops, Postfix, Prefix, precedence}
 import parsley.implicits.character.charLift
 import wacc.Parser.ExpressionParser.expression
 
@@ -22,6 +22,27 @@ object Parser {
     lazy val maybeArrayElem: Parsley[String => Expr with LVal] = choice(arrayIndices, pure(IdentLiteral(_)))
     lazy val arrayLiteral = ("[" ~> sepBy1(expression, ",") <~ "]").map(ArrayLiteral)
   }
+
+  /*
+  object DeclarationTypeParser {
+    import AbstractSyntaxTree.BaseT._
+    import parsley.implicits.lift.{Lift2}
+    import parsley.expr.chain
+    import parsley.expr.chain.postfix1
+
+    lazy val baseTypeType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
+    private lazy val baseType = baseTypeType.map(BaseType)
+    private lazy val canBeArray: Ops[DeclarationType, DeclarationType] =
+      Ops[DeclarationType](Postfix)(("[" ~> "]") #> ArrayType)
+
+    private lazy val declarationType: Parsley[DeclarationType] = precedence(baseType, pairType)(canBeArray)
+    private lazy val pairElemType = baseType <|> ("pair" #> NestedPair()) <|>
+
+    private lazy val isArray = lookAhead(manyUntil(notFollowedBy(endOfLine), attempt("[" ~> "]" ~> endOfLine)))
+    private lazy val pairType: Parsley[DeclarationType] = PairType.lift("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
+  }
+  
+   */
 
   object PairParser {
     import LValueParser.lValue
@@ -96,18 +117,18 @@ object Parser {
   object StatementParser {
     import parsley.implicits.lift.{Lift1, Lift2, Lift3}
     import parsley.expr.chain.right1
-    import wacc.AbstractSyntaxTree.BaseT._
     import wacc.AbstractSyntaxTree.CmdT._
     import LValueParser.lValue
     import RValueParser.rValue
+    import DeclarationTypeParser.baseTypeType
 
-    private lazy val baseType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
+
     private lazy val commandType =
       "free" #> Free <|> "return" #> Ret <|> "exit" #> Exit <|> "print" #> Print <|> "println" #> PrintLn
 
     private lazy val skipStat = "skip" #> SkipStat()
     private lazy val identLiteral = IdentLiteral.lift(identifier)
-    private lazy val declaration = Declaration.lift(baseType, identLiteral, "=" ~> rValue)
+    private lazy val declaration = Declaration.lift(baseTypeType, identLiteral, "=" ~> rValue)
     private lazy val assignment = Assignment.lift(lValue, "=" ~> rValue)
     private lazy val read = "read" ~> Read.lift(lValue)
     private lazy val command = Command.lift(commandType, expression)

@@ -1,8 +1,10 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.BaseT.BaseType
+import wacc.AbstractSyntaxTree.BaseT.BaseTypeType
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
+
+import javax.xml.datatype.DatatypeConfigurationException
 
 // This should probably be a class which takes in a lookup table
 object AbstractSyntaxTree {
@@ -50,9 +52,17 @@ object AbstractSyntaxTree {
     val Mul, Div, Mod, Add, Sub, Gt, Gte, Lt, Lte, Eq, Neq, And, Or = Value
   }
 
+
+  sealed trait DeclarationType
+  case class NestedPair() extends DeclarationType
+  case class BaseType(baseType: BaseTypeType) extends DeclarationType
+  case class ArrayType(dataType: DeclarationType) extends DeclarationType
+  case class PairType(fstType: DeclarationType, sndType: DeclarationType) extends DeclarationType
+
+
   sealed trait Stat
   case class SkipStat() extends Stat
-  case class Declaration(dataType: BaseType, ident: IdentLiteral, rvalue: RVal) extends Stat
+  case class Declaration(dataType: BaseTypeType, ident: IdentLiteral, rvalue: RVal) extends Stat
   case class Assignment(lvalue: LVal, rvalue: RVal) extends Stat
   case class Read(lvalue: LVal) extends Stat // Read has a different input and output type to the other commands
   case class Command(command: CmdT.Cmd, input: Expr) extends Stat
@@ -66,7 +76,7 @@ object AbstractSyntaxTree {
     val Free, Ret, Exit, Print, PrintLn = Value
   }
   object BaseT extends Enumeration {
-    type BaseType = Value
+    type BaseTypeType = Value
     val Int_T, Bool_T, Char_T, String_T = Value
   }
 
