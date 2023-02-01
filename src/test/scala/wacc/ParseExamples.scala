@@ -28,7 +28,7 @@ object ParseExamples {
 
   var statExamples = Set(
     "skip" -> SkipStat(),
-    "return 12;\nreturn 13" -> List(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13)))
+    "return 12;\nreturn 13" -> StatList(List(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13))))
   )
 
   private var declarationTypeExamples = Set(

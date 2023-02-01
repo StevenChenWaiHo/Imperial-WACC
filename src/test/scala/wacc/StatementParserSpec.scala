@@ -28,11 +28,10 @@ class StatementParserSpec extends AnyFlatSpec {
       |int skip_int = 3
       |""".stripMargin.format(lval._1, rval._1)
       var result = statement.parse(parseString)
-      assert(result == Success(StatList(
+      assert(result == Success(StatList(List(
         SkipStat(),
-        StatList(Assignment(lval._2, rval._2),
-          Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))
-        )
+        Assignment(lval._2, rval._2),
+        Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3)))
       )))
 
     }
@@ -46,9 +45,10 @@ class StatementParserSpec extends AnyFlatSpec {
           |%s 2;
           |int skip_int = 3
           |""".stripMargin.format(cmd._1))
-      assert(result == Success(StatList(SkipStat(),
-        StatList(Command(cmd._2, IntLiteral(2)),
-          Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))))))
+      assert(result == Success(StatList(List(
+        SkipStat(),
+        Command(cmd._2, IntLiteral(2)),
+        Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))))))
     }
   }
 
@@ -65,9 +65,11 @@ class StatementParserSpec extends AnyFlatSpec {
           |int skip_int = 3
           |""".stripMargin.format(expr._1, stat1._1, stat2._1)
       var result = statement.parse(parseString)
-      assert(result == Success(StatList(SkipStat(),
-        StatList(IfStat(expr._2, stat1._2, stat2._2),
-          Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))))))
+      assert(result == Success(StatList(List(
+        SkipStat(),
+        IfStat(expr._2, stat1._2, stat2._2),
+        Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3)))
+      )))
     }
   }
 
@@ -82,9 +84,11 @@ class StatementParserSpec extends AnyFlatSpec {
           |int skip_int = 3
           |""".stripMargin.format(expr._1, stat._1)
       var result = statement.parse(parseString)
-      assert(result == Success(StatList(SkipStat(),
-        StatList(WhileLoop(expr._2, stat._2),
-          Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))))))
+      assert(result == Success(StatList(List(
+        SkipStat(),
+        WhileLoop(expr._2, stat._2),
+        Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3)))
+      )))
     }
   }
 

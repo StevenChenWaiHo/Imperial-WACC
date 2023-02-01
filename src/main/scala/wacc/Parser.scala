@@ -149,7 +149,8 @@ object Parser {
         whileLoop <|>
         program
 
-    lazy val statement: Parsley[Stat] = sepBy(statementAtom, ";").map(StatList)
+    lazy val statement: Parsley[Stat] =
+      attempt(((statementAtom <~ ";") <::> sepBy1(statementAtom, ";")).map(StatList)) <|> statementAtom
   }
 
   object FunctionParser {
