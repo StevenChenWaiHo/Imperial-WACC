@@ -6,32 +6,7 @@ import wacc.AbstractSyntaxTree._
 import wacc.Parser.StatementParser.statement
 
 class StatementParserSpec extends AnyFlatSpec {
-
-  // Generating these could be automated from the BNF,
-  // but implementing that would be almost as much work as the parser itself.
-  // It would be quite interesting to build a reverse parsley for test generation, though
-  private var rValExamples = Set(
-    "3 + exp" -> BinaryOp(BinaryOpType.Add, IntLiteral(3), IdentLiteral("exp")),
-    "[3 + exp, 12]" -> ArrayLiteral(List(BinaryOp(BinaryOpType.Add, IntLiteral(3), IdentLiteral("exp")), IntLiteral(12))),
-    "newpair (3 + exp, 12)" -> PairValue(BinaryOp(BinaryOpType.Add, IntLiteral(3), IdentLiteral("exp")), IntLiteral(12)),
-    "fst fst_var" -> PairElement(PairElemT.Fst, IdentLiteral("fst_var")),
-    "call call_ident" -> Call(IdentLiteral("call_ident"), List())
-  )
-
-  private var lValExamples = Set(
-    "fst_var" -> IdentLiteral("fst_var"),
-    "fst_var[12][13]" -> ArrayElem("fst_var", List(IntLiteral(12), IntLiteral(13))),
-    "fst fst_var[12][13]" -> PairElement(PairElemT.Fst, ArrayElem("fst_var", List(IntLiteral(12), IntLiteral(13))))
-  )
-
-  private var exprExamples = Set(
-    "3 * 3 " -> BinaryOp(BinaryOpType.Mul, IntLiteral(3), IntLiteral(3))
-  )
-
-  private var statExamples = Set(
-    "skip" -> SkipStat(),
-    "return 12;\nreturn 13" -> StatList(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13)))
-  )
+  import wacc.ParseExamples._
 
 
   "Statement Parser" can "parse skip statements" in {

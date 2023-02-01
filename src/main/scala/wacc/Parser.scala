@@ -3,9 +3,9 @@ import AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree.BinaryOpType._
 import parsley.Parsley
-import parsley.combinator.{choice, many, manyUntil, sepBy1, some}
+import parsley.combinator.{choice, many, manyUntil, sepBy, sepBy1, some}
 import parsley.Parsley.{attempt, lookAhead, notFollowedBy, pure}
-import parsley.character.{endOfLine, letterOrDigit, newline, satisfy, stringOfMany}
+import parsley.character.{endOfLine, item, letterOrDigit, newline, satisfy, stringOfMany}
 import parsley.expr.{InfixL, Ops, Postfix, Prefix, precedence}
 import parsley.implicits.character.charLift
 import wacc.Parser.ExpressionParser.expression
@@ -149,7 +149,7 @@ object Parser {
         whileLoop <|>
         program
 
-    lazy val statement: Parsley[Stat] = right1(statementAtom, ";" #> StatList)
+    lazy val statement: Parsley[Stat] = sepBy(statementAtom, ";").map(StatList)
   }
 
   object FunctionParser {
@@ -170,7 +170,7 @@ object Parser {
     import parsley.implicits.lift.Lift2
     import FunctionParser.func
     import StatementParser.statement
-    lazy val program = Program.lift(many(func), statement)
+    lazy val program = fully("begin" ~> Program.lift(many(attempt(func)), statement <~ "end"))
   }
 
 }

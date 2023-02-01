@@ -66,7 +66,6 @@ object AbstractSyntaxTree {
   sealed trait FuncT
   case class Func(returnType: DeclarationType, ident: IdentLiteral, types: List[(DeclarationType, IdentLiteral)], code: Stat) extends FuncT
 
-
   sealed trait Stat
   case class SkipStat() extends Stat
   case class Declaration(dataType: DeclarationType, ident: IdentLiteral, rvalue: RVal) extends Stat
@@ -76,7 +75,7 @@ object AbstractSyntaxTree {
   case class IfStat(cond: Expr, stat1: Stat, stat2: Stat) extends Stat
   case class WhileLoop(cond: Expr, stat: Stat) extends Stat
   case class BeginEndStat(stat: Stat) extends Stat
-  case class StatList(stat1: Stat, stat2: Stat) extends Stat
+  case class StatList(stats: List[Stat]) extends Stat
 
   object CmdT extends Enumeration {
     type Cmd = Value
