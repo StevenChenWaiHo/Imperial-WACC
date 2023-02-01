@@ -5,7 +5,7 @@ import parsley.character.digit
 import parsley.expr.chain
 import parsley.implicits.character.charLift
 import wacc.AbstractSyntaxTree.ArrayElem
-import wacc.Parser.StatementParser.statement
+import wacc.Parser.ProgramParser.program
 
 import scala.io.Source
 
@@ -19,7 +19,7 @@ object Main {
         file.close
         println("read file " + args.head)
 
-        println(statement.parse(inputProgram))
+        println(program.parse(inputProgram))
     }
 }
 

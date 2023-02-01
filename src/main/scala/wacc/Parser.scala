@@ -3,7 +3,7 @@ import AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree.BinaryOpType._
 import parsley.Parsley
-import parsley.combinator.{choice, many, manyUntil, some}
+import parsley.combinator.{choice, many, manyUntil, sepBy1, some}
 import parsley.Parsley.{attempt, lookAhead, notFollowedBy, pure}
 import parsley.character.{endOfLine, letterOrDigit, newline, satisfy, stringOfMany}
 import parsley.expr.{InfixL, Ops, Postfix, Prefix, precedence}
@@ -120,22 +120,24 @@ object Parser {
     import wacc.AbstractSyntaxTree.CmdT._
     import LValueParser.lValue
     import RValueParser.rValue
-    import DeclarationTypeParser.baseTypeType
+    import wacc.AbstractSyntaxTree.BaseT._
 
 
     private lazy val commandType =
       "free" #> Free <|> "return" #> Ret <|> "exit" #> Exit <|> "print" #> Print <|> "println" #> PrintLn
+    private lazy val baseTypeType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
 
+    lazy val baseType = baseTypeType.map(BaseType)
     private lazy val skipStat = "skip" #> SkipStat()
     private lazy val identLiteral = IdentLiteral.lift(identifier)
-    private lazy val declaration = Declaration.lift(baseTypeType, identLiteral, "=" ~> rValue)
+    private lazy val declaration = Declaration.lift(baseType, identLiteral, "=" ~> rValue)
     private lazy val assignment = Assignment.lift(lValue, "=" ~> rValue)
     private lazy val read = "read" ~> Read.lift(lValue)
     private lazy val command = Command.lift(commandType, expression)
     private lazy val ifStat =
       IfStat.lift("if" ~> expression, "then" ~> statement, "else" ~> statement <~ "fi")
     private lazy val whileLoop = WhileLoop.lift("while" ~> expression, "do" ~> statement<~ "done")
-    private lazy val program = Program.lift("begin" ~> statement<~ "end")
+    private lazy val program = BeginEndStat.lift("begin" ~> statement<~ "end")
 
     private lazy val statementAtom: Parsley[Stat] =
       skipStat <|>
@@ -148,6 +150,27 @@ object Parser {
         program
 
     lazy val statement: Parsley[Stat] = right1(statementAtom, ";" #> StatList)
+  }
+
+  object FunctionParser {
+    import StatementParser.baseType
+    import parsley.implicits.lift.{Lift4, Lift1}
+    import StatementParser.statement
+
+    private lazy val ident = IdentLiteral.lift(identifier)
+    lazy val func = Func.lift(
+      baseType,
+      ident,
+      "(" ~> sepBy1(baseType <~> ident, ","),
+      ")" ~> "is" ~> statement <~ "end"
+    )
+  }
+
+  object ProgramParser {
+    import parsley.implicits.lift.Lift2
+    import FunctionParser.func
+    import StatementParser.statement
+    lazy val program = Program.lift(many(func), statement)
   }
 
 }

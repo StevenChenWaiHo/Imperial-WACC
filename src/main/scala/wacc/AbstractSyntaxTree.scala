@@ -60,15 +60,22 @@ object AbstractSyntaxTree {
   case class PairType(fstType: DeclarationType, sndType: DeclarationType) extends DeclarationType
 
 
+  sealed trait ProgramT
+  case class Program(funcs: List[FuncT], stats: Stat) extends ProgramT
+
+  sealed trait FuncT
+  case class Func(returnType: DeclarationType, ident: IdentLiteral, types: List[(DeclarationType, IdentLiteral)], code: Stat) extends FuncT
+
+
   sealed trait Stat
   case class SkipStat() extends Stat
-  case class Declaration(dataType: BaseTypeType, ident: IdentLiteral, rvalue: RVal) extends Stat
+  case class Declaration(dataType: DeclarationType, ident: IdentLiteral, rvalue: RVal) extends Stat
   case class Assignment(lvalue: LVal, rvalue: RVal) extends Stat
   case class Read(lvalue: LVal) extends Stat // Read has a different input and output type to the other commands
   case class Command(command: CmdT.Cmd, input: Expr) extends Stat
   case class IfStat(cond: Expr, stat1: Stat, stat2: Stat) extends Stat
   case class WhileLoop(cond: Expr, stat: Stat) extends Stat
-  case class Program(stat: Stat) extends Stat
+  case class BeginEndStat(stat: Stat) extends Stat
   case class StatList(stat1: Stat, stat2: Stat) extends Stat
 
   object CmdT extends Enumeration {

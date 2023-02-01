@@ -120,7 +120,7 @@ class StatementParserSpec extends AnyFlatSpec {
           |  %s
           |end""".stripMargin.format(stat._1)
       var result = statement.parse(parseString)
-      assert(result == Success(Program(stat._2)))
+      assert(result == Success(BeginEndStat(stat._2)))
     }
   }
 }
