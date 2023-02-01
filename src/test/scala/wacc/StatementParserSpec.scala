@@ -41,7 +41,7 @@ class StatementParserSpec extends AnyFlatSpec {
   "Statement Parser" can "parse variable declarations" in {
     for (rval <- rValExamples) {
       assert(statement.parse("int int_declaration = " + rval._1)
-        == Success(Declaration(BaseT.Int_T, IdentLiteral("int_declaration"), rval._2)))
+        == Success(Declaration(BaseType(BaseT.Int_T), IdentLiteral("int_declaration"), rval._2)))
     }
   }
 
@@ -56,7 +56,7 @@ class StatementParserSpec extends AnyFlatSpec {
       assert(result == Success(StatList(
         SkipStat(),
         StatList(Assignment(lval._2, rval._2),
-          Declaration(BaseT.Int_T, IdentLiteral("skip_int"), IntLiteral(3))
+          Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))
         )
       )))
 
@@ -73,7 +73,7 @@ class StatementParserSpec extends AnyFlatSpec {
           |""".stripMargin.format(cmd._1))
       assert(result == Success(StatList(SkipStat(),
         StatList(Command(cmd._2, IntLiteral(2)),
-          Declaration(BaseT.Int_T, IdentLiteral("skip_int"), IntLiteral(3))))))
+          Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))))))
     }
   }
 
@@ -92,7 +92,7 @@ class StatementParserSpec extends AnyFlatSpec {
       var result = statement.parse(parseString)
       assert(result == Success(StatList(SkipStat(),
         StatList(IfStat(expr._2, stat1._2, stat2._2),
-          Declaration(BaseT.Int_T, IdentLiteral("skip_int"), IntLiteral(3))))))
+          Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))))))
     }
   }
 
@@ -109,7 +109,7 @@ class StatementParserSpec extends AnyFlatSpec {
       var result = statement.parse(parseString)
       assert(result == Success(StatList(SkipStat(),
         StatList(WhileLoop(expr._2, stat._2),
-          Declaration(BaseT.Int_T, IdentLiteral("skip_int"), IntLiteral(3))))))
+          Declaration(BaseType(BaseT.Int_T), IdentLiteral("skip_int"), IntLiteral(3))))))
     }
   }
 
