@@ -29,16 +29,9 @@ class ProgramParserSpec extends AnyFlatSpec {
 
   def testFunctionParsing = {
     for (function <- funcExamples) {
-      println(function._1)
       assert(func.parse(function._1) == Success(function._2))
     }
   }
-
-  val format =
-    """begin
-      | %s
-      | %s
-      |end""".stripMargin
 
   val whitespaceFormat =
     """
@@ -51,16 +44,35 @@ class ProgramParserSpec extends AnyFlatSpec {
       |
       |""".stripMargin
 
+
+  val format2 =
+    """begin
+      | %s
+      | %s
+      | %s
+      |end""".stripMargin
+
+  val format1 =
+    """begin
+      | %s
+      | %s
+      |end""".stripMargin
+
+  val format =
+    """begin
+      | %s
+      |end""".stripMargin
+
   "Function Parser" can "parse individual functions correctly" in {
     testFunctionParsing
   }
 
   "Program Parser" can "parse functions with multiple inputs" in {
-    testFunctions1(format, funcExamples)
+    testFunctions1(format1, funcExamples)
   }
 
   "Program Parser" can "parse functions with no inputs" in {
-    testFunctions1(format, procExamples)
+    testFunctions1(format1, procExamples)
   }
 
   "Program Parser" should "ignore comments and whitespace" in {
@@ -72,6 +84,6 @@ class ProgramParserSpec extends AnyFlatSpec {
   }
 
   "Program Parser" can "parse programs with multiple functions" in {
-    testFunctions2(format, procExamples union funcExamples)
+    testFunctions2(format2, procExamples union funcExamples)
   }
 }

@@ -3,10 +3,10 @@ import AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree.BinaryOpType._
 import parsley.Parsley
-import parsley.combinator.{choice, many, manyUntil, sepBy, sepBy1, some}
-import parsley.Parsley.{attempt, lookAhead, notFollowedBy, pure}
-import parsley.character.{endOfLine, item, letterOrDigit, newline, satisfy, stringOfMany}
-import parsley.expr.{InfixL, Ops, Postfix, Prefix, precedence}
+import parsley.combinator.{choice, many, sepBy, sepBy1, some}
+import parsley.Parsley.{attempt, notFollowedBy, pure}
+import parsley.character.{letterOrDigit, stringOfMany}
+import parsley.expr.{InfixL, Ops, Prefix, precedence}
 import parsley.implicits.character.charLift
 import wacc.Parser.ExpressionParser.expression
 
@@ -162,7 +162,7 @@ object Parser {
     lazy val func = Func.lift(
       baseType,
       ident,
-      "(" ~> sepBy1(baseType <~> ident, ","),
+      "(" ~> sepBy(baseType <~> ident, ","),
       ")" ~> "is" ~> statement <~ "end"
     )
   }
