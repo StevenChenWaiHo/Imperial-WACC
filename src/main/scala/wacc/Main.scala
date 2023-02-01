@@ -1,19 +1,18 @@
 package wacc
 
-import parsley.{Failure, Parsley, Success}
-import parsley.character.digit
-import parsley.expr.chain
-import parsley.implicits.character.charLift
-import wacc.AbstractSyntaxTree.ArrayElem
 import wacc.Parser.ProgramParser.program
 
+import java.io.FileNotFoundException
 import scala.io.Source
 
 
 object Main {
     def main(args: Array[String]): Unit = {
-        // TODO: Handle error when file does not exist?
-        val file = Source.fromFile(args.head)
+        if(args.length != 1) throw new IllegalArgumentException(
+            "Incorrect number of arguments provided. Received: " + args.length + ", Expected 1."
+        )
+        val file = Option(Source.fromFile(args.head))
+          .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
         val inputProgram = file.getLines.mkString
         // Close the file
         file.close
@@ -22,4 +21,6 @@ object Main {
         println(program.parse(inputProgram))
     }
 }
+
+
 
