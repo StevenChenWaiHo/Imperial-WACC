@@ -13,7 +13,6 @@ object AbstractSyntaxTree {
   case class PairLiteral() extends PairLit
 
   sealed trait ArrayE extends Expr with LVal
-  //TODO: name should probably be an IdentLiteral (make constructor?)
   case class ArrayElem(val name: String, val indices: List[Expr]) extends ArrayE
 
   sealed trait IdentLit extends Expr with LVal
@@ -58,6 +57,7 @@ object AbstractSyntaxTree {
   case class BaseType(baseType: BaseTypeType) extends DeclarationType
   case class ArrayType(dataType: DeclarationType) extends DeclarationType
   case class PairType(fstType: DeclarationType, sndType: DeclarationType) extends DeclarationType
+  case class NoneType() extends DeclarationType
 
 
   sealed trait ProgramT
@@ -83,7 +83,7 @@ object AbstractSyntaxTree {
   }
   object BaseT extends Enumeration {
     type BaseTypeType = Value
-    val Int_T, Bool_T, Char_T, String_T = Value
+    val Int_T, Bool_T, Char_T, String_T, None_T = Value
   }
 
   sealed trait PairElem extends LVal with RVal
