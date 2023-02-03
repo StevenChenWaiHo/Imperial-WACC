@@ -12,26 +12,26 @@ object TypeValidator {
 
   /* Contains functions for getting an expectation for any type of AST node. */
   object Expectation {
+    implicit def baseTypeDeclaration(t: BaseT.BaseTypeType): DeclarationType = BaseType(t)
 
     object Expression {
       import wacc.AbstractSyntaxTree.UnaryOpType._
 
-      def apply(expr: Expr) {
-        expr match {
-          case IntLiteral(_) => TypeGenerator(BaseType(Int_T))
-          case BoolLiteral(_) => TypeGenerator(BaseType(Bool_T))
-          case CharLiteral(_) => TypeGenerator(BaseType(Char_T))
-          case StringLiteral(_) => TypeGenerator(BaseType(String_T))
+      def apply(expr: Expr): Expectation = expr match {
+          case IntLiteral(_) => TypeGenerator(Int_T)
+          case BoolLiteral(_) => TypeGenerator(Bool_T)
+          case CharLiteral(_) => TypeGenerator(Char_T)
+          case StringLiteral(_) => TypeGenerator(String_T)
           case UnaryOp(op, _) => TypeProcessor(UnaryOpExpectations(op))
         }
-      }
+
 
       private val UnaryOpExpectations = Map[UnOp, (List[DeclarationType], DeclarationType)](
-        (Not -> (List(BaseType(Bool_T))   -> BaseType(Bool_T))),
-        (Neg -> (List(BaseType(Int_T))    -> BaseType(Int_T))),
-        (Len -> (List(BaseType(String_T)) -> BaseType(String_T))),
-        (Ord -> (List(BaseType(String_T)) -> BaseType(Int_T))),
-        (Chr -> (List(BaseType(Int_T))    -> BaseType(String_T)))
+        Not -> (List(Bool_T)   -> Bool_T),
+        Neg -> (List(Int_T)    -> Int_T),
+        Len -> (List(String_T) -> String_T),
+        Ord -> (List(String_T) -> Int_T),
+        Chr -> (List(Int_T)    -> String_T)
       )
     }
   }
