@@ -22,19 +22,18 @@ object TypeValidator {
           case BoolLiteral(_) => TypeGenerator(BaseType(Bool_T))
           case CharLiteral(_) => TypeGenerator(BaseType(Char_T))
           case StringLiteral(_) => TypeGenerator(BaseType(String_T))
-          case UnaryOp(op, _) => TypeProcessor()
+          case UnaryOp(op, _) => TypeProcessor(UnaryOpExpectations.get(op).get)//Not the best way)
         }
       }
 
       private val UnaryOpExpectations = Map[UnOp, (List[DeclarationType], DeclarationType)](
-        (Not -> ()),
-        (Neg ->),
-        (Len ->),
-        (Ord ->),
-        (Chr ->)
+        (Not -> (List[DeclarationType](BaseType(Bool_T)), BaseType(Bool_T))),
+        (Neg -> (List[DeclarationType](BaseType(Int_T)), BaseType(Int_T))),
+        (Len -> (List[DeclarationType](BaseType(String_T)), BaseType(String_T))),
+        (Ord -> (List[DeclarationType](BaseType(String_T)), BaseType(Int_T))),
+        (Chr -> (List[DeclarationType](BaseType(Int_T)), BaseType(String_T)))
       )
     }
-
   }
 
 }
