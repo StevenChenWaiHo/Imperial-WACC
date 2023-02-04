@@ -3,6 +3,7 @@ package wacc
 import wacc.AbstractSyntaxTree._;
 
 object SemanticAnalyser {
+  /*
   case class FunctionType(ExpectedInput: List[DeclarationType], ExpectedOutput: DeclarationType)
   private def validateType(n:ASTNode, context: Map[IdentLiteral, FunctionType]): Boolean = {
 
@@ -33,4 +34,5 @@ object SemanticAnalyser {
   case class CommandError(errorMessage: String) extends Errors
   case class ConditionError(errorMessage: String) extends Errors
   case class ArrayError(errorMessage: String) extends Errors
+  */
 }

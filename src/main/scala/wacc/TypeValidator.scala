@@ -2,6 +2,7 @@ package wacc
 
 import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BaseT._
+import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 
 object TypeValidator {
   /* The input and output type an AST node is expecting. */
@@ -27,12 +28,28 @@ object TypeValidator {
 
 
       private val UnaryOpExpectations = Map[UnOp, (List[DeclarationType], DeclarationType)](
-        Not -> (List(Bool_T)   -> Bool_T),
-        Neg -> (List(Int_T)    -> Int_T),
-        Len -> (List(String_T) -> String_T),
-        Ord -> (List(String_T) -> Int_T),
-        Chr -> (List(Int_T)    -> String_T)
+        Not -> (List(Bool_T)  , Bool_T),
+        Neg -> (List(Int_T)    , Int_T),
+        Len -> (List(String_T) , String_T),
+        Ord -> (List(String_T) ,Int_T),
+        Chr -> (List(Int_T)    , String_T)
       )
+
+      private val BinaryOpExpectations = Map[BinOp, (List[DeclarationType], DeclarationType)](
+        BinaryOpType.Mul -> (List(Int_T), Int_T),
+        BinaryOpType.Div -> (List(Int_T), Int_T),
+        BinaryOpType.Mod -> (List(Int_T), Int_T),
+        BinaryOpType.Add -> (List(Int_T, Char_T), Int_T),
+        BinaryOpType.Sub -> (List(Int_T, Char_T), Int_T),
+        BinaryOpType.Gt -> (List(Int_T, Char_T), Bool_T),
+        BinaryOpType.Gte -> (List(Int_T, Char_T), Bool_T),
+        BinaryOpType.Lt -> (List(Int_T, Char_T), Bool_T),
+        BinaryOpType.Lte -> (List(Int_T, Char_T), Bool_T),
+        BinaryOpType.Eq -> (List(Int_T, Char_T, Bool_T, String_T), Bool_T),
+        BinaryOpType.Neq -> (List(Int_T, Char_T, Bool_T, String_T), Bool_T),
+        BinaryOpType.And -> (List(Bool_T), Bool_T),
+        BinaryOpType.Or -> (List(Bool_T), Bool_T)
+      ) // for add to neq need to verify all input are of same type
     }
   }
 
