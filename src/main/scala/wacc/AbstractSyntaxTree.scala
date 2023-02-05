@@ -1,5 +1,6 @@
 package wacc
 
+import wacc.AbstractSyntaxTree.AnyType
 import wacc.AbstractSyntaxTree.BaseT.BaseTypeType
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
@@ -53,12 +54,25 @@ object AbstractSyntaxTree {
   }
 
 
-  sealed trait DeclarationType extends ASTNode
+  // Note: AnyType and NoneType will never arise in the AST, so it should be OK to override their equality checking
+  sealed trait DeclarationType extends ASTNode {
+    override def equals(obj: Any): Boolean = obj match {
+      case AnyType => true
+      case NoneType => false
+      case _ => super.equals(obj)
+    }
+  }
+
   case class NestedPair() extends DeclarationType
   case class BaseType(baseType: BaseTypeType) extends DeclarationType
   case class ArrayType(dataType: DeclarationType) extends DeclarationType
   case class PairType(fstType: DeclarationType, sndType: DeclarationType) extends DeclarationType
-  case class NoneType() extends DeclarationType
+  case class AnyType() extends DeclarationType {
+    override def equals(obj: Any): Boolean = obj.equals(this)
+  }
+  case class NoneType() extends DeclarationType {
+    override def equals(obj: Any): Boolean = obj.equals(this)
+  }
 
 
   sealed trait ProgramT extends ASTNode

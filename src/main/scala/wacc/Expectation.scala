@@ -1,27 +1,41 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.DeclarationType
+import wacc.AbstractSyntaxTree.BaseT.BaseTypeType
+import wacc.AbstractSyntaxTree.{BaseType, DeclarationType, NestedPair}
 
 import scala.util.control.Breaks.break
 
 type ReturnType = Either[List[String], DeclarationType]
+type ReturnTypeMatcher = List[ReturnType] => ReturnType
 
-class Expectation(expectation: List[ReturnType] => ReturnType) {
-  var context = ""
+class Expectation(val expecting: ReturnTypeMatcher, var contextMessage: String = "") {
+
+  /* Simpler constructor. Handles Left ReturnTypes automatically. */
+  def this(decTypeMatcher: List[DeclarationType] => ReturnType, contextMessage: String = "") = this(
+    (inputs: List[ReturnType]) => {
+      val maybeError = inputs.find(_.isLeft)
+      if (maybeError.isDefined) maybeError.get.left.map(contextMessage :: _)
+      else decTypeMatcher(inputs.map(_.toOption.get))
+    }, contextMessage)
 
   def matchedWith(inputs: List[ReturnType]): ReturnType = {
-    var result = expectation(inputs)
-    if(context != "") result.left.map[List[String]](x => context :: x)
-    result
+    expecting(inputs).left.map(contextMessage :: _)
   }
+
+  /* Union of two expectations. If both produce errors, return the error from the rightmost expectation. */
+  def ~>(other: Expectation): Expectation = new Expectation(
+    (inputs: List[ReturnType]) => {
+      val result1 = this matchedWith inputs
+      val result2 = other matchedWith inputs
+      if (result1.isRight && result2.isRight) throw new RuntimeException("Ambiguous expectation: This should never happen.")
+      result2 orElse result1
+    })
+
+  /* Opposite of ~>. Not strictly necessary, but it could make the syntax a bit nicer. */
+  def <~(other: Expectation): Expectation = other ~> this
 }
 
-case class Type(declarationType: DeclarationType)
-case class Mismatch(messages: List[String])
-
-
-object Expectation {
-
+object TypeProcessor {
   private def countMatches(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 0
     for ((expectedInput, input) <- expected zip inputs)
@@ -43,7 +57,7 @@ object Expectation {
   private def conditionalExpectation(valids: List[(List[DeclarationType], DeclarationType)])
                                     (inputs: List[ReturnType]): ReturnType = {
     val maybeError = inputs.find(_.isLeft)
-    if(maybeError.isDefined) return maybeError.get
+    if (maybeError.isDefined) return maybeError.get
 
     val definitelyInputs = inputs.map(_.toOption.get)
     val orderedMatches = valids.sortBy(x => countMatches(x._1, definitelyInputs)).reverse
@@ -60,10 +74,19 @@ object Expectation {
                                (inputs: List[ReturnType]): ReturnType =
     conditionalExpectation(List(valids))(inputs)
 
+//  def apply(ts: (BaseTypeType, BaseTypeType), contextMessage: String = ""): Expectation =
+//    new Expectation(simpleExpectation(List(BaseType(ts._1)), BaseType(ts._2)): ReturnTypeMatcher, contextMessage)
 
-  def apply(valids: List[(List[DeclarationType], DeclarationType)]): Expectation =
-    new Expectation(conditionalExpectation(valids))
+//  def apply(in: DeclarationType, out: DeclarationType, contextMessage: String = ""): Expectation =
+//    new Expectation(simpleExpectation(List(in), out): ReturnTypeMatcher, contextMessage)
 
-  def apply(valid: (List[DeclarationType], DeclarationType)): Expectation =
-    new Expectation(simpleExpectation(valid))
+
+  def conditional[A, B](ts: List[(List[A], B)])
+                 (implicit fromA: A => DeclarationType, fromB: B => DeclarationType) : Expectation =
+    new Expectation(conditionalExpectation(ts.map(x => (x._1.map(fromA), fromB(x._2)))): ReturnTypeMatcher)
+
+  def simple[A, B](ts: (List[A], B), contextMessage: String = "")
+                 (implicit fromA: A => DeclarationType, fromB: B => DeclarationType) : Expectation =
+    new Expectation(simpleExpectation(ts._1.map(fromA), fromB(ts._2)): ReturnTypeMatcher, contextMessage)
+
 }

@@ -1,56 +1,58 @@
 package wacc
 
-import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
+import wacc.AbstractSyntaxTree.UnaryOpType._
+import wacc.AbstractSyntaxTree._
 
 object TypeValidator {
-  /* The input and output type an AST node is expecting. */
-  final case class Expectation (input: List[DeclarationType], output: DeclarationType)
+  implicit def declarationTypeToReturnType(t: DeclarationType): ReturnType = Right(t)
 
-  private def TypeGenerator(declarationType: DeclarationType) = new Expectation(Nil, declarationType)
-  private def TypeProcessor(types: (List[DeclarationType], DeclarationType)) = new Expectation(types._1, types._2)
+  implicit def makeBaseType(t: BaseTypeType): BaseType = BaseType(t)
 
-  /* Contains functions for getting an expectation for any type of AST node. */
-  object Expectation {
-    implicit def baseTypeDeclaration(t: BaseT.BaseTypeType): DeclarationType = BaseType(t)
+  implicit def decTypeToList(x: DeclarationType): List[DeclarationType] = List(x)
 
-    object Expression {
-      import wacc.AbstractSyntaxTree.UnaryOpType._
+  implicit def retTypeToList(x: ReturnType): List[ReturnType] = List(x)
 
-      def apply(expr: Expr): Expectation = expr match {
-          case IntLiteral(_) => TypeGenerator(Int_T)
-          case BoolLiteral(_) => TypeGenerator(Bool_T)
-          case CharLiteral(_) => TypeGenerator(Char_T)
-          case StringLiteral(_) => TypeGenerator(String_T)
-          case UnaryOp(op, _) => TypeProcessor(UnaryOpExpectations(op))
-        }
-
-
-      private val UnaryOpExpectations = Map[UnOp, (List[DeclarationType], DeclarationType)](
-        Not -> (List(Bool_T)  , Bool_T),
-        Neg -> (List(Int_T)    , Int_T),
-        Len -> (List(String_T) , String_T),
-        Ord -> (List(String_T) ,Int_T),
-        Chr -> (List(Int_T)    , String_T)
-      )
-
-      private val BinaryOpExpectations = Map[BinOp, (List[DeclarationType], DeclarationType)](
-        BinaryOpType.Mul -> (List(Int_T), Int_T),
-        BinaryOpType.Div -> (List(Int_T), Int_T),
-        BinaryOpType.Mod -> (List(Int_T), Int_T),
-        BinaryOpType.Add -> (List(Int_T, Char_T), Int_T),
-        BinaryOpType.Sub -> (List(Int_T, Char_T), Int_T),
-        BinaryOpType.Gt -> (List(Int_T, Char_T), Bool_T),
-        BinaryOpType.Gte -> (List(Int_T, Char_T), Bool_T),
-        BinaryOpType.Lt -> (List(Int_T, Char_T), Bool_T),
-        BinaryOpType.Lte -> (List(Int_T, Char_T), Bool_T),
-        BinaryOpType.Eq -> (List(Int_T, Char_T, Bool_T, String_T), Bool_T),
-        BinaryOpType.Neq -> (List(Int_T, Char_T, Bool_T, String_T), Bool_T),
-        BinaryOpType.And -> (List(Bool_T), Bool_T),
-        BinaryOpType.Or -> (List(Bool_T), Bool_T)
-      ) // for add to neq need to verify all input are of same type
-    }
+  def returnType(expr: Expr)(implicit context: Map[String, DeclarationType]): ReturnType = expr match {
+    case IntLiteral(_) => BaseType(Int_T)
+    case BoolLiteral(_) => BaseType(Bool_T)
+    case CharLiteral(_) => BaseType(Char_T)
+    case StringLiteral(_) => BaseType(String_T)
+    case IdentLiteral(name) => context(name)
+    case UnaryOp(op, x) => UnaryOpExpectations(op) matchedWith returnType(x)
+    case BinaryOp(op, x1, x2) => BinaryOpExpectations(op) matchedWith List(returnType(x1), returnType(x2))
   }
 
+  private val UnaryOpExpectations = Map[UnOp, Expectation](
+    Not -> TypeProcessor.simple(List(Bool_T) -> Bool_T),
+    Neg -> TypeProcessor.simple(List(Int_T) -> Int_T),
+    Len -> TypeProcessor.simple(List(ArrayType(AnyType())) -> Int_T),
+    Ord -> TypeProcessor.simple(List(Char_T) -> Int_T),
+    Chr -> TypeProcessor.simple(List(Int_T) -> Char_T)
+  )
+
+  private val boolComparisonTypes =
+    TypeProcessor.conditional(List(List(Int_T, Int_T) -> Bool_T, List(Char_T, Char_T) -> Bool_T))
+
+  private val identicalTypes = new Expectation((inputs: List[DeclarationType]) => {
+    if(inputs(0) == inputs(1)) Right(BaseType(Bool_T))
+    else Left(List["Only matching types may be compared using == and !="])
+  })
+
+  private val BinaryOpExpectations = Map[BinOp, Expectation](
+    BinaryOpType.Mul -> TypeProcessor.simple(List(Int_T, Int_T) -> Int_T),
+    BinaryOpType.Div -> TypeProcessor.simple(List(Int_T, Int_T) -> Int_T),
+    BinaryOpType.Mod -> TypeProcessor.simple(List(Int_T, Int_T) -> Int_T),
+    BinaryOpType.Add -> TypeProcessor.simple(List(Int_T, Int_T) -> Int_T),
+    BinaryOpType.Sub -> TypeProcessor.simple(List(Int_T, Int_T) -> Int_T),
+    BinaryOpType.Gt -> boolComparisonTypes,
+    BinaryOpType.Gte -> boolComparisonTypes,
+    BinaryOpType.Lt -> boolComparisonTypes,
+    BinaryOpType.Lte -> boolComparisonTypes,
+    BinaryOpType.Eq -> identicalTypes,
+    BinaryOpType.Neq -> identicalTypes,
+    BinaryOpType.And -> TypeProcessor.simple(List(Bool_T, Bool_T) -> Bool_T),
+    BinaryOpType.Or -> TypeProcessor.simple(List(Bool_T, Bool_T) -> Bool_T)
+  )
 }

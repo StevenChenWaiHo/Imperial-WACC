@@ -1,8 +1,12 @@
 package wacc
 
 import wacc.AbstractSyntaxTree._;
+import wacc.Expectation
 
 object SemanticAnalyser {
+
+
+
   /*
   case class FunctionType(ExpectedInput: List[DeclarationType], ExpectedOutput: DeclarationType)
   private def validateType(n:ASTNode, context: Map[IdentLiteral, FunctionType]): Boolean = {
