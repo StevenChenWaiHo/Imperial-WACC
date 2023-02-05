@@ -8,6 +8,7 @@ import javax.xml.datatype.DatatypeConfigurationException
 
 // This should probably be a class which takes in a lookup table
 object AbstractSyntaxTree {
+  sealed trait ASTNode
 
   sealed trait PairLit extends Expr with RVal
   case class PairLiteral() extends PairLit
@@ -52,7 +53,7 @@ object AbstractSyntaxTree {
   }
 
 
-  sealed trait DeclarationType
+  sealed trait DeclarationType extends ASTNode
   case class NestedPair() extends DeclarationType
   case class BaseType(baseType: BaseTypeType) extends DeclarationType
   case class ArrayType(dataType: DeclarationType) extends DeclarationType
@@ -60,13 +61,13 @@ object AbstractSyntaxTree {
   case class NoneType() extends DeclarationType
 
 
-  sealed trait ProgramT
+  sealed trait ProgramT extends ASTNode
   case class Program(funcs: List[FuncT], stats: Stat) extends ProgramT
 
-  sealed trait FuncT
+  sealed trait FuncT extends ASTNode
   case class Func(returnType: DeclarationType, ident: IdentLiteral, types: List[(DeclarationType, IdentLiteral)], code: Stat) extends FuncT
 
-  sealed trait Stat
+  sealed trait Stat extends ASTNode
   case class SkipStat() extends Stat
   case class Declaration(dataType: DeclarationType, ident: IdentLiteral, rvalue: RVal) extends Stat
   case class Assignment(lvalue: LVal, rvalue: RVal) extends Stat
@@ -94,12 +95,12 @@ object AbstractSyntaxTree {
     val Fst, Snd = Value
   }
 
-  sealed trait RVal
+  sealed trait RVal extends ASTNode
   case class ArrayLiteral(elements: List[Expr]) extends RVal
   case class Call(ident: IdentLiteral, args: List[Expr]) extends RVal
   case class PairValue(exp1: Expr, exp2: Expr) extends RVal
 
-  sealed trait LVal
+  sealed trait LVal extends ASTNode
   case class IdentReference(name: String)
 }
 
