@@ -37,7 +37,7 @@ object TypeValidator {
 
   private val identicalTypes = new Expectation((inputs: List[DeclarationType]) => {
     if(inputs(0) == inputs(1)) Right(BaseType(Bool_T))
-    else Left(List["Only matching types may be compared using == and !="])
+    else Left(List("Only matching types may be compared using == and !="))
   })
 
   private val BinaryOpExpectations = Map[BinOp, Expectation](
