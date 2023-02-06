@@ -4,10 +4,6 @@ import wacc.AbstractSyntaxTree.BaseT.BaseTypeType
 import wacc.AbstractSyntaxTree.{BaseType, DeclarationType, NestedPair}
 
 import scala.util.control.Breaks.break
-
-type ReturnType = Either[List[String], DeclarationType]
-type ReturnTypeMatcher = List[ReturnType] => ReturnType
-
 class Expectation(val expecting: ReturnTypeMatcher, var contextMessage: String = "") {
 
   /* Simpler constructor. Handles Left ReturnTypes automatically. */
