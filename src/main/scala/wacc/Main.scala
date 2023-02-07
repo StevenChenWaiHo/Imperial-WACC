@@ -15,18 +15,17 @@ object Main {
         val file = Option(Source.fromFile(args.head))
           .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
         val inputProgram = file.mkString
-        // Close the file
         file.close
-        println("read file " + args.head)
 
+        /* Compile */
         val ast = program.parse(inputProgram)
-        println(ast)
-        if (ast.isFailure) {
+         if (ast.isFailure) {
+            println(ast)
             sys.exit(100)
         }
-        val errOrVerified = verifyProgram(ast.get)
-        println(errOrVerified)
-        if (errOrVerified.isLeft) {
+        val verified = verifyProgram(ast.get)
+        if (verified.isLeft) {
+            println(verified)
             sys.exit(200)
         }
         sys.exit(0)
