@@ -13,7 +13,7 @@ object Main {
         )
         val file = Option(Source.fromFile(args.head))
           .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
-        val inputProgram = file.getLines.mkString
+        val inputProgram = file.mkString
         // Close the file
         file.close
         println("read file " + args.head)

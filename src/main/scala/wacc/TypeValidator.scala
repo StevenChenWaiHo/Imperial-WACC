@@ -96,7 +96,7 @@ object TypeValidator {
     case CharLiteral(_) => BaseType(Char_T)
     case StringLiteral(_) => BaseType(String_T)
     case IdentLiteral(name) => context.findVar(name) match {
-      case Option.empty => Left(List("Variable %s is not defined\n".format(name)))
+      case None => Left(List("Variable %s is not defined\n".format(name)))
       case Some(declarationType) => declarationType
     }
     case UnaryOp(op, x) => UnaryOpExpectations(op) matchedWith returnType(x)

@@ -5,6 +5,7 @@ import wacc.AbstractSyntaxTree._
 import wacc.TypeValidator
 import wacc.ScopeContext
 
+
 object SemanticAnalyser {
   private def verifyStat(context: ScopeContext, stat: Stat): Either[List[String], ScopeContext] = {
       case skipStat => context
@@ -40,6 +41,7 @@ object SemanticAnalyser {
 }
 
 /*
+
 object SemanticAnalyser {
   private def verifyStat(stat: AbstractSyntaxTree.Stat, expectedFunctionType: FunctionType): List[Errors] = {
     val errorsList= List[Errors]
@@ -69,4 +71,4 @@ object SemanticAnalyser {
   case class ArrayError(errorMessage: String) extends Errors
 }
 
- */
+*/
