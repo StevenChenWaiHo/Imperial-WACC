@@ -5,17 +5,61 @@ import wacc.AbstractSyntaxTree._
 import wacc.TypeValidator
 import wacc.ScopeContext
 
+import scala.util.control.Breaks.break
+
 object SemanticAnalyser {
   private def verifyStat(context: ScopeContext, stat: Stat): Either[List[String], ScopeContext] = {
+    val listOfErrors = List(): List[String];
+    val hardKeywords = Set(
+      "true", "false", "null", "len", "ord", "chr", "skip", "read", "free", "return", "exit",
+      "print", "println", "if", "then", "else", "fi", "while", "do", "done", "begin", "end",
+      "int", "bool", "char", "string", "fst", "snd", "call", "pair", "newpair", "is"
+    ): Set[String]
+    val hardOperators = Set("!", "*", "/", "%", "+", "-", ">=", ">", "<", "<=", "==", "!=", "&&", "||", ";") : Set[String]
+    stat match {
       case skipStat => context
       case Declaration(dataType, ident, rvalue) => {
+        if (hardKeywords.contains(ident.name) || ident.name.contains(hardOperators)) {
+          listOfErrors.appended("Variable names cannot be identifiers or contain operator\n")
+        }
         /*if ident is keyword then return an error*/
+        if (context.findVar(ident.name).nonEmpty) {
+          listOfErrors.appended("Variable exists in this scope already\n")
+        }
         dataType match {
           case NestedPair() => {}
-          case BaseType(baseType) => {}
-        } /*and make sure dataType and rvalue have same type*/
+          case BaseType(baseType) => {baseType.equals(/*evaluated expectation of rval*/)}
+          case PairType(fstType, sndType) => {
+            rvalue match {
+              case PairValue(exp1, exp2) => {
+                if (exp1 != fstType || exp2 != sndType) {
+                  listOfErrors.appended("Pair values do not match\n")
+                }
+              }
+              case _ => {
+                listOfErrors.appended("Rhs not a pair\n")
+              }
+
+            }
+          }
+          case ArrayType(dataType) => {
+            rvalue match {
+              case ArrayLiteral(elements) => {
+                for (element <- elements) {
+                  if (element != dataType) {
+                    listOfErrors.appended("Invalid array typing")
+                    break
+                  }
+                }
+              }
+            }
+          }
+        }
+        /*and make sure dataType and rvalue have same type*/
       }
       case Assignment(lvalue, rvalue) => {
+        if (context.findVar(lvalue).isEmpty) {
+        }
         /*if lvalue type == rvalue type then true otherwise error*/
       }
       case Read(lvalue) => {
@@ -25,6 +69,10 @@ object SemanticAnalyser {
         /*Not sure what this is*/
       }
       case IfStat(cond, stat1, stat2) => {
+        cond match {
+          case BoolLiteral(x) => context
+          case UnaryOp(UnaryOpType(),)
+        }
         /*Make sure cond is boolean, verify stat1 and stat2 and make sure there is fi*/
       }
       case WhileLoop(cond, stat) => {
@@ -36,6 +84,7 @@ object SemanticAnalyser {
       case StatList(statList) => {
         /*verify stat in list*/
       }
+    }
   }
 }
 
