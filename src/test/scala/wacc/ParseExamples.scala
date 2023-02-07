@@ -31,6 +31,12 @@ object ParseExamples {
     "return 12;\nreturn 13" -> StatList(List(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13))))
   )
 
+  var pairExamples = Set(
+    "pair(int, int) p = newpair(10, 3)" -> Declaration(PairType(BaseType(Int_T),BaseType(Int_T)),IdentLiteral("p"),PairValue(IntLiteral(10), IntLiteral(3))),
+    "pair(int, char) p = newpair(10, 'a')" -> Declaration(PairType(BaseType(Int_T),BaseType(Char_T)),IdentLiteral("p"),PairValue(IntLiteral(10), CharLiteral('a'))),
+    "pair(bool, string) p = newpair(true, \"hi\")" -> Declaration(PairType(BaseType(Bool_T),BaseType(String_T)),IdentLiteral("p"),PairValue(BoolLiteral(true), StringLiteral("hi")))
+  )
+
   private var declarationTypeExamples = Set(
     "int x " -> (BaseType(Int_T), IdentLiteral("x")),
     "char begin_char " -> (BaseType(Char_T), IdentLiteral("begin_char"))
