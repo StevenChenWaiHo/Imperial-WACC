@@ -21,8 +21,15 @@ object Main {
 
         val ast = program.parse(inputProgram)
         println(ast)
-        val x = verifyProgram(ast.get)
-        println(x)
+        if (ast.isFailure) {
+            sys.exit(100)
+        }
+        val errOrVerified = verifyProgram(ast.get)
+        println(errOrVerified)
+        if (errOrVerified.isLeft) {
+            sys.exit(200)
+        }
+        sys.exit(0)
     }
 }
 
