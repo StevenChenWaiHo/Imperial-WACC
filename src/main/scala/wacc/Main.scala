@@ -1,6 +1,7 @@
 package wacc
 
 import wacc.Parser.ProgramParser.program
+import wacc.SemanticAnalyser.verifyProgram
 
 import java.io.FileNotFoundException
 import scala.io.Source
@@ -13,12 +14,15 @@ object Main {
         )
         val file = Option(Source.fromFile(args.head))
           .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
-        val inputProgram = file.getLines.mkString
+        val inputProgram = file.mkString
         // Close the file
         file.close
         println("read file " + args.head)
 
-        println(program.parse(inputProgram))
+        val ast = program.parse(inputProgram)
+        println(ast)
+        val x = verifyProgram(ast.get)
+        println(x)
     }
 }
 
