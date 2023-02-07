@@ -1,11 +1,22 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree._
-import wacc.TypeValidator
-import wacc.ScopeContext
 
 object SemanticAnalyser {
+
+  def verifyProgram(program: Program) = {
+    val topLevelScope = new ScopeContext()
+    for (func <- program.funcs) {
+      verifyFunc(topLevelScope, func)
+    }
+    verifyStat(topLevelScope, program.stats)
+  }
+
+  private def verifyFunc(context: ScopeContext, func: Func) = {
+    // TODO: Change this to properly deal with functions
+    verifyStat(context, func.code)
+  }
+
   private def verifyStat(context: ScopeContext, stat: Stat): Either[List[String], ScopeContext] = {
       case skipStat => context
       case Declaration(dataType, ident, rvalue) => {
@@ -35,6 +46,11 @@ object SemanticAnalyser {
       }
       case StatList(statList) => {
         /*verify stat in list*/
+        var newContext = context
+        for (stat <- statList) {
+          newContext = verifyStat(newContext, stat)
+        }
+        newContext
       }
   }
 }
