@@ -3,7 +3,10 @@
 # You are free to change the language used for this script,
 # but do *not* change its name.
 
-java -jar wacc-39-compiler.jar $@
+for var in $@
+do
+    java -jar wacc-39-compiler.jar "$var"
+done
 
 exit $?
 
