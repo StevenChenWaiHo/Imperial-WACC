@@ -71,6 +71,7 @@ object SemanticAnalyser {
       }
       case Assignment(lvalue, rvalue) => {
         if (context.findVar(lvalue).isEmpty) {
+          listOfErrors.appended("Variable doesn't exist in this scope currently")
         }
         /*if lvalue type == rvalue type then true otherwise error*/
       }
