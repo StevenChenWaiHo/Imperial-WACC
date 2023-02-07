@@ -2,6 +2,7 @@ package wacc
 
 import wacc.AbstractSyntaxTree._
 
+
 object SemanticAnalyser {
 
   def verifyProgram(program: Program) = {
@@ -56,6 +57,7 @@ object SemanticAnalyser {
 }
 
 /*
+
 object SemanticAnalyser {
   private def verifyStat(stat: AbstractSyntaxTree.Stat, expectedFunctionType: FunctionType): List[Errors] = {
     val errorsList= List[Errors]
@@ -85,4 +87,4 @@ object SemanticAnalyser {
   case class ArrayError(errorMessage: String) extends Errors
 }
 
- */
+*/
