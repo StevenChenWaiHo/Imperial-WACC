@@ -96,11 +96,12 @@ object SemanticAnalyser {
       }
       case Read(lvalue) => {
         /*Not sure what this is*/
-        Left(List("Not Yet Implemented\n"))
+        // TODO: ensure lvalue is int or char
+        Right(context)
       }
       case Command(command, input) => {
         /*Not sure what this is*/
-        Left(List("Not Yet Implemented\n"))
+        Right(context)
       }
       case IfStat(cond, stat1, stat2) => {
         /*Make sure cond is boolean, verify stat1 and stat2 and make sure there is fi*/
