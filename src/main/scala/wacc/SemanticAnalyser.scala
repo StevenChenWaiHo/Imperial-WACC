@@ -74,12 +74,15 @@ object SemanticAnalyser {
           listOfErrors.appended("Variable doesn't exist in this scope currently")
         }
         /*if lvalue type == rvalue type then true otherwise error*/
+        Left(List("Not Yet Implemented"))
       }
       case Read(lvalue) => {
         /*Not sure what this is*/
+        Left(List("Not Yet Implemented"))
       }
       case Command(command, input) => {
         /*Not sure what this is*/
+        Left(List("Not Yet Implemented"))
       }
       case IfStat(cond, stat1, stat2) => {
         cond match {
@@ -87,20 +90,23 @@ object SemanticAnalyser {
           case UnaryOp(UnaryOpType(),)
         }
         /*Make sure cond is boolean, verify stat1 and stat2 and make sure there is fi*/
+        Left(List("Not Yet Implemented"))
       }
       case WhileLoop(cond, stat) => {
         /*Make sure cond is boolean, verify stat*/
+        verifyStat(context, stat)
       }
       case BeginEndStat(stat) => {
         /*verify stat (What is this?)*/
+        verifyStat(context, stat)
       }
       case StatList(statList) => {
         /*verify stat in list*/
         var newContext = context
         for (stat <- statList) {
-          newContext = verifyStat(newContext, stat)
+          //newContext = verifyStat(newContext, stat)
         }
-        newContext
+        Right(newContext)
       }
     }
   }
