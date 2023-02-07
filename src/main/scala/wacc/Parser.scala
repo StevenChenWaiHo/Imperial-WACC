@@ -26,7 +26,7 @@ object Parser {
 
   object DeclarationTypeParser {
     import AbstractSyntaxTree.BaseT._
-    import parsley.implicits.lift.{Lift2}
+    import parsley.implicits.lift.Lift2
 
     lazy val baseTypeType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
     private lazy val baseType = baseTypeType.map(BaseType)

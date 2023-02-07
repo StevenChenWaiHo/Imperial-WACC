@@ -1,6 +1,5 @@
 import wacc.AbstractSyntaxTree.DeclarationType
 
 package object wacc {
-  type ReturnType = Either[List[String], DeclarationType]
-  type ReturnTypeMatcher = List[ReturnType] => ReturnType 
+  type TypeMatcher = List[Either[List[String], DeclarationType]] => Either[List[String], DeclarationType]
 }

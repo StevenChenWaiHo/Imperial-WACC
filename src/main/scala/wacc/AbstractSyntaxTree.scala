@@ -1,11 +1,8 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.AnyType
-import wacc.AbstractSyntaxTree.BaseT.BaseTypeType
+import wacc.AbstractSyntaxTree.BaseT.{Any_T, BaseTypeType}
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
-
-import javax.xml.datatype.DatatypeConfigurationException
 
 // This should probably be a class which takes in a lookup table
 object AbstractSyntaxTree {
@@ -15,19 +12,19 @@ object AbstractSyntaxTree {
   case class PairLiteral() extends PairLit
 
   sealed trait ArrayE extends Expr with LVal
-  case class ArrayElem(val name: String, val indices: List[Expr]) extends ArrayE
+  case class ArrayElem(name: String, indices: List[Expr]) extends ArrayE
 
   sealed trait IdentLit extends Expr with LVal
-  case class IdentLiteral(val name: String) extends IdentLit
+  case class IdentLiteral(name: String) extends IdentLit
 
 
   sealed trait Expr extends RVal
-  case class IntLiteral(val x: Int) extends Expr
-  case class BoolLiteral(val x: Boolean) extends Expr
-  case class CharLiteral(val x: Char) extends Expr
-  case class StringLiteral(val x: String) extends Expr
-  case class UnaryOp(val op: UnOp, val expr: Expr) extends Expr
-  case class BinaryOp(val op: BinOp, val expr1: Expr, val expr2: Expr) extends Expr
+  case class IntLiteral(x: Int) extends Expr
+  case class BoolLiteral(x: Boolean) extends Expr
+  case class CharLiteral(x: Char) extends Expr
+  case class StringLiteral(x: String) extends Expr
+  case class UnaryOp(op: UnOp, expr: Expr) extends Expr
+  case class BinaryOp(op: BinOp, expr1: Expr, expr2: Expr) extends Expr
 
   /* Constructors and Factories */
   object ArrayElem {
@@ -56,9 +53,13 @@ object AbstractSyntaxTree {
 
   // Note: AnyType and NoneType will never arise in the AST, so it should be OK to override their equality checking
   sealed trait DeclarationType extends ASTNode {
+    private def isAny (decl: DeclarationType): Boolean = decl match {
+      case BaseType(x) => x == Any_T
+      case _ => false
+    }
+    /* BaseType(Any_T) matches any other declaration type. */
     override def equals(obj: Any): Boolean = obj match {
-      case AnyType => true
-      case NoneType => false
+      case obj: DeclarationType if isAny(obj) || isAny(this) => true
       case _ => super.equals(obj)
     }
   }
@@ -67,19 +68,10 @@ object AbstractSyntaxTree {
   case class BaseType(baseType: BaseTypeType) extends DeclarationType
   case class ArrayType(dataType: DeclarationType) extends DeclarationType
   case class PairType(fstType: DeclarationType, sndType: DeclarationType) extends DeclarationType
-  case class AnyType() extends DeclarationType {
-    override def equals(obj: Any): Boolean = obj.equals(this)
-  }
-  case class NoneType() extends DeclarationType {
-    override def equals(obj: Any): Boolean = obj.equals(this)
-  }
 
+  case class Program(funcs: List[Func], stats: Stat) extends ASTNode
 
-  sealed trait ProgramT extends ASTNode
-  case class Program(funcs: List[FuncT], stats: Stat) extends ProgramT
-
-  sealed trait FuncT extends ASTNode
-  case class Func(returnType: DeclarationType, ident: IdentLiteral, types: List[(DeclarationType, IdentLiteral)], code: Stat) extends FuncT
+  case class Func(returnType: DeclarationType, ident: IdentLiteral, types: List[(DeclarationType, IdentLiteral)], code: Stat) extends ASTNode
 
   sealed trait Stat extends ASTNode
   case class SkipStat() extends Stat
@@ -98,7 +90,7 @@ object AbstractSyntaxTree {
   }
   object BaseT extends Enumeration {
     type BaseTypeType = Value
-    val Int_T, Bool_T, Char_T, String_T, None_T = Value
+    val Int_T, Bool_T, Char_T, String_T, Any_T, None_T = Value
   }
 
   sealed trait PairElem extends LVal with RVal
@@ -115,7 +107,6 @@ object AbstractSyntaxTree {
   case class PairValue(exp1: Expr, exp2: Expr) extends RVal
 
   sealed trait LVal extends ASTNode
-  case class IdentReference(name: String)
 }
 
 

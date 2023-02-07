@@ -1,34 +1,33 @@
 package wacc
 
 import wacc.AbstractSyntaxTree.BaseT.BaseTypeType
-import wacc.AbstractSyntaxTree.{BaseType, DeclarationType, NestedPair}
+import wacc.AbstractSyntaxTree.{BaseType, DeclarationType, Func, NestedPair}
 
 import scala.util.control.Breaks.break
-class Expectation(val expecting: ReturnTypeMatcher, var contextMessage: String = "") {
-
-  /* Simpler constructor. Handles Left ReturnTypes automatically. */
-  def this(decTypeMatcher: List[DeclarationType] => ReturnType, contextMessage: String = "") = this(
-    (inputs: List[ReturnType]) => {
-      val maybeError = inputs.find(_.isLeft)
-      if (maybeError.isDefined) maybeError.get.left.map(contextMessage :: _)
-      else decTypeMatcher(inputs.map(_.toOption.get))
-    }, contextMessage)
-
-  def matchedWith(inputs: List[ReturnType]): ReturnType = {
+class Expectation(val expecting: TypeMatcher, var contextMessage: String) {
+  def matchedWith(inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] = {
     expecting(inputs).left.map(contextMessage :: _)
   }
 
   /* Union of two expectations. If both produce errors, return the error from the rightmost expectation. */
-  def ~>(other: Expectation): Expectation = new Expectation(
-    (inputs: List[ReturnType]) => {
-      val result1 = this matchedWith inputs
-      val result2 = other matchedWith inputs
-      if (result1.isRight && result2.isRight) throw new RuntimeException("Ambiguous expectation: This should never happen.")
-      result2 orElse result1
-    })
+//  def ~>(other: Expectation): Expectation = new Expectation(
+//    (inputs: List[Either[List[String], DeclarationType]]) => {
+//      (this matchedWith inputs) orElse (other matchedWith inputs)
+//    })
 
   /* Opposite of ~>. Not strictly necessary, but it could make the syntax a bit nicer. */
-  def <~(other: Expectation): Expectation = other ~> this
+//  def <~(other: Expectation): Expectation = other ~> this
+}
+
+object simpleExpectation {
+  /* Simpler constructor. Handles Left Either[List[String], DeclarationType]s automatically. */
+  def apply(decTypeMatcher: List[DeclarationType] => Either[List[String], DeclarationType], contextMessage: String = "")
+  = new Expectation(
+    (inputs: List[Either[List[String], DeclarationType]]) => {
+      val maybeError = inputs.find(_.isLeft)
+      if (maybeError.isDefined) maybeError.get.left.map(contextMessage :: _)
+      else decTypeMatcher(inputs.map(_.toOption.get))
+    }, contextMessage)
 }
 
 object TypeProcessor {
@@ -51,7 +50,7 @@ object TypeProcessor {
   /* Returns a function that matches the input types ('inputs') to the first in a list of valid input types ('valids'),
   *   returning the corresponding output type. */
   private def conditionalExpectation(valids: List[(List[DeclarationType], DeclarationType)])
-                                    (inputs: List[ReturnType]): ReturnType = {
+                                    (inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] = {
     val maybeError = inputs.find(_.isLeft)
     if (maybeError.isDefined) return maybeError.get
 
@@ -67,22 +66,16 @@ object TypeProcessor {
   }
 
   private def simpleExpectation(valids: (List[DeclarationType], DeclarationType))
-                               (inputs: List[ReturnType]): ReturnType =
+                               (inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] =
     conditionalExpectation(List(valids))(inputs)
-
-//  def apply(ts: (BaseTypeType, BaseTypeType), contextMessage: String = ""): Expectation =
-//    new Expectation(simpleExpectation(List(BaseType(ts._1)), BaseType(ts._2)): ReturnTypeMatcher, contextMessage)
-
-//  def apply(in: DeclarationType, out: DeclarationType, contextMessage: String = ""): Expectation =
-//    new Expectation(simpleExpectation(List(in), out): ReturnTypeMatcher, contextMessage)
-
 
   def conditional[A, B](ts: List[(List[A], B)])
                  (implicit fromA: A => DeclarationType, fromB: B => DeclarationType) : Expectation =
-    new Expectation(conditionalExpectation(ts.map(x => (x._1.map(fromA), fromB(x._2)))): ReturnTypeMatcher)
+    new Expectation(conditionalExpectation(ts.map(x => (x._1.map(fromA), fromB(x._2)))): TypeMatcher, "")
 
   def simple[A, B](ts: (List[A], B), contextMessage: String = "")
                  (implicit fromA: A => DeclarationType, fromB: B => DeclarationType) : Expectation =
-    new Expectation(simpleExpectation(ts._1.map(fromA), fromB(ts._2)): ReturnTypeMatcher, contextMessage)
+    new Expectation(simpleExpectation(ts._1.map(fromA), fromB(ts._2)): TypeMatcher, contextMessage)
 
+  def fromFunction(func: Func): Expectation = simple(func.types.map(_._1) -> func.returnType)
 }
