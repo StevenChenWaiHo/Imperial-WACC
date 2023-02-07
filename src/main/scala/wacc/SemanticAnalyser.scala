@@ -45,7 +45,7 @@ object SemanticAnalyser {
             /*
             baseType.equals(/*evaluated expectation of rval*/)
             */
-            Left(List("Not Yet Implemented\n"))
+            Left(List("BaseType Not Yet Implemented\n"))
           }
           case PairType(fstType, sndType) => {
             rvalue match {
@@ -53,7 +53,7 @@ object SemanticAnalyser {
                 if (exp1 != fstType || exp2 != sndType) {
                   Left(List("Pair values do not match\n"))
                 } else {
-                  Left(List("Not Yet Implemented\n"))
+                  Left(List("Good Pair Value Not Yet Implemented\n"))
                 }
               }
               case _ => {
@@ -69,7 +69,7 @@ object SemanticAnalyser {
                     return Left(List("Invalid array typing\n"))
                   }
                 }
-                return Left(List("Not Yet Implemented\n"))
+                return Left(List("ArryType Not Yet Implemented\n"))
               }
             }
           }
