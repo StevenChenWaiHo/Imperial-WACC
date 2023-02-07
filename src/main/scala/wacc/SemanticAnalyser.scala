@@ -1,9 +1,8 @@
 package wacc
 
 import wacc.AbstractSyntaxTree._
-
-
-import scala.util.control.Breaks.break
+import wacc.AbstractSyntaxTree.BaseT._
+import wacc.TypeValidator.returnType
 
 object SemanticAnalyser {
 
@@ -29,29 +28,37 @@ object SemanticAnalyser {
     ): Set[String]
     val hardOperators = Set("!", "*", "/", "%", "+", "-", ">=", ">", "<", "<=", "==", "!=", "&&", "||", ";") : Set[String]
     stat match {
-      case skipStat => context
+      case SkipStat() => Right(context)
       case Declaration(dataType, ident, rvalue) => {
+        /* Ensure identifier does not include keywords */
         if (hardKeywords.contains(ident.name) || ident.name.contains(hardOperators)) {
-          listOfErrors.appended("Variable names cannot be identifiers or contain operator\n")
+          Left(List("Variable names cannot be identifiers or contain operator\n"))
         }
-        /*if ident is keyword then return an error*/
         if (context.findVar(ident.name).nonEmpty) {
-          listOfErrors.appended("Variable exists in this scope already\n")
+          listOfErrors.appended("Variable " + ident.name + " exists in this scope already\n")
         }
+        // TODO: add variable to context if no errors
+        //context.addVar(ident.name, BaseType(ident)) ??
         dataType match {
-          case NestedPair() => {}
-          case BaseType(baseType) => {baseType.equals(/*evaluated expectation of rval*/)}
+          case NestedPair() => Left(List("Not Yet Implemented\n"))
+          case BaseType(baseType) => {
+            /*
+            baseType.equals(/*evaluated expectation of rval*/)
+            */
+            Left(List("Not Yet Implemented\n"))
+          }
           case PairType(fstType, sndType) => {
             rvalue match {
               case PairValue(exp1, exp2) => {
                 if (exp1 != fstType || exp2 != sndType) {
-                  listOfErrors.appended("Pair values do not match\n")
+                  Left(List("Pair values do not match\n"))
+                } else {
+                  Left(List("Not Yet Implemented\n"))
                 }
               }
               case _ => {
-                listOfErrors.appended("Rhs not a pair\n")
+                Left(List("Rhs not a pair\n"))
               }
-
             }
           }
           case ArrayType(dataType) => {
@@ -59,10 +66,10 @@ object SemanticAnalyser {
               case ArrayLiteral(elements) => {
                 for (element <- elements) {
                   if (element != dataType) {
-                    listOfErrors.appended("Invalid array typing")
-                    break
+                    return Left(List("Invalid array typing\n"))
                   }
                 }
+                return Left(List("Not Yet Implemented\n"))
               }
             }
           }
@@ -70,31 +77,49 @@ object SemanticAnalyser {
         /*and make sure dataType and rvalue have same type*/
       }
       case Assignment(lvalue, rvalue) => {
-        if (context.findVar(lvalue).isEmpty) {
-          listOfErrors.appended("Variable doesn't exist in this scope currently")
+        /* Check if LHS is in scope */
+        val name = lvalue match {
+          case IdentLiteral(name) => name
+          case ArrayElem(name, indicicies) => name
         }
-        /*if lvalue type == rvalue type then true otherwise error*/
-        Left(List("Not Yet Implemented"))
+        if (context.findVar(name).isEmpty) {
+          return Left(List("Identifier " + name + " not in scope\n"))
+        }
+        /* If lvalue type == rvalue type then true */
+        /*
+        if (returnType(lvalue) == returnType(rvalue)) {
+          ???
+        }
+        */
+
+        Left(List("Not Yet Implemented: lvalue/rvalue type checking\n"))
       }
       case Read(lvalue) => {
         /*Not sure what this is*/
-        Left(List("Not Yet Implemented"))
+        Left(List("Not Yet Implemented\n"))
       }
       case Command(command, input) => {
         /*Not sure what this is*/
-        Left(List("Not Yet Implemented"))
+        Left(List("Not Yet Implemented\n"))
       }
       case IfStat(cond, stat1, stat2) => {
-        cond match {
-          case BoolLiteral(x) => context
-          case UnaryOp(UnaryOpType(),)
-        }
         /*Make sure cond is boolean, verify stat1 and stat2 and make sure there is fi*/
-        Left(List("Not Yet Implemented"))
+
+        if (returnType(cond)(context) == BaseType(Bool_T)) {
+          verifyStat(context, stat1) match {
+            case Left(err) => return Left(err)
+            case Right(_) => return verifyStat(context, stat2)
+          }
+        }
+        Left(List("Semantic Error: Condition is not of type Bool\n"))
+        // TODO: verify there is a fi
       }
       case WhileLoop(cond, stat) => {
         /*Make sure cond is boolean, verify stat*/
-        verifyStat(context, stat)
+        if (returnType(cond)(context) == BaseType(Bool_T)) {
+          return verifyStat(context, stat)
+        }
+        Left(List("Semantic Error: Condition is not of type Bool\n"))
       }
       case BeginEndStat(stat) => {
         /*verify stat (What is this?)*/
@@ -104,7 +129,10 @@ object SemanticAnalyser {
         /*verify stat in list*/
         var newContext = context
         for (stat <- statList) {
-          //newContext = verifyStat(newContext, stat)
+          verifyStat(newContext, stat) match {
+            case Left(err) => return Left(err)
+            case Right(c) => newContext = c
+          }
         }
         Right(newContext)
       }
