@@ -48,7 +48,7 @@ class ScopeContext(scopeStack: List[Scope]) {
              decType: DeclarationType,
             ): Either[List[String], ScopeContext] = scopeStack match {
     case Scope(vars, funcs, returnType) :: scopes => {
-      if (vars.contains(name)) Left(List("Variable %s has already been defined in this scope\n".format(name)))
+      if (vars.contains(name) && vars.get(name).equals(decType)) Left(List("Variable %s has already been defined in this scope\n".format(name)))
       else Right(new ScopeContext(Scope(vars.updated(name, decType), funcs, returnType) :: scopes))
     }
     case _ => throw new InvalidAttributeValueException("Empty context: this should never happen.")

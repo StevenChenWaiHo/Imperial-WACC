@@ -43,15 +43,16 @@ object SemanticAnalyser {
       case SkipStat() => Right(context)
       case Declaration(dataType, ident, rvalue) => {
         if (context.findVar(ident.name).nonEmpty) {
-          Left(List("Variable " + ident.name + " exists in this scope already"))
+          val decType = context.findVar(ident.name).get
+          if (decType.equals(dataType)) {
+            Left(List("Variable " + ident.name + " exists in this scope already"))
+          }
         }
         // TODO: add variable to context if no errors
         //context.addVar(ident.name, BaseType(ident)) ??
         dataType match {
           case NestedPair() => Left(List("Not Yet Implemented"))
-           /*
-            baseType.equals(/*evaluated expectation of rval*/)
-            */
+          
           case BaseType(baseType) => {
             // int i = 0
             rvalue match {
@@ -60,6 +61,18 @@ object SemanticAnalyser {
                   case BaseType(Int_T) => context.addVar(ident.name, BaseType(Int_T))
                   case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(Int_T))))
                 }
+              }
+              case BoolLiteral(x) => {
+                dataType match {
+                  case BaseType(Bool_T) => context.addVar(ident.name, BaseType(Bool_T))
+                  case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(Bool_T))))
+                }
+              }
+              case CharLiteral(x) => {
+                dataType match {
+                  case BaseType(Char_T) => context.addVar(ident.name, BaseType(Char_T))
+                  case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(Char_T))))
+               }
               }
               // int i = i + 1
               case binOp@BinaryOp(op, expr1, expr2) => {
