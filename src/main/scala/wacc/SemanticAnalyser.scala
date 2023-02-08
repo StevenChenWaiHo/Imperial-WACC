@@ -4,6 +4,8 @@ import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree.PairElemT._
 import wacc.AbstractSyntaxTree._
 import wacc.TypeValidator.{isHomogenousList, returnType, declarationTypeToEither}
+import wacc.TypeProcessor.fromFunction
+import wacc.AbstractSyntaxTree.CmdT.Ret
 
 object SemanticAnalyser {
   private def pairElementType(element: PairElemT.Elem) = simpleExpectation {
@@ -96,6 +98,10 @@ object SemanticAnalyser {
       }
       case Command(command, input) => {
         /*Not sure what this is*/
+        // TODO: don't allow return in main func
+        if (command == Ret && context.getDepth() == 1) {
+          return Left(List("Cannot return from main program"))
+        }
         Right(context)
       }
       case BeginEndStat(stat) => {

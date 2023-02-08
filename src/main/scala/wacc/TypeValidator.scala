@@ -66,6 +66,8 @@ class ScopeContext(scopeStack: List[Scope]) {
         Right(new ScopeContext(List(Scope(currentScope.vars, currentScope.funcs.updated(name, expects), returnType))))
       }
   }
+
+  def getDepth(): Int = scopeStack.length
 }
 
 
