@@ -108,7 +108,6 @@ object SemanticAnalyser {
               }
               // int i = ord 'a'
               case unOp@UnaryOp(op, expr) => {
-                return context.addVar(ident.name, BaseType(Char_T))
                 returnType(unOp)(context) match {
                   case Left(err) => Left(err)
                   case Right(opType) => {
