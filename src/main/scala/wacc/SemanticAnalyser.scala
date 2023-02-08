@@ -40,19 +40,9 @@ object SemanticAnalyser {
 
   private def verifyStat(context: ScopeContext, stat: Stat): Either[List[String], ScopeContext] = {
     println(stat)
-    val hardKeywords = Set(
-      "true", "false", "null", "len", "ord", "chr", "skip", "read", "free", "return", "exit",
-      "print", "println", "if", "then", "else", "fi", "while", "do", "done", "begin", "end",
-      "int", "bool", "char", "string", "fst", "snd", "call", "pair", "newpair", "is"
-    ): Set[String]
-    val hardOperators = Set("!", "*", "/", "%", "+", "-", ">=", ">", "<", "<=", "==", "!=", "&&", "||", ";") : Set[String]
     stat match {
       case SkipStat() => Right(context)
       case Declaration(dataType, ident, rvalue) => {
-        /* Ensure identifier does not include keywords */
-        if (hardKeywords.contains(ident.name) || ident.name.contains(hardOperators)) {
-          Left(List("Variable names cannot be identifiers or contain operator"))
-        }
         if (context.findVar(ident.name).nonEmpty) {
           Left(List("Variable " + ident.name + " exists in this scope already"))
         }
