@@ -25,7 +25,10 @@ object Lexer {
     numericDesc = NumericDesc.plain.copy(
     ),
     textDesc = TextDesc.plain.copy(
-      escapeSequences = EscapeDesc.plain.copy() //TODO: Add escape characters
+      escapeSequences = EscapeDesc.plain.copy(
+        literals = Set('\\', '\"', '\''),
+        singleMap = Map('0' -> 0x00, 'b' -> 0x08, 't' -> 0x09, 'n' -> 0x0a, 'f' -> 0x0c, 'r' -> 0x0d)
+      )
     ),
     spaceDesc = SpaceDesc.plain.copy(
       commentLine = "#",

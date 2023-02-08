@@ -49,6 +49,8 @@ object SemanticAnalyser {
     }
   }
 
+
+
   def verifyProgram(program: Program): Either[List[String], ScopeContext] = {
     var topLevelContext = new ScopeContext()
     for (func <- program.funcs) {
