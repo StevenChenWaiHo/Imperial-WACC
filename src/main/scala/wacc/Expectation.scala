@@ -3,7 +3,6 @@ package wacc
 import wacc.AbstractSyntaxTree.BaseT.BaseTypeType
 import wacc.AbstractSyntaxTree.{BaseType, DeclarationType, Func, NestedPair}
 
-import scala.util.control.Breaks.break
 class Expectation(val expecting: TypeMatcher, var contextMessage: String) {
   def matchedWith(inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] = {
     expecting(inputs).left.map(contextMessage :: _)
@@ -34,14 +33,21 @@ object TypeProcessor {
   private def countMatches(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 0
     for ((expectedInput, input) <- expected zip inputs)
-      if (expectedInput == input) count += 1
+      if (expectedInput.equals(input)) count += 1
     count
   }
 
   private def firstMismatch(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 1
     for ((expectedInput, input) <- expected zip inputs) {
-      if (expectedInput != input) break()
+      expectedInput match {
+        /* TODO: change this implementation (only some values are checked) */
+        case BaseType(baseType) => input match {
+          case BaseType(baseType) => 
+          case _ => return count
+        }
+        case _ => return count
+      }
       count += 1
     }
     count
@@ -55,13 +61,14 @@ object TypeProcessor {
     if (maybeError.isDefined) return maybeError.get
 
     val definitelyInputs = inputs.map(_.toOption.get)
-    val orderedMatches = valids.sortBy(x => countMatches(x._1, definitelyInputs)).reverse
+    val orderedMatches = valids.sortBy(x => countMatches(x._1, definitelyInputs))
     val bestMatch = orderedMatches.head
     val mismatch = firstMismatch(bestMatch._1, definitelyInputs)
     if (mismatch > bestMatch._1.length) return Right(bestMatch._2)
 
-    val errorMessage = "Mismatched argument. Best guess: argument %i should be of type: \n%s\nbut it was of type: \n%s"
-      .formatted(mismatch, bestMatch._1(mismatch - 1), definitelyInputs(mismatch - 1))
+    // val errorMessage = "Mismatched argument. Best guess: argument %i should be of type: \n%s\nbut it was of type: \n%s"
+    //   .format(mismatch, bestMatch._1(mismatch - 1), definitelyInputs(mismatch - 1))
+    val errorMessage = "Mismatched arguments"
     Left(List(errorMessage))
   }
 
@@ -78,4 +85,5 @@ object TypeProcessor {
     new Expectation(simpleExpectation(ts._1.map(fromA), fromB(ts._2)): TypeMatcher, contextMessage)
 
   def fromFunction(func: Func): Expectation = simple(func.types.map(_._1) -> func.returnType)
+
 }
