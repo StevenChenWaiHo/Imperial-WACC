@@ -40,14 +40,7 @@ object TypeProcessor {
   private def firstMismatch(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 1
     for ((expectedInput, input) <- expected zip inputs) {
-      expectedInput match {
-        /* TODO: change this implementation (only some values are checked) */
-        case BaseType(baseType) => input match {
-          case BaseType(baseType) => 
-          case _ => return count
-        }
-        case _ => return count
-      }
+      if (expectedInput.equals(input)) return count
       count += 1
     }
     count
@@ -61,7 +54,7 @@ object TypeProcessor {
     if (maybeError.isDefined) return maybeError.get
 
     val definitelyInputs = inputs.map(_.toOption.get)
-    val orderedMatches = valids.sortBy(x => countMatches(x._1, definitelyInputs))
+    val orderedMatches = valids.sortBy(x => countMatches(x._1, definitelyInputs)).reverse
     val bestMatch = orderedMatches.head
     val mismatch = firstMismatch(bestMatch._1, definitelyInputs)
     if (mismatch > bestMatch._1.length) return Right(bestMatch._2)
