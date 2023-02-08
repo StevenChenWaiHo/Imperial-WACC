@@ -21,7 +21,7 @@ class ScopeContext(scopeStack: List[Scope]) {
 
     def findVar1(stack: List[Scope]): Option[DeclarationType] = stack match {
       case Scope(vars, _, _) :: scopes => {
-        var result = vars.get(name)
+        val result = vars.get(name)
         if (result.isEmpty) findVar1(scopes) else result
       }
       case Nil => Option.empty
