@@ -224,8 +224,13 @@ object SemanticAnalyser {
             rvalue match {
               case ArrayLiteral(elements) => {
                 for (element <- elements) {
-                  if (returnType(element)(context) != Right(dataType)) {
-                    return Left(List("Invalid array typing"))
+                  returnType(element)(context) match {
+                    case Left(err) => Left(Error)
+                    case Right(elementType) => {
+                      if (elementType != dataType) {
+                        Left(List("Invalid Array Typing"))
+                      }
+                    }
                   }
                 }
                 return Left(List("ArrayType Not Yet Implemented"))
