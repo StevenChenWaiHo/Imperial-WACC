@@ -1,4 +1,4 @@
-package wacc
+// package wacc
 
 import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree.PairElemT._
