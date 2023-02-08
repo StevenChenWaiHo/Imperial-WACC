@@ -59,9 +59,8 @@ object TypeProcessor {
     val mismatch = firstMismatch(bestMatch._1, definitelyInputs)
     if (mismatch > bestMatch._1.length) return Right(bestMatch._2)
 
-    // val errorMessage = "Mismatched argument. Best guess: argument %i should be of type: \n%s\nbut it was of type: \n%s"
-    //   .format(mismatch, bestMatch._1(mismatch - 1), definitelyInputs(mismatch - 1))
-    val errorMessage = "Mismatched arguments"
+    val errorMessage = "Mismatched argument. Best guess: argument %d should be of type: %s but it was of type: %s"
+       .format(mismatch, bestMatch._1(mismatch - 1), definitelyInputs(mismatch - 1))
     Left(List(errorMessage))
   }
 
