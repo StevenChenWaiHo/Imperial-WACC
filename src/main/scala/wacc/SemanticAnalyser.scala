@@ -93,10 +93,16 @@ object SemanticAnalyser {
       case statList: StatList => verifyStatList(context, statList)
       case Read(lvalue) => {
         /*Not sure what this is*/
-        if (!(lValType(lvalue)(context) == BaseType(Int_T) ||  lValType(lvalue)(context) == BaseType(Char_T))) {
-          return Left(List("Left value not character or integer"))
+        lValType(lvalue)(context) match {
+          case Left(err) => Left(err)
+          case Right(lType) => {
+            if (lType == BaseType(Int_T) || lType == BaseType(Char_T)) {
+              Right(context)
+            } else {
+              Left(List("Left value not character or integer"))
+            }
+          }
         }
-        Right(context)
       }
       case Command(command, input) => {
         /*Not sure what this is*/
