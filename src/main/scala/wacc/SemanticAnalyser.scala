@@ -88,9 +88,9 @@ object SemanticAnalyser {
                 }
               }
               // int i = f()
-              case call@Call(ident, args) => {
-                context.findFunc(ident.name) match {
-                  case None => Left(List("Function %s not in scope".format(ident.name)))
+              case call@Call(funcIdent, args) => {
+                context.findFunc(funcIdent.name) match {
+                  case None => Left(List("Function %s not in scope".format(funcIdent.name)))
                   case Some(exp) => {
                     exp matchedWith List(declarationTypeToEither(dataType)) match {
                       case Left(err) => Left(err)
@@ -152,10 +152,15 @@ object SemanticAnalyser {
           case PairElement(elem, lvalue) => Left(List("Not implemented"))
           case PairValue(exp1, exp2) => Left(List("Not implemented"))
         }
-        if (!lType.equals(rType)) {
-          return Left(List("Assignment types are not the same"))
+        rType match {
+          case Left(err) => Left(err)
+          case Right(t) => {
+            if (!lType.equals(t)) {
+              Left(List("Assignment types are not the same {%s, %s}".format(lType, rType)))
+            }
+            Right(context)
+          }
         }
-        Right(context)
       }
       case Read(lvalue) => {
         /*Not sure what this is*/
@@ -171,12 +176,14 @@ object SemanticAnalyser {
         returnType(cond)(context) match {
           case Left(err) => Left(err)
           case Right(sType) => {
-            if (!sType.equals(BaseType(Bool_T))) {
-              return Left(List("Semantic Error: if condition is not of type Bool"))
-            }
-            verifyStat(context, stat1) match {
-              case Left(err) => return Left(err)
-              case Right(_) => return verifyStat(context, stat2)
+            sType match {
+              case BaseType(Bool_T) => {
+                verifyStat(context, stat1) match {
+                  case Left(err) => return Left(err)
+                  case Right(_) => return verifyStat(context, stat2)
+                }
+              }
+              case _ => Left(List("Semantic Error: if condition is not of type Bool"))
             }
           }
         }
@@ -187,10 +194,10 @@ object SemanticAnalyser {
         returnType(cond)(context) match {
           case Left(err) => Left(err)
           case Right(sType) => {
-            if (!sType.equals(BaseType(Bool_T))) {
-              return Left(List("Semantic Error: while condition is not of type Bool"))
+            sType match {
+              case BaseType(Bool_T) => verifyStat(context, stat)
+              case _ => Left(List("Semantic Error: while condition is not of type Bool"))
             }
-            verifyStat(context, stat)
           }
         }
       }
