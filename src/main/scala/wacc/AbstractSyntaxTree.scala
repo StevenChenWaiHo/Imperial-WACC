@@ -52,17 +52,7 @@ object AbstractSyntaxTree {
 
 
   // Note: AnyType and NoneType will never arise in the AST, so it should be OK to override their equality checking
-  sealed trait DeclarationType extends ASTNode {
-    private def isAny (decl: DeclarationType): Boolean = decl match {
-      case BaseType(x) => x == Any_T
-      case _ => false
-    }
-    /* BaseType(Any_T) matches any other declaration type. */
-//    override def equals(obj: Any): Boolean = obj match {
-//      case obj: DeclarationType if isAny(obj) || isAny(this) => true
-//      case _ => super.equals(obj)
-//    }
-  }
+  sealed trait DeclarationType extends ASTNode {}
 
   case class NestedPair() extends DeclarationType
   case class BaseType(baseType: BaseTypeType) extends DeclarationType

@@ -101,9 +101,9 @@ object SemanticAnalyser {
       case Command(command, input) => {
         /*Not sure what this is*/
         // TODO: don't allow return in main func
-        if (command == Ret && context.getDepth() == 1) {
-          return Left(List("Cannot return from main program"))
-        }
+        // if (command == Ret && context.getDepth() == 1) {
+        //   return Left(List("Cannot return from main program"))
+        // }
         Right(context)
       }
       case BeginEndStat(stat) => {

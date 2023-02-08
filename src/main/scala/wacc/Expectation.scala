@@ -40,14 +40,7 @@ object TypeProcessor {
   private def firstMismatch(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 1
     for ((expectedInput, input) <- expected zip inputs) {
-      expectedInput match {
-        /* TODO: change this implementation (only some values are checked) */
-        case BaseType(baseType) => input match {
-          case BaseType(baseType) => 
-          case _ => return count
-        }
-        case _ => return count
-      }
+      if (!expectedInput.equals(input)) return count
       count += 1
     }
     count
@@ -61,14 +54,13 @@ object TypeProcessor {
     if (maybeError.isDefined) return maybeError.get
 
     val definitelyInputs = inputs.map(_.toOption.get)
-    val orderedMatches = valids.sortBy(x => countMatches(x._1, definitelyInputs))
+    val orderedMatches = valids.sortBy(x => countMatches(x._1, definitelyInputs)).reverse
     val bestMatch = orderedMatches.head
     val mismatch = firstMismatch(bestMatch._1, definitelyInputs)
     if (mismatch > bestMatch._1.length) return Right(bestMatch._2)
 
-    // val errorMessage = "Mismatched argument. Best guess: argument %i should be of type: \n%s\nbut it was of type: \n%s"
-    //   .format(mismatch, bestMatch._1(mismatch - 1), definitelyInputs(mismatch - 1))
-    val errorMessage = "Mismatched arguments"
+    val errorMessage = "Mismatched argument. Best guess: argument %d should be of type: %s but it was of type: %s"
+       .format(mismatch, bestMatch._1(mismatch - 1), definitelyInputs(mismatch - 1))
     Left(List(errorMessage))
   }
 

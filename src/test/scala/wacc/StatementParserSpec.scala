@@ -102,4 +102,25 @@ class StatementParserSpec extends AnyFlatSpec {
       assert(result == Success(BeginEndStat(stat._2)))
     }
   }
+
+  "Statement Parser" can "parse pair types" in {
+    for (pair <- pairExamples) {
+      var result = statement.parse(pair._1)
+      assert(result == Success(pair._2))
+    }
+  }
+
+  "Statement Parser" can "parse nested pair types" in {
+    for (pair <- pairExamples; nested <- nestedPairExamples) {
+      // var parseString =
+      //   """%s;
+      //     |%s""".stripMargin.format(pair._1, nested._1)
+      var result = statement.parse(nested._1)
+      // assert(result == Success(StatList(List(
+      //   pair._2,
+      //   nested._2)
+      // )))
+      assert(result == Success(nested._2))
+    }
+  }
 }
