@@ -58,10 +58,10 @@ object AbstractSyntaxTree {
       case _ => false
     }
     /* BaseType(Any_T) matches any other declaration type. */
-    override def equals(obj: Any): Boolean = obj match {
-      case obj: DeclarationType if isAny(obj) || isAny(this) => true
-      case _ => super.equals(obj)
-    }
+//    override def equals(obj: Any): Boolean = obj match {
+//      case obj: DeclarationType if isAny(obj) || isAny(this) => true
+//      case _ => super.equals(obj)
+//    }
   }
 
   case class NestedPair() extends DeclarationType

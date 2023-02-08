@@ -186,7 +186,20 @@ object SemanticAnalyser {
               case any => Left(List("rvalue %s not implemented".format(any)))
             }
           }
-          case NestedPair() => Left(List("Not Yet Implemented"))
+          case NestedPair() => {
+            rvalue match {
+              case IdentLiteral(x) => {
+                if (context.findVar(x) != PairType) {
+                  return Left(List("Not a pair"))
+                }
+              }
+              case default => {
+                return Left(List("Not a pair"))
+              }
+            }
+            Left(List("Not Yet Implemented"))
+          }
+
           case PairType(fstType, sndType) => {
             rvalue match {
               case PairValue(exp1, exp2) => {
