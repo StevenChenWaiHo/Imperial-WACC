@@ -93,7 +93,9 @@ object SemanticAnalyser {
       case statList: StatList => verifyStatList(context, statList)
       case Read(lvalue) => {
         /*Not sure what this is*/
-        // TODO: ensure lvalue is int or char
+        if (!(lValType(lvalue)(context) == BaseType(Int_T) ||  lValType(lvalue)(context) == BaseType(Char_T))) {
+          return Left(List("Left value not character or integer"))
+        }
         Right(context)
       }
       case Command(command, input) => {
@@ -170,7 +172,7 @@ object SemanticAnalyser {
               // int i = f()
               case call@Call(funcIdent, args) => {
                 context.findFunc(funcIdent.name) match {
-                  case None => Left(List("Function %s not in scope".format(funcIdent.name)))
+                  case => Left(List("Function %s not in scope".format(funcIdent.name)))
                   case Some(exp) => {
                     exp matchedWith List(declarationTypeToEither(dataType)) match {
                       case Left(err) => Left(err)
@@ -188,7 +190,7 @@ object SemanticAnalyser {
           case PairType(fstType, sndType) => {
             rvalue match {
               case PairValue(exp1, exp2) => {
-                if (exp1 != fstType || exp2 != sndType) {
+                if (returnType(exp1)(context) != Right(fstType) || returnType(exp2)(context) != Right(sndType)) {
                   Left(List("Pair values do not match"))
                 } else {
                   Left(List("Good Pair Value Not Yet Implemented"))
@@ -203,11 +205,14 @@ object SemanticAnalyser {
             rvalue match {
               case ArrayLiteral(elements) => {
                 for (element <- elements) {
-                  if (element != dataType) {
+                  if (returnType(element)(context) != Right(dataType)) {
                     return Left(List("Invalid array typing"))
                   }
                 }
-                return Left(List("ArryType Not Yet Implemented"))
+                return Left(List("ArrayType Not Yet Implemented"))
+              }
+              case default => {
+                return Left(List("Right side not array literal"))
               }
             }
           }
@@ -229,15 +234,15 @@ object SemanticAnalyser {
         if (lTypeMaybe.isLeft) {
           return Left(List("Identifier %s not in scope".format(name)))
         }
-        val lType = lTypeMaybe.get
+        val lType = lTypeMaybe
         /* Check LHS and RHS are same type */
         val rType = rvalue match {
           case exp:Expr => returnType(exp)(context)
           case ArrayLiteral(elements) => Left(List("Not implemented"))
           case call@Call(funcIdent, args) => {
             context.findFunc(funcIdent.name) match {
-              case None => Left(List("Function %s not in scope".format(funcIdent.name)))
-              case Some(exp) => {
+              case Left(value) => Left(List("Function %s not in scope".format(funcIdent.name))) // this line was None but it showed an error
+              case exp => { // This line was Some() but it showed an error
                 exp matchedWith List(declarationTypeToEither(lType)) match {
                   case Left(err) => Left(err)
                   case Right(opType) => Right(lType)
