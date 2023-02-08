@@ -153,6 +153,12 @@ object SemanticAnalyser {
                   case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(Char_T))))
                }
               }
+              case StringLiteral(x) => {
+                dataType match {
+                  case BaseType(String_T) => context.addVar(ident.name, BaseType(String_T))
+                  case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(String_T))))
+               }
+              }
               // int i = i + 1
               case binOp@BinaryOp(op, expr1, expr2) => {
                 returnType(binOp)(context) match {
