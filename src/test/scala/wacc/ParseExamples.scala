@@ -32,15 +32,17 @@ object ParseExamples {
   )
 
   var pairExamples = Set(
+    "pair(int, int) p = 2" -> Declaration(PairType(BaseType(Int_T), BaseType(Int_T)), IdentLiteral("p"), IntLiteral(2)), //wrong type
     "pair(int, int) p = newpair(10, 3)" -> Declaration(PairType(BaseType(Int_T), BaseType(Int_T)), IdentLiteral("p"), PairValue(IntLiteral(10), IntLiteral(3))),
     "pair(int, char) p = newpair(10, 'a')" -> Declaration(PairType(BaseType(Int_T), BaseType(Char_T)), IdentLiteral("p"), PairValue(IntLiteral(10), CharLiteral('a'))),
     "pair(bool, string) p = newpair(true, \"hi\")" -> Declaration(PairType(BaseType(Bool_T), BaseType(String_T)), IdentLiteral("p"), PairValue(BoolLiteral(true), StringLiteral("hi")))
   )
 
   var nestedPairExamples = Set(
-    "pair(pair, int) q = newpair(p, 3)" -> Declaration(PairType(NestedPair(), BaseType(Int_T)), IdentLiteral("q"), PairValue(IdentLiteral("p"), IntLiteral(3))),
-    "pair(char, pair) q = newpair('a', p)" -> Declaration(PairType(BaseType(Char_T), NestedPair()), IdentLiteral("q"), PairValue(CharLiteral('a'), IdentLiteral("p"))),
-    "pair(pair, pair) q = newpair(p, p)" -> Declaration(PairType(NestedPair(), NestedPair()), IdentLiteral("q"), PairValue(IdentLiteral("p"), IdentLiteral("p")))
+    "pair(pair, int) q = 2" -> Declaration(PairType(NestedPair(), BaseType(Int_T)), IdentLiteral("q"), IntLiteral(2)), //wrong type
+    "pair(pair, int) q = newpair(p, 3)" -> Declaration(PairType(NestedPair(), BaseType(Int_T)), IdentLiteral("q"), PairValue(PairLiteral(), IntLiteral(3))),
+    "pair(char, pair) q = newpair('a', p)" -> Declaration(PairType(BaseType(Char_T), NestedPair()), IdentLiteral("q"), PairValue(CharLiteral('a'), PairLiteral())),
+    "pair(pair, pair) q = newpair(p, p)" -> Declaration(PairType(NestedPair(), NestedPair()), IdentLiteral("q"), PairValue(PairLiteral(), PairLiteral()))
   )
 
   private var declarationTypeExamples = Set(
