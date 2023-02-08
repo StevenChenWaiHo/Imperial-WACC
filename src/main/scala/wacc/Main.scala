@@ -5,6 +5,8 @@ import wacc.SemanticAnalyser.verifyProgram
 
 import java.io.FileNotFoundException
 import scala.io.Source
+import parsley.Failure
+import parsley.Success
 
 
 object Main {
@@ -19,13 +21,21 @@ object Main {
 
         /* Compile */
         val ast = program.parse(inputProgram)
-         if (ast.isFailure) {
-            println(ast)
-            sys.exit(100)
+        ast match { 
+            case Failure(err) => {
+                println("Syntax Error: %s".format(err))
+                sys.exit(100)
+            }
+            case Success(x) => 
         }
+
         val verified = verifyProgram(ast.get)
         if (verified.isLeft) {
-            println(verified)
+            verified.left.foreach(errList => {
+                errList.foreach(err => {
+                    println("Semantic Error: %s".format(err))
+                })
+            })
             sys.exit(200)
         }
         sys.exit(0)
