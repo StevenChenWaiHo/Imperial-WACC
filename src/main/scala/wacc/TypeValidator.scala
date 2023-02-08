@@ -35,7 +35,7 @@ class ScopeContext(scopeStack: List[Scope]) {
 
     def findFunc1(stack: List[Scope]): Option[Expectation] = stack match {
       case Scope(_, funcs, _) :: scopes => {
-        var result = funcs.get(name)
+        val result = funcs.get(name)
         if (result.isEmpty) findFunc1(scopes) else result
       }
       case Nil => Option.empty
@@ -58,8 +58,9 @@ class ScopeContext(scopeStack: List[Scope]) {
     case Scope(vars, funcs, returnType) :: scopes => {
 
     }
-      if (findFunc(name).isDefined) Left(List("Function re-definition: %s\b"))
-      else {
+      if (findFunc(name).isDefined) {
+        Left(List("Function re-definition: %s\b"))
+      } else {
         val currentScope = scopeStack.head
         Right(new ScopeContext(List(Scope(currentScope.vars, currentScope.funcs.updated(name, expects), returnType))))
       }

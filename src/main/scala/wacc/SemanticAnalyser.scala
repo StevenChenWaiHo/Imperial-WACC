@@ -3,23 +3,43 @@ package wacc
 import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BaseT._
 import wacc.TypeValidator.returnType
+import wacc.TypeValidator.declarationTypeToEither
+import wacc.TypeProcessor.fromFunction
+import wacc.TypeValidator.makeBaseType
 
 object SemanticAnalyser {
 
-  def verifyProgram(program: Program) = {
-    val topLevelScope = new ScopeContext()
+  def verifyProgram(program: Program): Either[List[String], ScopeContext] = {
+    var topLevelContext = new ScopeContext()
     for (func <- program.funcs) {
-      verifyFunc(topLevelScope, func)
+      /* Ensure that funcs are added to top levek symbol table */
+      topLevelContext = 
+        topLevelContext.addFunc(func.ident.name, fromFunction(func)) match {
+        case Left(err) => return Left(err)
+        case Right(newContext) => newContext
+      }
+      verifyFunc(topLevelContext, func) match {
+        case Left(err) => return Left(err)
+        case Right(value) => 
+      }
     }
-    verifyStat(topLevelScope, program.stats)
+    verifyStat(topLevelContext, program.stats)
   }
 
-  private def verifyFunc(context: ScopeContext, func: Func) = {
-    // TODO: Change this to properly deal with functions
-    verifyStat(context, func.code)
+  private def verifyFunc(context: ScopeContext, func: Func): Either[List[String], ScopeContext] = {
+    var funcContext = context
+    /* Add all arguments to symbol table for func to use */
+    println(func.types.foreach(elem => {
+      funcContext = funcContext.addVar(elem._2.name, elem._1) match {
+        case Left(err) => return Left(err)
+        case Right(newContext) => newContext
+      }
+    }))
+    verifyStat(funcContext, func.code)
   }
 
   private def verifyStat(context: ScopeContext, stat: Stat): Either[List[String], ScopeContext] = {
+    println(stat)
     val hardKeywords = Set(
       "true", "false", "null", "len", "ord", "chr", "skip", "read", "free", "return", "exit",
       "print", "println", "if", "then", "else", "fi", "while", "do", "done", "begin", "end",
@@ -47,40 +67,49 @@ object SemanticAnalyser {
             // int i = 0
             rvalue match {
               case IntLiteral(x) => {
-                if (!dataType.equals(BaseType(Int_T))) {
-                  // TODO: extract this error message into function
-                  return Left(List("RHS has incorrect type"))
+                dataType match {
+                  case BaseType(Int_T) => context.addVar(ident.name, BaseType(Int_T))
+                  case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(Int_T))))
                 }
-                context.addVar(ident.name, BaseType(Int_T))
-                Right(context)
               }
               // int i = i + 1
               case binOp@BinaryOp(op, expr1, expr2) => {
                 returnType(binOp)(context) match {
                   case Left(err) => Left(err)
                   case Right(opType) => {
-                    if (dataType.equals(opType)) {
-                      context.addVar(ident.name, opType)
-                      return Right(context)
+                    if (!dataType.equals(opType)) {
+                      return Left(List("Incorrect type assignment"))
                     }
-                    Left(List("RHS has incorrect type")) 
+                    context.addVar(ident.name, opType)
                   }
                 }
               }
               // int i = ord 'a'
               case unOp@UnaryOp(op, expr) => {
+                return context.addVar(ident.name, BaseType(Char_T))
                 returnType(unOp)(context) match {
                   case Left(err) => Left(err)
                   case Right(opType) => {
+                    if (dataType.equals(opType)) {
+                      return Left(List("Incorrect type assignment")) 
+                    }
                     context.addVar(ident.name, opType)
-                    Right(context)
                   }
                 }
               }
               // int i = f()
               case call@Call(ident, args) => {
-                // TODO: implement
-                Right(context)
+                context.findFunc(ident.name) match {
+                  case None => Left(List("Function %s not in scope".format(ident.name)))
+                  case Some(exp) => {
+                    exp matchedWith List(declarationTypeToEither(dataType)) match {
+                      case Left(err) => Left(err)
+                      case Right(opType) => {
+                        context.addVar(ident.name, opType)
+                      }
+                    }
+                  }
+                }
               }
               case any => Left(List("rvalue %s not implemented".format(any)))
             }
@@ -118,19 +147,25 @@ object SemanticAnalyser {
         /* Check if LHS is in scope */
         val name = lvalue match {
           case IdentLiteral(name) => name
-          case ArrayElem(name, indicicies) => name
+          case ArrayElem(name, indicies) => name
         }
-        if (context.findVar(name).isEmpty) {
-          return Left(List("Identifier " + name + " not in scope"))
+        val lTypeMaybe = context.findVar(name)
+        if (lTypeMaybe.isEmpty) {
+          return Left(List("Identifier %s not in scope".format(name)))
         }
-        /* If lvalue type == rvalue type then true */
-        /*
-        if (returnType(lvalue) == returnType(rvalue)) {
-          ???
+        val lType = lTypeMaybe.get
+        /* Check LHS and RHS are same type */
+        val rType = rvalue match {
+          case exp:Expr => returnType(exp)(context)
+          case ArrayLiteral(elements) => Left(List("Not implemented"))
+          case Call(ident, args) => Left(List("Not implemented"))
+          case PairElement(elem, lvalue) => Left(List("Not implemented"))
+          case PairValue(exp1, exp2) => Left(List("Not implemented"))
         }
-        */
-
-        Left(List("Not Yet Implemented: lvalue/rvalue type checking"))
+        if (!lType.equals(rType)) {
+          return Left(List("Assignment types are not the same"))
+        }
+        Right(context)
       }
       case Read(lvalue) => {
         /*Not sure what this is*/
@@ -178,8 +213,7 @@ object SemanticAnalyser {
         var newContext = context
         for (stat <- statList) {
           verifyStat(newContext, stat) match {
-            // TODO: does this exit correctly on error?
-            case Left(err) => Left(err)
+            case Left(err) => return Left(err)
             case Right(c) => newContext = c
           }
         }
