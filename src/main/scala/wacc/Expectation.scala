@@ -3,7 +3,6 @@ package wacc
 import wacc.AbstractSyntaxTree.BaseT.BaseTypeType
 import wacc.AbstractSyntaxTree.{BaseType, DeclarationType, Func, NestedPair}
 
-import scala.util.control.Breaks.break
 class Expectation(val expecting: TypeMatcher, var contextMessage: String) {
   def matchedWith(inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] = {
     expecting(inputs).left.map(contextMessage :: _)
@@ -41,7 +40,7 @@ object TypeProcessor {
   private def firstMismatch(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 1
     for ((expectedInput, input) <- expected zip inputs) {
-      if (expectedInput != input) break()
+      if (expectedInput != input) return count
       count += 1
     }
     count
