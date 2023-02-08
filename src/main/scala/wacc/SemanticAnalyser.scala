@@ -84,6 +84,30 @@ object SemanticAnalyser {
     //println(stat)
     stat match {
       case SkipStat() => Right(context)
+      case dec: Declaration => verifyDeclaration(context, dec)
+      case assignment: Assignment => verifyAssignment(context, assignment)
+      case ifStat: IfStat => verifyIf(context, ifStat)
+      case whileLoop: WhileLoop => verifyWhile(context, whileLoop)
+      case statList: StatList => verifyStatList(context, statList)
+      case Read(lvalue) => {
+        /*Not sure what this is*/
+        // TODO: ensure lvalue is int or char
+        Right(context)
+      }
+      case Command(command, input) => {
+        /*Not sure what this is*/
+        Right(context)
+      }
+      case BeginEndStat(stat) => {
+        /*verify stat (What is this?)*/
+        verifyStat(context, stat)
+      }
+      
+    }
+  }
+
+  private def verifyDeclaration(context: ScopeContext, dec: Declaration): Either[List[String], ScopeContext] = {
+    dec match {
       case Declaration(dataType, ident, rvalue) => {
         if (context.findVar(ident.name).isRight) {
           val decType = context.findVar(ident.name)
@@ -91,11 +115,7 @@ object SemanticAnalyser {
             Left(List("Variable " + ident.name + " exists in this scope already"))
           }
         }
-        // TODO: add variable to context if no errors
-        //context.addVar(ident.name, BaseType(ident)) ??
         dataType match {
-          case NestedPair() => Left(List("Not Yet Implemented"))
-
           case BaseType(baseType) => {
             // int i = 0
             rvalue match {
@@ -131,7 +151,6 @@ object SemanticAnalyser {
               }
               // int i = ord 'a'
               case unOp@UnaryOp(op, expr) => {
-                return context.addVar(ident.name, BaseType(Char_T))
                 returnType(unOp)(context) match {
                   case Left(err) => Left(err)
                   case Right(opType) => {
@@ -159,6 +178,7 @@ object SemanticAnalyser {
               case any => Left(List("rvalue %s not implemented".format(any)))
             }
           }
+          case NestedPair() => Left(List("Not Yet Implemented"))
           case PairType(fstType, sndType) => {
             rvalue match {
               case PairValue(exp1, exp2) => {
@@ -188,6 +208,11 @@ object SemanticAnalyser {
         }
         /*and make sure dataType and rvalue have same type*/
       }
+    }
+  }
+
+  private def verifyAssignment(context: ScopeContext, assignment: Assignment): Either[List[String], ScopeContext] = {
+    assignment match {
       case Assignment(lvalue, rvalue) => {
         /* Check if LHS is in scope */
         val name = lvalue match {
@@ -227,33 +252,33 @@ object SemanticAnalyser {
           }
         }
       }
-      case Read(lvalue) => {
-        /*Not sure what this is*/
-        // TODO: ensure lvalue is int or char
-        Right(context)
-      }
-      case Command(command, input) => {
-        /*Not sure what this is*/
-        Right(context)
-      }
+    }
+  }
+
+  private def verifyIf(context: ScopeContext, ifStat: IfStat): Either[List[String], ScopeContext] = {
+    ifStat match {
       case IfStat(cond, stat1, stat2) => {
-        /*Make sure cond is boolean, verify stat1 and stat2 and make sure there is fi*/
-        returnType(cond)(context) match {
-          case Left(err) => Left(err)
-          case Right(sType) => {
-            sType match {
-              case BaseType(Bool_T) => {
-                verifyStat(context, stat1) match {
-                  case Left(err) => return Left(err)
-                  case Right(_) => return verifyStat(context, stat2)
-                }
+      /*Make sure cond is boolean, verify stat1 and stat2 and make sure there is fi*/
+      returnType(cond)(context) match {
+        case Left(err) => Left(err)
+        case Right(sType) => {
+          sType match {
+            case BaseType(Bool_T) => {
+              verifyStat(context, stat1) match {
+                case Left(err) => return Left(err)
+                case Right(_) => return verifyStat(context, stat2)
               }
-              case _ => Left(List("Semantic Error: if condition is not of type Bool"))
             }
+            case _ => Left(List("Semantic Error: if condition is not of type Bool"))
           }
         }
-        // TODO: verify there is a fi
       }
+    }
+    }
+  }
+
+  private def verifyWhile(context: ScopeContext, whileLoop: WhileLoop): Either[List[String], ScopeContext] = {
+    whileLoop match {
       case WhileLoop(cond, stat) => {
         /*Make sure cond is boolean, verify stat*/
         returnType(cond)(context) match {
@@ -266,10 +291,11 @@ object SemanticAnalyser {
           }
         }
       }
-      case BeginEndStat(stat) => {
-        /*verify stat (What is this?)*/
-        verifyStat(context, stat)
-      }
+    }
+  }
+
+  private def verifyStatList(context: ScopeContext, statList: StatList): Either[List[String], ScopeContext] = {
+    statList match {
       case StatList(statList) => {
         /*verify stat in list*/
         var newContext = context
