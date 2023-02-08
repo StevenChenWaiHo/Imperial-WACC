@@ -31,7 +31,6 @@ class ScopeContext(scopeStack: List[Scope]) {
   }
 
   def findFunc(name: String): Option[Expectation] = {
-    if (findVar(name).isDefined) return Option.empty
 
     def findFunc1(stack: List[Scope]): Option[Expectation] = stack match {
       case Scope(_, funcs, _) :: scopes => {
