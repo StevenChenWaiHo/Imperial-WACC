@@ -31,8 +31,8 @@ object Parser {
     lazy val baseTypeType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
     private lazy val baseType = baseTypeType.map(BaseType)
     private lazy val pairType = PairType.lift("pair" ~> "(" ~> pairElemType <~ ",", pairElemType <~ ")")
-    private lazy val pairElemType: Parsley[DeclarationType] = declarationType <|> 
-      (notFollowedBy("pair" <~ "(") #> NestedPair())
+    private lazy val pairElemType: Parsley[DeclarationType] =
+      (("pair" <~ notFollowedBy("(")) #> NestedPair()) <|> declarationType
     lazy val declarationType: Parsley[DeclarationType] = precedence[DeclarationType](pairType, baseType)(
       Ops[DeclarationType](Postfix)("[" ~> "]" #> ArrayType)
     )

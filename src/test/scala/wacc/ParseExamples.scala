@@ -38,9 +38,9 @@ object ParseExamples {
   )
 
   var nestedPairExamples = Set(
-    "pair(pair, int) q = newpair(p, 3)" -> Declaration(PairType(NestedPair(), BaseType(Int_T)), IdentLiteral("q"), PairValue(PairLiteral(), IntLiteral(3))),
-    "pair(char, pair) q = newpair('a', p)" -> Declaration(PairType(BaseType(Char_T), NestedPair()), IdentLiteral("q"), PairValue(CharLiteral('a'), PairLiteral())),
-    "pair(pair, pair) q = newpair(p, p)" -> Declaration(PairType(NestedPair(), NestedPair()), IdentLiteral("q"), PairValue(PairLiteral(), PairLiteral()))
+    "pair(pair, int) q = newpair(p, 3)" -> Declaration(PairType(NestedPair(), BaseType(Int_T)), IdentLiteral("q"), PairValue(IdentLiteral("p"), IntLiteral(3))),
+    "pair(char, pair) q = newpair('a', p)" -> Declaration(PairType(BaseType(Char_T), NestedPair()), IdentLiteral("q"), PairValue(CharLiteral('a'), IdentLiteral("p"))),
+    "pair(pair, pair) q = newpair(p, p)" -> Declaration(PairType(NestedPair(), NestedPair()), IdentLiteral("q"), PairValue(IdentLiteral("p"), IdentLiteral("p")))
   )
 
   private var declarationTypeExamples = Set(

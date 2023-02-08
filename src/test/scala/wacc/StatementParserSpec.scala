@@ -6,6 +6,7 @@ import wacc.AbstractSyntaxTree._
 import wacc.Parser.StatementParser.statement
 
 class StatementParserSpec extends AnyFlatSpec {
+
   import wacc.ParseExamples._
 
 
@@ -23,10 +24,10 @@ class StatementParserSpec extends AnyFlatSpec {
   "Statement Parser" can "parse assignments" in {
     for (rval <- rValExamples; lval <- lValExamples) {
       var parseString =
-      """skip;
-      |%s = %s;
-      |int skip_int = 3
-      |""".stripMargin.format(lval._1, rval._1)
+        """skip;
+          |%s = %s;
+          |int skip_int = 3
+          |""".stripMargin.format(lval._1, rval._1)
       var result = statement.parse(parseString)
       assert(result == Success(StatList(List(
         SkipStat(),
@@ -93,7 +94,7 @@ class StatementParserSpec extends AnyFlatSpec {
   }
 
   "Statement Parser" can "parse statements" in {
-    for (stat <- statExamples){
+    for (stat <- statExamples) {
       var parseString =
         """begin
           |  %s
@@ -112,15 +113,14 @@ class StatementParserSpec extends AnyFlatSpec {
 
   "Statement Parser" can "parse nested pair types" in {
     for (pair <- pairExamples; nested <- nestedPairExamples) {
-      // var parseString =
-      //   """%s;
-      //     |%s""".stripMargin.format(pair._1, nested._1)
-      var result = statement.parse(nested._1)
-      // assert(result == Success(StatList(List(
-      //   pair._2,
-      //   nested._2)
-      // )))
-      assert(result == Success(nested._2))
+      var parseString =
+        """%s;
+          |%s""".stripMargin.format(pair._1, nested._1)
+      var result = statement.parse(parseString)
+      assert(result == Success(StatList(List(
+        pair._2,
+        nested._2)
+      )))
     }
   }
 }
