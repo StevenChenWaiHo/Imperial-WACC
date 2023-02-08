@@ -36,4 +36,10 @@ import wacc.ValidateExamples._
       assert(returnType(pair._1) == pair._2)
     }
   }
+
+    "Type Validator" can "validate op-types" in {
+    for (op <- OpExamples) {
+      assert(returnType(op._1) == op._2)
+    }
+  }
 }

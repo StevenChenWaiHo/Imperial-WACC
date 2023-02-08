@@ -13,7 +13,7 @@ object ValidateExamples {
 
   var IdentLiteralExamples = Set(
     "int spam = 3" -> Right(BaseType(Int_T)),
-    "bool spam = true" -> Right(BaseType(Bool_)),
+    "bool spam = true" -> Right(BaseType(Bool_T)),
     "char spam = 'q'" -> Right(BaseType(Char_T)),
     "string spam = \"spam\"" -> Right(BaseType(String_T)),
     "int[] spam = [1, 2]" -> Right(ArrayType(BaseType(Int_T))),
@@ -31,5 +31,16 @@ object ValidateExamples {
 
   var PairTypeExamples = Set(
     
+  )
+
+  var OpExamples = Set(
+    UnaryOp(UnaryOpType.Not, BoolLiteral(true)) -> Right(BaseType(Bool_T)),
+    UnaryOp(UnaryOpType.Neg, IntLiteral(3)) -> Right(BaseType(Int_T)),
+    UnaryOp(UnaryOpType.Len, StringLiteral("hi")) -> Right(BaseType(Int_T)),
+
+    BinaryOp(BinaryOpType.Mul, IntLiteral(3), IntLiteral(3)) -> Right(BaseType(Int_T)),
+    BinaryOp(BinaryOpType.Add, IntLiteral(3), IntLiteral(3)) -> Right(BaseType(Int_T)),
+    BinaryOp(BinaryOpType.Eq, IntLiteral(3), IntLiteral(3)) -> Right(BaseType(Bool_T)),
+    BinaryOp(BinaryOpType.Neq, IntLiteral(3), IntLiteral(3)) -> Right(BaseType(Bool_T))
   )
 }
