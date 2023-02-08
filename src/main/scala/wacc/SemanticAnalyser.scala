@@ -5,7 +5,7 @@ import wacc.AbstractSyntaxTree.BaseT._
 import wacc.TypeValidator.returnType
 import wacc.TypeValidator.declarationTypeToEither
 import wacc.TypeProcessor.fromFunction
-
+import wacc.AbstractSyntaxTree.CmdT.Ret
 object SemanticAnalyser {
 
   def verifyProgram(program: Program): Either[List[String], ScopeContext] = {
@@ -53,6 +53,10 @@ object SemanticAnalyser {
       }
       case Command(command, input) => {
         /*Not sure what this is*/
+        // TODO: don't allow return in main func
+        if (command == Ret && context.getDepth() == 1) {
+          return Left(List("Cannot return from main program"))
+        }
         Right(context)
       }
       case BeginEndStat(stat) => {
