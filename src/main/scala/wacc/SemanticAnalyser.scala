@@ -11,7 +11,7 @@ object SemanticAnalyser {
   private def pairElementType(element: PairElemT.Elem) = simpleExpectation {
     (input) =>
       input match {
-        case PairType(t1, t2) => Right(if (element == Fst) t1 else t2)
+        //case PairType(t1, t2) => Right(if (element == Fst) t1 else t2)
         case _ => Left(List("Mismatched type: expected a pair but received: \n".format(input)))
       }
   }
@@ -172,8 +172,8 @@ object SemanticAnalyser {
               // int i = f()
               case call@Call(funcIdent, args) => {
                 context.findFunc(funcIdent.name) match {
-                  case => Left(List("Function %s not in scope".format(funcIdent.name)))
-                  case Some(exp) => {
+                  case Left(err) => Left(List("Function %s not in scope".format(funcIdent.name)))
+                  case Right(exp) => {
                     exp matchedWith List(declarationTypeToEither(dataType)) match {
                       case Left(err) => Left(err)
                       case Right(opType) => {
@@ -230,19 +230,18 @@ object SemanticAnalyser {
           case IdentLiteral(name) => name
           case ArrayElem(name, indicies) => name
         }
-        val lTypeMaybe = context.findVar(name)
-        if (lTypeMaybe.isLeft) {
-          return Left(List("Identifier %s not in scope".format(name)))
+        val lType = context.findVar(name) match {
+          case Left(err) => return Left(List("Identifier %s not in scope".format(name)))
+          case Right(t) => t
         }
-        val lType = lTypeMaybe
         /* Check LHS and RHS are same type */
         val rType = rvalue match {
           case exp:Expr => returnType(exp)(context)
           case ArrayLiteral(elements) => Left(List("Not implemented"))
           case call@Call(funcIdent, args) => {
             context.findFunc(funcIdent.name) match {
-              case Left(value) => Left(List("Function %s not in scope".format(funcIdent.name))) // this line was None but it showed an error
-              case exp => { // This line was Some() but it showed an error
+              case Left(err) => Left(List("Function %s not in scope".format(funcIdent.name)))
+              case Right(exp) => {
                 exp matchedWith List(declarationTypeToEither(lType)) match {
                   case Left(err) => Left(err)
                   case Right(opType) => Right(lType)
