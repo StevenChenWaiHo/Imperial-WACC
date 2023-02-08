@@ -233,7 +233,7 @@ object SemanticAnalyser {
                       if (elementType != dataType) {
                         return Left(List("Invalid Array Typing"))
                       }
-                      context.addVar(ident.name, elementType) match {
+                      context.addVar(ident.name, ArrayType(elementType)) match {
                         case Left(err) => return Left(err)
                         case Right(value) => newContext = value
                       }
@@ -268,7 +268,29 @@ object SemanticAnalyser {
         /* Check LHS and RHS are same type */
         val rType = rvalue match {
           case exp:Expr => returnType(exp)(context)
-          case ArrayLiteral(elements) => Left(List("Not implemented"))
+          case ArrayLiteral(elements) => {
+            if (elements.isEmpty) {
+              // TODO: Can emoty array exist?
+              Left(List("Empty array on RHS"))
+            } else {
+              returnType(elements.head)(context) match {
+                case Left(err) => return Left(err)
+                case Right(aType) => {
+                  for (elem <- elements) {
+                    returnType(elem)(context) match {
+                      case Left(err) => return Left(err)
+                      case Right(eType) => {
+                        if (eType != aType) {
+                          return Left(List("Inconsistent types in RHS array assignment"))
+                        }
+                      }
+                    }
+                  }
+                  Right(ArrayType(aType))
+                }
+              }
+            }
+          }
           case call@Call(funcIdent, args) => {
             context.findFunc(funcIdent.name) match {
               case Left(err) => Left(List("Function %s not in scope".format(funcIdent.name)))
