@@ -5,7 +5,6 @@ import wacc.AbstractSyntaxTree.BaseT._
 import wacc.TypeValidator.returnType
 import wacc.TypeValidator.declarationTypeToEither
 import wacc.TypeProcessor.fromFunction
-import wacc.TypeValidator.makeBaseType
 
 object SemanticAnalyser {
 
@@ -29,17 +28,17 @@ object SemanticAnalyser {
   private def verifyFunc(context: ScopeContext, func: Func): Either[List[String], ScopeContext] = {
     var funcContext = context
     /* Add all arguments to symbol table for func to use */
-    println(func.types.foreach(elem => {
+    func.types.foreach(elem => {
       funcContext = funcContext.addVar(elem._2.name, elem._1) match {
         case Left(err) => return Left(err)
         case Right(newContext) => newContext
       }
-    }))
+    })
     verifyStat(funcContext, func.code)
   }
 
   private def verifyStat(context: ScopeContext, stat: Stat): Either[List[String], ScopeContext] = {
-    println(stat)
+    //println(stat)
     stat match {
       case SkipStat() => Right(context)
       case Declaration(dataType, ident, rvalue) => {
@@ -148,7 +147,17 @@ object SemanticAnalyser {
         val rType = rvalue match {
           case exp:Expr => returnType(exp)(context)
           case ArrayLiteral(elements) => Left(List("Not implemented"))
-          case Call(ident, args) => Left(List("Not implemented"))
+          case call@Call(funcIdent, args) => {
+            context.findFunc(funcIdent.name) match {
+              case None => Left(List("Function %s not in scope".format(funcIdent.name)))
+              case Some(exp) => {
+                exp matchedWith List(declarationTypeToEither(lType)) match {
+                  case Left(err) => Left(err)
+                  case Right(opType) => Right(lType)
+                }
+              }
+            }
+          }
           case PairElement(elem, lvalue) => Left(List("Not implemented"))
           case PairValue(exp1, exp2) => Left(List("Not implemented"))
         }

@@ -38,6 +38,7 @@ object Main {
             })
             sys.exit(200)
         }
+        println("Compilation Successful!")
         sys.exit(0)
     }
 }
