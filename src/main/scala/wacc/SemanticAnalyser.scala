@@ -222,19 +222,24 @@ object SemanticAnalyser {
           }
           case ArrayType(dataType) => {
             rvalue match {
-              case ArrayLiteral(elements) => {
-                for (element <- elements) {
+               case ArrayLiteral(elements) => {
+                  var newContext = context
+                 for (element <- elements) {
                   returnType(element)(context) match {
-                    case Left(err) => Left(Error)
+                    case Left(err) => Left(err)
                     case Right(elementType) => {
                       if (elementType != dataType) {
-                        Left(List("Invalid Array Typing"))
+                        return Left(List("Invalid Array Typing"))
+                      }
+                      context.addVar(ident.name, elementType) match {
+                        case Left(err) => return Left(err)
+                        case Right(value) => newContext = value
                       }
                     }
                   }
-                }
-                return Left(List("ArrayType Not Yet Implemented"))
-              }
+                 }
+                 Right(newContext)
+               }
               case default => {
                 return Left(List("Right side not array literal"))
               }
