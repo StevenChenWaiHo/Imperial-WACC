@@ -40,7 +40,7 @@ object TypeProcessor {
   private def firstMismatch(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 1
     for ((expectedInput, input) <- expected zip inputs) {
-      if (expectedInput.equals(input)) return count
+      if (!expectedInput.equals(input)) return count
       count += 1
     }
     count
