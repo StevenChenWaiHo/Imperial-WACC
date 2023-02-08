@@ -85,4 +85,5 @@ object TypeProcessor {
     new Expectation(simpleExpectation(ts._1.map(fromA), fromB(ts._2)): TypeMatcher, contextMessage)
 
   def fromFunction(func: Func): Expectation = simple(func.types.map(_._1) -> func.returnType)
+
 }

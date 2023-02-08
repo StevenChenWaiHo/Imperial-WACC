@@ -1,12 +1,51 @@
 package wacc
 
-import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BaseT._
-import wacc.TypeValidator.returnType
-import wacc.TypeValidator.declarationTypeToEither
-import wacc.TypeProcessor.fromFunction
+import wacc.AbstractSyntaxTree.PairElemT._
+import wacc.AbstractSyntaxTree._
+import wacc.TypeValidator.{isHomogenousList, returnType, declarationTypeToEither}
 
 object SemanticAnalyser {
+  private def pairElementType(element: PairElemT.Elem) = simpleExpectation {
+    (input) =>
+      input match {
+        case PairType(t1, t2) => Right(if (element == Fst) t1 else t2)
+        case _ => Left(List("Mismatched type: expected a pair but received: \n".format(input)))
+      }
+  }
+
+  private def arrayNestedType(array: DeclarationType, indices: Int): Either[List[String], DeclarationType] = array match {
+    case ArrayType(innerType) if indices != 0 => arrayNestedType(innerType, indices - 1)
+    case someType if indices == 0 => Right(someType)
+    case someType if indices != 0 => Left(List("Attempted to dereference non-array type: %s\n".format(someType)))
+  }
+
+  def rValType(rVal: RVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = rVal match {
+    case rVal: Expr => returnType(rVal)
+    case ArrayLiteral(exprs) => isHomogenousList(exprs)
+    case PairValue(exp1, exp2) => simpleExpectation { (inputs) => Right(PairType(inputs(0), inputs(1))) }
+      .matchedWith(List(returnType(exp1), returnType(exp2)))
+    case Call(ident, args) => {
+      val funcExpectation = scopeContext.findFunc(ident.name)
+      funcExpectation.map(_ matchedWith args.map(returnType))
+        .getOrElse(Left(List("Function '%s' not defined in scope.")))
+    }
+    case PairElement(element, pair) => pairElementType(element) matchedWith List(lValType(pair))
+  }
+
+  def lValType(lVal: LVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = lVal match {
+    case PairElement(element, pair) => pairElementType(element) matchedWith List(lValType(pair))
+    case IdentLiteral(name) => scopeContext.findVar(name)
+    case ArrayElem(name, indices) => {
+      if (indices.map(returnType(_)).find((x) => x match {
+        case Right(Int_T) => false
+        case _ => true
+      }).isDefined) Left(List("Non-integer indices in array access."))
+      else simpleExpectation(
+        (input) => arrayNestedType(input(0), indices.length)) matchedWith List(scopeContext.findVar(name)
+      )
+    }
+  }
 
   def verifyProgram(program: Program): Either[List[String], ScopeContext] = {
     var topLevelContext = new ScopeContext()
@@ -37,13 +76,17 @@ object SemanticAnalyser {
     verifyStat(funcContext, func.code)
   }
 
+  private def verifyRValue(rVal: RVal): Unit = {
+
+  }
+
   private def verifyStat(context: ScopeContext, stat: Stat): Either[List[String], ScopeContext] = {
     //println(stat)
     stat match {
       case SkipStat() => Right(context)
       case Declaration(dataType, ident, rvalue) => {
-        if (context.findVar(ident.name).nonEmpty) {
-          val decType = context.findVar(ident.name).get
+        if (context.findVar(ident.name).isRight) {
+          val decType = context.findVar(ident.name)
           if (decType.equals(dataType)) {
             Left(List("Variable " + ident.name + " exists in this scope already"))
           }
@@ -52,7 +95,7 @@ object SemanticAnalyser {
         //context.addVar(ident.name, BaseType(ident)) ??
         dataType match {
           case NestedPair() => Left(List("Not Yet Implemented"))
-          
+
           case BaseType(baseType) => {
             // int i = 0
             rvalue match {
@@ -152,7 +195,7 @@ object SemanticAnalyser {
           case ArrayElem(name, indicies) => name
         }
         val lTypeMaybe = context.findVar(name)
-        if (lTypeMaybe.isEmpty) {
+        if (lTypeMaybe.isLeft) {
           return Left(List("Identifier %s not in scope".format(name)))
         }
         val lType = lTypeMaybe.get
