@@ -29,7 +29,7 @@ object Lexer {
         literals = Set('\\', '\"', '\''),
         singleMap = Map('0' -> 0x00, 'b' -> 0x08, 't' -> 0x09, 'n' -> 0x0a, 'f' -> 0x0c, 'r' -> 0x0d)
       ),
-      graphicCharacter = predicate.Basic((c: Char) => (c != '\n') && (c != '\'') && (c != '\"') && (c != '\\'))
+      graphicCharacter = predicate.Basic((c: Char) => (c != '\n')  && (c != '\"') && (c != '\'')&& (c != '\\'))
     ),
     spaceDesc = SpaceDesc.plain.copy(
       commentLine = "#",
