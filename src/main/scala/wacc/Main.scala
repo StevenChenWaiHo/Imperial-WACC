@@ -34,7 +34,7 @@ object Main {
         val verified = verifyProgram(ast.get)
 //////////////////////////////////////////////////////////
       if (verified.isLeft) {
-        print("SEMANTIC")
+        println("SEMANTIC")
         sys.exit()
       }
       else sys.exit(0)

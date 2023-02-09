@@ -67,7 +67,7 @@ object TypeProcessor {
   *   returning the corresponding output type. */
   private def conditionalExpectation(valids: List[(List[DeclarationType], DeclarationType)])
                                     (inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] = {
-    if (inputs.length != valids.length)
+    if (inputs.length != valids(0)._1.length)
       return Left(List(s"Mismatched argument count. Expected: ${valids.length} but received: ${inputs.length}"))
     val maybeError = inputs.find(_.isLeft)
     if (maybeError.isDefined) return maybeError.get

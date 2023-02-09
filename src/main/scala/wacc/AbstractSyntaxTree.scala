@@ -61,12 +61,12 @@ object AbstractSyntaxTree {
 
 
   sealed trait DeclarationType extends ASTNode {
-    private def isAny: Boolean = this match {
+    val isAny: Boolean = this match {
       case BaseType(Any_T) => true
       case _ => false
     }
 
-    private def isNone: Boolean = this match {
+    val isNone: Boolean = this match {
       case BaseType(None_T) => true
       case _ => false
     }

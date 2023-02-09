@@ -69,15 +69,23 @@ object SemanticAnalyser {
       }
       // Accept any two identical types. Drop the return type and replace it with the (unchanged) context.
       case Assignment(lVal, rVal) => {
-        val matcher = TypeMatcher.identicalTypes(BaseType(Any_T)) withContext s"In variable assignment on line: ${0}" //TODO
+        val lValT = lValType(lVal)
+        val rValT = rValType(rVal)
+        if(lValT.isRight && rValT.isRight && lValT.toOption.get.isAny && rValT.toOption.get.isAny)
+          return Left(List(s"Assignment between two ambiguous types: ${lValT.toOption.get}, ${rValT.toOption.get}\n"))
+
+        val matcher = TypeMatcher.identicalTypes withContext s"In variable assignment on line: ${0}" //TODO
         (matcher matchedWith List(lValType(lVal), rValType(rVal)))
           .map(_ => scopeContext)
       }
-      case Read(lVal) => (simpleExpectation((input) => input.head match {
-        case BaseType(x) if x is Bool_T => Left(List("Attempted to read into an invalid type: %s\n".format(x)))
-        case _ => Right(BaseType(None_T))
-      }) matchedWith List(lValType(lVal)))
-        .map(_ => scopeContext)
+      case Read(lVal) =>
+        (simpleExpectation((input) => input.head match {
+          case BaseType(x) if x is Bool_T => Left(List("Attempted to read into an invalid type: %s\n".format(x)))
+          case PairType(a, b) if (a is Any_T) && (b is Any_T) => Left(List("Attempted to read into a pair\n"))
+          case _ => Right(BaseType(None_T))
+        }) matchedWith List(lValType(lVal)))
+          .map(_ => scopeContext)
+
 
       case Command(cmd, input) => {
         val expectation = cmd match {
