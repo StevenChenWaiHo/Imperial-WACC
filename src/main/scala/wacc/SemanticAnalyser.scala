@@ -271,7 +271,7 @@ object SemanticAnalyser {
                         if (e2Type == NestedPair) {
                           exp2 match {
                             case IdentLiteral(x) => {
-                              if (context(findVar(x)) != PairType) {
+                              if (context.findVar(x) != PairType) {
                                 Left(List("Not a nested pair"))
                               }
                             }
