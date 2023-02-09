@@ -17,6 +17,12 @@ class ScopeContext(scopeStack: List[Scope]) {
 
   def this() = this(List(new Scope(Map(), Map(), null)))
 
+  def returnType(): Expectation = this.scopeStack match {
+      case Scope(_, _, retType) :: scopes => {
+        retType
+      }
+    } 
+
   def findVar(name: String): Either[List[String], DeclarationType] = {
 
     def findVar1(stack: List[Scope]): Either[List[String], DeclarationType] = stack match {
@@ -24,7 +30,7 @@ class ScopeContext(scopeStack: List[Scope]) {
         vars.get(name).map(Right(_))
           .getOrElse(findVar1(scopes))
       }
-      case Nil => Left(List("Variable not found: %s\n"))
+      case Nil => Left(List("Variable not found: %s".format(name)))
     }
 
     findVar1(this.scopeStack)

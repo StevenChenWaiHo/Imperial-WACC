@@ -109,14 +109,31 @@ object SemanticAnalyser {
       case Command(command, input) => {
         /*Not sure what this is*/
         // TODO: don't allow return in main func
-        // if (command == Ret && context.getDepth() == 1) {
-        //   return Left(List("Cannot return from main program"))
-        // }
+        if (command == Ret) {
+          /* Ensure correct value type is returned from function */
+          returnType(input)(context) match {
+            case Left(err) => Left(err)
+            case Right(iType) => {
+              val retType = Option(context.returnType())
+              if (retType.isEmpty) {
+                /* Don't allow return statement in main program */
+                return Right(context)
+              }
+              retType.get matchedWith(List(declarationTypeToEither(iType))) match {
+                case Left(err) => Left(List("Return type %s does not match function type %s".format(iType, context.returnType())))
+                case Right(mType) => Right(context)
+              }
+            }
+          }
+        }
         Right(context)
       }
       case BeginEndStat(stat) => {
-        /*verify stat (What is this?)*/
-        verifyStat(context, stat)
+        /* Ensure scoping is confined */
+        verifyStat(context, stat) match {
+          case Left(err) => Left(err)
+          case Right(newContext) => context 
+        }
       }
       
     }
@@ -158,6 +175,19 @@ object SemanticAnalyser {
                   case BaseType(String_T) => context.addVar(ident.name, BaseType(String_T))
                   case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(String_T))))
                }
+              }
+              // int i = n
+              case IdentLiteral(name) => {
+                context.findVar(name) match {
+                  case Left(err) => return Left(List("Identifier %s not in scope".format(name)))
+                  case Right(iType) => {
+                    if (iType != dataType) {
+                      Left(List("Identifier %s does not match type of %s {%s, %s}".format(name, ident.name, iType, dataType)))
+                    } else {
+                      Right(context)
+                    }
+                  }
+                }
               }
               // int i = i + 1
               case binOp@BinaryOp(op, expr1, expr2) => {
