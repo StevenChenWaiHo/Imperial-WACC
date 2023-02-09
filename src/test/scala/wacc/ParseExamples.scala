@@ -13,7 +13,7 @@ object ParseExamples {
     "[3 + exp, 12]" -> ArrayLiteral(List(BinaryOp(BinaryOpType.Add, IntLiteral(3), IdentLiteral("exp")), IntLiteral(12))),
     "newpair (3 + exp, 12)" -> PairValue(BinaryOp(BinaryOpType.Add, IntLiteral(3), IdentLiteral("exp")), IntLiteral(12)),
     "fst fst_var" -> PairElement(PairElemT.Fst, IdentLiteral("fst_var")),
-    "call call_ident" -> Call(IdentLiteral("call_ident"), List())
+    "call call_ident()" -> Call(IdentLiteral("call_ident"), List())
   )
 
   var lValExamples = Set(
