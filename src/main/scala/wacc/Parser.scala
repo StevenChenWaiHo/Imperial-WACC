@@ -20,7 +20,7 @@ object Parser {
 
     lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression <~ "]").map(ArrayElem(_))
     lazy val maybeArrayElem: Parsley[String => Expr with LVal] = choice(arrayIndices, pure(IdentLiteral(_)))
-    lazy val arrayLiteral = ("[" ~> sepBy1(expression, ",") <~ "]").map(ArrayLiteral)
+    lazy val arrayLiteral = ("[" ~> sepBy(expression, ",") <~ "]").map(ArrayLiteral)
   }
 
 
