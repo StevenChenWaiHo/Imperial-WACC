@@ -54,12 +54,15 @@ object SemanticAnalyser {
   def verifyProgram(program: Program): Either[List[String], ScopeContext] = {
     var topLevelContext = new ScopeContext()
     for (func <- program.funcs) {
-      /* Ensure that funcs are added to top levek symbol table */
+      /* Ensure that funcs are added to top level symbol table */
       topLevelContext = 
         topLevelContext.addFunc(func.ident.name, fromFunction(func)) match {
         case Left(err) => return Left(err)
         case Right(newContext) => newContext
       }
+    }
+    /* Verify each functions code */
+    for (func <- program.funcs) {
       verifyFunc(topLevelContext, func) match {
         case Left(err) => return Left(err)
         case Right(value) => 
