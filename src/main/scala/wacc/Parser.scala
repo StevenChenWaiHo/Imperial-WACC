@@ -4,6 +4,7 @@ import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree.BinaryOpType._
 import parsley.Parsley
 import parsley.combinator.{choice, many, sepBy, sepBy1, some}
+import parsley.errors.combinator.ErrorMethods
 import parsley.Parsley.{attempt, notFollowedBy, pure}
 import parsley.character.{letterOrDigit, stringOfMany}
 import parsley.expr.{InfixL, Ops, Postfix, Prefix, precedence}
@@ -13,6 +14,15 @@ import wacc.Parser.ExpressionParser.expression
 object Parser {
   import wacc.Lexer._
   import wacc.Lexer.implicits._
+
+  def noReturnStat(stat: Stat): Boolean = stat match {
+    case IfStat(cond, stat1, stat2) => noReturnStat(stat1) || noReturnStat(stat2)
+    case WhileLoop(cond, stat1) => noReturnStat(stat1)
+    case BeginEndStat(stat1) => noReturnStat(stat1)
+    case StatList(statList) => noReturnStat(statList.last)
+    case Command(CmdT.Exit, _) | Command(CmdT.Ret, _) => false
+    case _ => true
+  }
 
   object ArrayParser {
     import parsley.combinator.sepBy1
@@ -154,7 +164,8 @@ object Parser {
       declarationType,
       ident,
       "(" ~> sepBy(declarationType <~> ident, ","),
-      ")" ~> "is" ~> statement <~ "end"
+      ")" ~> "is" ~> statement.filterOut{
+          case s if noReturnStat(s) => s"No exit or return statement"} <~ "end"
     )
   }
 

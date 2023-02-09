@@ -27,7 +27,7 @@ object ParseExamples {
   )
 
   var statExamples = Set(
-    "skip" -> SkipStat(),
+    "println \"b\";\nreturn 3" -> StatList(List(Command(CmdT.PrintLn, StringLiteral("b")),Command(CmdT.Ret, IntLiteral(3)))),
     "return 12;\nreturn 13" -> StatList(List(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13))))
   )
 
