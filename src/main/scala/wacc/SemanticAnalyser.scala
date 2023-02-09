@@ -250,15 +250,60 @@ object SemanticAnalyser {
           case PairType(fstType, sndType) => {
             rvalue match {
               case PairValue(exp1, exp2) => {
-                if (returnType(exp1)(context) != Right(fstType) || returnType(exp2)(context) != Right(sndType)) {
-                  Left(List("Pair values do not match"))
-                } else {
-                  Left(List("Good Pair Value Not Yet Implemented"))
+                returnType(exp1)(context) match {
+                  case Left(err) => Left(err)
+                  case Right(e1Type) => {
+                    returnType(exp2)(context) match {
+                      case Left(err) => Left(err)
+                      case Right(e2Type) => {
+                        if (!fstType.equals(e1Type) || !sndType.equals(e2Type)) {
+                          Left(List("Pair types do not match {(%s, %s), (%s, %s)}"
+                          .format(fstType, sndType, e1Type, e2Type)))
+                        } else {
+                          context.addVar(ident.name, PairType(e1Type, e2Type))
+                        }
+                      }
+                    }
+                  }
                 }
               }
-              case _ => {
-                Left(List("Rhs not a pair"))
+              case PairLiteral() => {
+                // TODO: adjust PairType to allow for nested pairs
+                context.addVar(ident.name, PairType(fstType, sndType))
               }
+              case IdentLiteral(name) => {
+                context.findVar(name) match {
+                  case Left(err) => Left(err)
+                  case Right(rType) => {
+                    if (rType.equals(PairType(fstType, sndType))) {
+                      context.addVar(ident.name, PairType(fstType, sndType))
+                    } else {
+                      Left(List("Pair types do not match {(%s, %s), %s}"
+                      .format(fstType, sndType, rType)))
+                    }
+                  }
+                }
+              }
+              case Call(ident, args) => {
+                context.findFunc(ident.name) match {
+                  case Left(err) => Left(err)
+                  case Right(exp) => {
+                    exp matchedWith(List(declarationTypeToEither(PairType(fstType, sndType)))) match {
+                      case Left(err) => Left(err)
+                      case Right(rType) => {
+                        if (rType.equals(PairType(fstType, sndType))) {
+                          context.addVar(ident.name, PairType(fstType, sndType))
+                        } else {
+                          Left(List("Pair types do not match {(%s, %s), %s}"
+                          .format(fstType, sndType, rType)))
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              case PairElement(elem, lvalue) => Left(List("PairElement not implemented"))
+              case any => Left(List("RHS is not a pair {%s}".format(any)))
             }
           }
           case ArrayType(dataType) => {
