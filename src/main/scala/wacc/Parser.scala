@@ -98,7 +98,7 @@ object Parser {
 
     private lazy val newPair = "newpair" ~> pairValue
     private lazy val call =  pure(Call.tupled) <*>
-      (("call" ~> identifier.map(IdentLiteral)) <~> (sepBy(expression, ",")))
+      (("call" ~> identifier.map(IdentLiteral)) <~> ("(" ~> (sepBy(expression, ",")) <~ ")"))
 
     lazy val rValue: Parsley[RVal] =
       expression <|>
