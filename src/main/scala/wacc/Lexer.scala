@@ -9,6 +9,8 @@ object Lexer {
   import parsley.token.descriptions.{LexicalDesc, NameDesc, SpaceDesc, SymbolDesc}
   import parsley.token.{Lexer, predicate}
 
+  private val escapedLiterals = Set('\\', '\"', '\'')
+
   private val desc = LexicalDesc.plain.copy(
     nameDesc = NameDesc.plain.copy(
       identifierStart = predicate.Basic((c: Char) => (c == '_') || c.isLetter),
@@ -26,9 +28,11 @@ object Lexer {
     ),
     textDesc = TextDesc.plain.copy(
       escapeSequences = EscapeDesc.plain.copy(
-        literals = Set('\\', '\"', '\''),
+        literals = escapedLiterals,
         singleMap = Map('0' -> 0x00, 'b' -> 0x08, 't' -> 0x09, 'n' -> 0x0a, 'f' -> 0x0c, 'r' -> 0x0d)
-      )
+      ),
+      graphicCharacter = parsley.token.predicate.Unicode(c =>
+        c >= ' '.toInt && !escapedLiterals.map(_.toInt).contains(c))
     ),
     spaceDesc = SpaceDesc.plain.copy(
       commentLine = "#",

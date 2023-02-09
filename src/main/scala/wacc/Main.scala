@@ -24,13 +24,21 @@ object Main {
         val ast = program.parse(inputProgram)
         ast match { 
             case Failure(err) => {
-                println("Syntax Error: %s".format(err))
+                //println("Syntax Error: %s".format(err))
+                println("syntax")
                 sys.exit(100)
             }
-            case Success(x) => 
+            case Success(x) =>
         }
 
         val verified = verifyProgram(ast.get)
+//////////////////////////////////////////////////////////
+      if (verified.isLeft) {
+        print("SEMANTIC")
+        sys.exit()
+      }
+      else sys.exit(0)
+
         if (verified.isLeft) {
             verified.left.foreach(errList => {
                 errList.foreach(err => {
