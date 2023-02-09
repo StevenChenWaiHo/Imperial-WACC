@@ -38,8 +38,6 @@ class ScopeContext(scopeStack: List[Scope]) {
 
 
   def findFunc(name: String): Either[List[String], Expectation] = {
-    if (findVar(name).isRight) return Left(List("Function '%s'" +
-      " has been overridden by a variable declaration in this scope, and cannot be called.\n"))
 
     def findFunc1(stack: List[Scope]): Either[List[String], Expectation] = stack match {
       case Scope(_, funcs, _) :: scopes => {
