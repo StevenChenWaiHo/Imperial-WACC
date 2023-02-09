@@ -4,24 +4,19 @@ import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree._
+import wacc.SemanticAnalyser.{lValType, rValType}
 
 import javax.management.InvalidAttributeValueException
 
 
 case class Scope(val vars: Map[String, DeclarationType],
                  val funcs: Map[String, Expectation],
-                 val nextReturn: Expectation)
+                 val nextReturn: DeclarationType)
 
 class ScopeContext(scopeStack: List[Scope]) {
   if (scopeStack.isEmpty) throw new InvalidAttributeValueException("Context cannot be empty")
 
   def this() = this(List(new Scope(Map(), Map(), null)))
-
-  def returnType(): Expectation = this.scopeStack match {
-    case Scope(_, _, retType) :: scopes => {
-      retType
-    }
-  }
 
   def findVar(name: String): Either[List[String], DeclarationType] = {
 
@@ -38,9 +33,6 @@ class ScopeContext(scopeStack: List[Scope]) {
 
 
   def findFunc(name: String): Either[List[String], Expectation] = {
-    if (findVar(name).isRight) return Left(List("Function '%s'" +
-      " has been overridden by a variable declaration in this scope, and cannot be called.\n"))
-
     def findFunc1(stack: List[Scope]): Either[List[String], Expectation] = stack match {
       case Scope(_, funcs, _) :: scopes => {
         funcs.get(name).map(Right(_))
@@ -72,10 +64,14 @@ class ScopeContext(scopeStack: List[Scope]) {
         Right(new ScopeContext(List(Scope(currentScope.vars, currentScope.funcs.updated(name, expects), returnType))))
       }
   }
-  def expectedReturn(): Expectation = scopeStack.head.nextReturn
+  def expectedReturn(): Expectation = TypeMatcher.oneOf(List(nextReturn()))
 
-  def newScope(returnType: Expectation) = new ScopeContext(new Scope(Map(), Map(), returnType) :: scopeStack)
+  def nextReturn(): DeclarationType = scopeStack.head.nextReturn
 
+  def newScope(returnType: DeclarationType): ScopeContext =
+    new ScopeContext(new Scope(Map(), Map(), returnType) :: scopeStack)
+
+  def newScope(): ScopeContext = newScope(nextReturn())
 }
 
 
@@ -96,6 +92,9 @@ object TypeValidator {
     case BoolLiteral(_) => BaseType(Bool_T)
     case CharLiteral(_) => BaseType(Char_T)
     case StringLiteral(_) => BaseType(String_T)
+    case PairLiteral() => PairType(Any_T, Any_T)
+    case expr: ArrayElem => lValType(expr)
+    case expr: PairLiteral => rValType(expr)
     case IdentLiteral(name) => context.findVar(name)
     case UnaryOp(op, x) => UnaryOpExpectations(op) matchedWith returnType(x)
     case BinaryOp(op, x1, x2) => BinaryOpExpectations(op) matchedWith List(returnType(x1), returnType(x2))
@@ -108,7 +107,7 @@ object TypeValidator {
         case Right(retType) => TypeProcessor.simple(List(retType) -> retType) matchedWith (isHomogenousList(exprs))
         case Left(errors) => Left(errors)
       }
-      case Nil => Right(BaseType(None_T))
+      case Nil => Right(BaseType(Any_T))
     }
   }
 
@@ -134,8 +133,8 @@ object TypeValidator {
     BinaryOpType.Gte -> boolComparisonTypes,
     BinaryOpType.Lt -> boolComparisonTypes,
     BinaryOpType.Lte -> boolComparisonTypes,
-    BinaryOpType.Eq -> TypeMatcher.identicalTypes(BaseType(Bool_T)),
-    BinaryOpType.Neq -> TypeMatcher.identicalTypes(BaseType(Bool_T)),
+    BinaryOpType.Eq -> TypeMatcher.identicalTypes(Bool_T),
+    BinaryOpType.Neq -> TypeMatcher.identicalTypes(Bool_T),
     BinaryOpType.And -> TypeProcessor.simple(List(Bool_T, Bool_T) -> Bool_T),
     BinaryOpType.Or -> TypeProcessor.simple(List(Bool_T, Bool_T) -> Bool_T)
   )

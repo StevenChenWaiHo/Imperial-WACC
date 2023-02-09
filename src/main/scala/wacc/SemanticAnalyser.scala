@@ -2,6 +2,7 @@ package wacc
 
 import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree.CmdT._
+import wacc.AbstractSyntaxTree.PairElemT._
 import wacc.AbstractSyntaxTree._
 import wacc.TypeValidator.{isHomogenousList, returnType}
 
@@ -9,11 +10,12 @@ object SemanticAnalyser {
 
   import TypeValidator.makeBaseType
 
-  private def pairElementType(element: PairElemT.Elem) = simpleExpectation {
+  private def pairElementType(element: PairElemT.Elem): Expectation = simpleExpectation {
     (input) =>
-      input match {
-        //case PairType(t1, t2) => Right(if (element == Fst) t1 else t2)
+      input(0) match {
+        case PairType(t1, t2) => Right(if (element == Fst) t1 else t2)
         case _ => Left(List("Mismatched type: expected a pair but received: \n".format(input)))
+
       }
   }
 
@@ -25,13 +27,13 @@ object SemanticAnalyser {
 
   def rValType(rVal: RVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = rVal match {
     case rVal: Expr => returnType(rVal)
-    case ArrayLiteral(exprs) => isHomogenousList(exprs)
+    case ArrayLiteral(exprs) => isHomogenousList(exprs).map(ArrayType(_))
     case PairValue(exp1, exp2) => simpleExpectation { (inputs) => Right(PairType(inputs(0), inputs(1))) }
       .matchedWith(List(returnType(exp1), returnType(exp2)))
     case Call(ident, args) => {
       val funcExpectation = scopeContext.findFunc(ident.name)
       funcExpectation.map(_ matchedWith args.map(returnType))
-        .getOrElse(Left(List("Function '%s' not defined in scope.")))
+        .getOrElse(Left(List(s"Function '${ident.name}' not defined in scope.")))
     }
     case PairElement(element, pair) => pairElementType(element) matchedWith List(lValType(pair))
   }
@@ -41,7 +43,7 @@ object SemanticAnalyser {
     case IdentLiteral(name) => scopeContext.findVar(name)
     case ArrayElem(name, indices) => {
       if (indices.map(returnType(_)).find((x) => x match {
-        case Right(Int_T) => false
+        case Right(x) if x is Int_T => false
         case _ => true
       }).isDefined) Left(List("Non-integer indices in array access."))
       else simpleExpectation(
@@ -50,7 +52,8 @@ object SemanticAnalyser {
     }
   }
 
-  def verifyStatement(statement: Stat)(implicit scopeContext: ScopeContext): Either[List[String], ScopeContext] =
+  def verifyStatement(statement: Stat)(implicit scopeContext: ScopeContext): Either[List[String], ScopeContext] = {
+//    println(scopeContext.expectedReturn() matchedWith(List(Right(BaseType(Char_T)))))
     statement match {
       // Make a new context from 'stat', and feed it to verifyStatement to verify 'stats'
       case StatList(stat :: stats) => verifyStatement(stat).map(verifyStatement(StatList(stats))(_)).joinRight
@@ -58,17 +61,19 @@ object SemanticAnalyser {
       case SkipStat() => Right(scopeContext)
       case Declaration(dataType, ident, rValue) => {
         // Make sure rValue and dataType are a pair of (any) matching data types
-        (TypeMatcher.identicalTypes(BaseType(Any_T)) matchedWith List(Right(dataType), rValType(rValue)))
+        val matcher = TypeMatcher.identicalTypes(BaseType(Any_T)) withContext s"In variable declaration for '$ident'\n"
+        (matcher matchedWith List(Right(dataType), rValType(rValue)))
           // Drop the return type and replace it with the new context
           .map(_ => scopeContext.addVar(ident.name, dataType)).joinRight
       }
       // Accept any two identical types. Drop the return type and replace it with the (unchanged) context.
       case Assignment(lVal, rVal) => {
-        (TypeMatcher.identicalTypes(BaseType(Any_T)) matchedWith List(lValType(lVal), rValType(rVal)))
+        val matcher = TypeMatcher.identicalTypes(BaseType(Any_T)) withContext s"In variable assignment on line: ${0}" //TODO
+        (matcher matchedWith List(lValType(lVal), rValType(rVal)))
           .map(_ => scopeContext)
       }
       case Read(lVal) => (simpleExpectation((input) => input.head match {
-        case BaseType(Bool_T) => Left(List("Attempted to read into a boolean"))
+        case BaseType(x) if x is Bool_T => Left(List("Attempted to read into an invalid type: %s\n".format(x)))
         case _ => Right(BaseType(None_T))
       }) matchedWith List(lValType(lVal)))
         .map(_ => scopeContext)
@@ -81,62 +86,63 @@ object SemanticAnalyser {
           case Print => (TypeMatcher.oneOf(List(Any_T)))
           case PrintLn => (TypeMatcher.oneOf(List(Any_T)))
         }
-        (expectation matchedWith List(returnType(input)))
+        (expectation.withContext(s"Inside command: $cmd\n") matchedWith List(returnType(input)))
           .map(_ => scopeContext)
       }
 
       case IfStat(cond, stat1, stat2) => {
-        val condReturn = TypeMatcher.oneOf(List(String_T)) matchedWith List(returnType(cond))
-        val stat1Return = verifyStatement(stat1)(scopeContext.newScope(TypeMatcher.oneOf(List(None_T))))
-        val stat2Return = verifyStatement(stat2)(scopeContext.newScope(TypeMatcher.oneOf(List(None_T))))
+        val condReturn = TypeMatcher.oneOf(List(Bool_T)) matchedWith List(returnType(cond))
+        val stat1Return = verifyStatement(stat1)(scopeContext.newScope())
+        val stat2Return = verifyStatement(stat2)(scopeContext.newScope())
 
         val returns = List(condReturn.map(_ => scopeContext), stat1Return, stat2Return)
         returns.find(_.isLeft).getOrElse(Right(scopeContext))
       }
 
       case WhileLoop(cond, stat) => {
-        val condReturn = TypeMatcher.oneOf(List(String_T)) matchedWith List(returnType(cond))
-        val statReturn = verifyStatement(stat)(scopeContext.newScope(TypeMatcher.oneOf(List(None_T))))
+        val condReturn = TypeMatcher.oneOf(List(Bool_T)) matchedWith List(returnType(cond))
+        val statReturn = verifyStatement(stat)(scopeContext.newScope())
 
         val returns = List(condReturn.map(_ => scopeContext), statReturn)
         returns.find(_.isLeft).getOrElse(Right(scopeContext))
       }
 
-      case BeginEndStat(stat) => verifyStatement(stat)(scopeContext.newScope(TypeMatcher.oneOf(List(None_T))))
+      case BeginEndStat(stat) => verifyStatement(stat)(scopeContext.newScope())
     }
+  }
 
-  def verifyFunction(f: Func)(implicit scopeContext: ScopeContext): Either[List[String], ScopeContext] = {
-    val updatedScope = scopeContext.addFunc(
-      f.ident.name,
-      TypeProcessor.simple(f.types.map(_._1) -> f.returnType))
-    val functionScope = f.types.foldLeft(updatedScope) { (scope, arg) =>
+  def verifyFunction(f: Func)(implicit scopeContext: ScopeContext): Option[List[String]] = {
+    val initial: Either[List[String], ScopeContext] = Right(scopeContext.newScope(None_T))
+    val functionScope = f.types.foldLeft(initial){ (scope, arg) =>
       scope match {
-        case Left(_) => scope
         case Right(x) => x.addVar(arg._2.name, arg._1)
+        case Left(_) => scope
       }
     }
-    if (updatedScope.isLeft) updatedScope
-    if (functionScope.isLeft) functionScope
+    if (functionScope.isLeft) return functionScope.left.toOption
 
-    val success = verifyStatement(f.code)
-    if (success.isLeft) success
-    else updatedScope
+    val success = verifyStatement(f.code)(functionScope.toOption.get.newScope(f.returnType))
+    success.left.toOption
   }
+
+  def declareFunction(scopeContext: ScopeContext, f: Func) = scopeContext.addFunc(
+      f.ident.name,
+      TypeProcessor.simple(f.types.map(_._1) -> f.returnType))
 
   def verifyProgram(program: Program): Either[List[String], ScopeContext] = {
     val emptyScope: Either[List[String], ScopeContext] = Right(new ScopeContext())
 
-    val initialScope = program.funcs.foldLeft(emptyScope) {
-      (scope, func) =>
-        scope match {
-          case Right(x) => verifyFunction(func)(x)
-          case Left(x) => Left(x)
-        }
-    }
+    val nominalScope = program.funcs.foldLeft(emptyScope)((s, f) => s match {
+      case Left(_) => s
+      case Right(sc) => declareFunction(sc, f)
+    })
+    if(nominalScope.isLeft) return nominalScope
 
-    if (initialScope.isLeft) initialScope
-    val mainScope = (initialScope.toOption.get).newScope(TypeMatcher.oneOf(List(None_T)))
+    val funcErrors = program.funcs.map(verifyFunction(_)(nominalScope.toOption.get))
+    val funcError = funcErrors.find(_.isDefined).flatten
+    if(funcError.isDefined) return Left(funcError.get)
 
+    val mainScope = (nominalScope.toOption.get).newScope()
     verifyStatement(program.stats)(mainScope)
   }
 }

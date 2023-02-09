@@ -1,10 +1,16 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.{DeclarationType, Func}
+import wacc.AbstractSyntaxTree.BaseT.Int_T
+import wacc.AbstractSyntaxTree.{BaseType, DeclarationType, Func}
 
 class Expectation(val expecting: TypeMatcher, var contextMessage: String) {
   def matchedWith(inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] = {
     expecting(inputs).left.map(contextMessage :: _)
+  }
+
+  def withContext(context: String): Expectation = {
+    this.contextMessage = context
+    this
   }
 }
 
@@ -21,17 +27,23 @@ object simpleExpectation {
 }
 
 object TypeMatcher {
-  /** Matches if both types are 'returnType', returning the type of the first variable. Returns an error otherwise.
-   * returnType can be 'baseType(Any_T)' to match any two identical types. */
+  /** Matches if both types are identical, returning returnType. Returns an error otherwise. */
   def identicalTypes(returnType: DeclarationType): Expectation = simpleExpectation((inputs: List[DeclarationType]) => {
-    if (inputs(0) == inputs(1)) Right(inputs(0))
+    if (inputs(0) is inputs(1)) Right(returnType)
+    else Left(List("Type mismatch: %s does not match %s\n".format(inputs(0), inputs(1))))
+  })
+
+  /** Matches if both types are identical, returning the first one. Returns an error otherwise. */
+  def identicalTypes: Expectation = simpleExpectation((inputs: List[DeclarationType]) => {
+    if (inputs(0) is inputs(1)) Right(inputs(0))
     else Left(List("Type mismatch: %s does not match %s\n".format(inputs(0), inputs(1))))
   })
 
   /** Matches if 'valids' contains the type it is matched with. Returns an error otherwise. */
   def oneOf(valids: List[DeclarationType]): Expectation = simpleExpectation((input: List[DeclarationType]) => {
-    if (valids.contains(input.head)) Right(input(0))
-    else Left(List(s"Type mismatch - Expected one of:  $valids  but received ${input(0)}"))
+    if (valids.find(_ is input(0)).isDefined) Right(input(0))
+    else Left(List(s"Type mismatch - Expected one of:  ${if(valids.length == 1) valids(0) else valids}  " +
+      s"but received ${input(0)}"))
   })
 }
 
@@ -39,14 +51,14 @@ object TypeProcessor {
   private def countMatches(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 0
     for ((expectedInput, input) <- expected zip inputs)
-      if (expectedInput.equals(input)) count += 1
+      if (expectedInput is input) count += 1
     count
   }
 
   private def firstMismatch(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
     var count = 1
     for ((expectedInput, input) <- expected zip inputs) {
-      if (!expectedInput.equals(input)) return count
+      if (!expectedInput.is(input)) return count
       count += 1
     }
     count

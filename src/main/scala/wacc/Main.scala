@@ -18,6 +18,7 @@ object Main {
           .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
         val inputProgram = file.mkString
         file.close
+        println(args.head)
 
         /* Compile */
         val ast = program.parse(inputProgram)
