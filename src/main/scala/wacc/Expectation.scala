@@ -1,7 +1,6 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.BaseT.Int_T
-import wacc.AbstractSyntaxTree.{BaseType, DeclarationType, Func}
+import wacc.AbstractSyntaxTree.{DeclarationType, Func}
 
 class Expectation(val expecting: TypeMatcher, var contextMessage: String) {
   def matchedWith(inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] = {
@@ -42,7 +41,7 @@ object TypeMatcher {
   /** Matches if 'valids' contains the type it is matched with. Returns an error otherwise. */
   def oneOf(valids: List[DeclarationType]): Expectation = simpleExpectation((input: List[DeclarationType]) => {
     if (valids.find(_ is input(0)).isDefined) Right(input(0))
-    else Left(List(s"Type mismatch - Expected one of:  ${if(valids.length == 1) valids(0) else valids}  " +
+    else Left(List(s"Type mismatch - Expected one of:  ${if (valids.length == 1) valids(0) else valids}  " +
       s"but received ${input(0)}"))
   })
 }
@@ -68,6 +67,8 @@ object TypeProcessor {
   *   returning the corresponding output type. */
   private def conditionalExpectation(valids: List[(List[DeclarationType], DeclarationType)])
                                     (inputs: List[Either[List[String], DeclarationType]]): Either[List[String], DeclarationType] = {
+    if (inputs.length != valids.length)
+      return Left(List(s"Mismatched argument count. Expected: ${valids.length} but received: ${inputs.length}"))
     val maybeError = inputs.find(_.isLeft)
     if (maybeError.isDefined) return maybeError.get
 
@@ -80,6 +81,8 @@ object TypeProcessor {
     val errorMessage = "Mismatched argument. Best guess: argument %d should be of type: %s but it was of type: %s"
       .format(mismatch, bestMatch._1(mismatch - 1), definitelyInputs(mismatch - 1))
     Left(List(errorMessage))
+
+
   }
 
   private def matchingExpectation(valids: (List[DeclarationType], DeclarationType))

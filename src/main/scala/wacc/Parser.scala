@@ -1,21 +1,24 @@
 package wacc
-import AbstractSyntaxTree._
-import wacc.AbstractSyntaxTree.UnaryOpType._
-import wacc.AbstractSyntaxTree.BinaryOpType._
+
 import parsley.Parsley
-import parsley.combinator.{choice, many, sepBy, sepBy1, some}
 import parsley.Parsley.{attempt, notFollowedBy, pure}
 import parsley.character.{letterOrDigit, stringOfMany}
-import parsley.expr.{InfixL, Ops, Postfix, Prefix, precedence}
+import parsley.combinator._
+import parsley.errors.combinator.ErrorMethods
+import parsley.expr._
 import parsley.implicits.character.charLift
+import wacc.AbstractSyntaxTree.BinaryOpType._
+import wacc.AbstractSyntaxTree.UnaryOpType._
+import wacc.AbstractSyntaxTree._
 import wacc.Parser.ExpressionParser.expression
 
 object Parser {
+
   import wacc.Lexer._
   import wacc.Lexer.implicits._
 
   object ArrayParser {
-    import parsley.combinator.sepBy1
+
     import Parser.ExpressionParser.expression
 
     lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression <~ "]").map(ArrayElem(_))
@@ -25,6 +28,7 @@ object Parser {
 
 
   object DeclarationTypeParser {
+
     import AbstractSyntaxTree.BaseT._
     import parsley.implicits.lift.Lift2
 
@@ -39,6 +43,7 @@ object Parser {
   }
 
   object PairParser {
+
     import LValueParser.lValue
 
     lazy val pairValue = pure(PairValue.tupled) <*> (("(" ~> expression <~ ",") <~> (expression <~ ")"))
@@ -48,6 +53,7 @@ object Parser {
   }
 
   object ExpressionParser {
+
     import Parser.ArrayParser.maybeArrayElem
     import Parser.PairParser.pairLiteral
 
@@ -65,6 +71,7 @@ object Parser {
         (identifier <**> maybeArrayElem) // Both an identifier and an array element can start with an 'ident'
 
     private def without[A](q: Parsley[A], p: Parsley[A]): Parsley[A] = attempt(p <~ notFollowedBy(q))
+
     private lazy val identCont = stringOfMany('_' <|> letterOrDigit)
 
     private lazy val _parseExpr: Parsley[Expr] = precedence(parseExprAtom, "(" ~> _parseExpr <~ ")")(
@@ -84,19 +91,20 @@ object Parser {
   }
 
   object LValueParser {
-    import PairParser.pairElement
+
     import ArrayParser.maybeArrayElem
+    import PairParser.pairElement
 
     lazy val lValue: Parsley[LVal] = (identifier <**> maybeArrayElem) <|> pairElement
   }
 
   object RValueParser {
-    import parsley.implicits.lift.Lift2
 
-    import parsley.combinator.sepBy
     import ArrayParser.arrayLiteral
-    import wacc.Parser.PairParser.{pairValue, pairElement}
+    import parsley.combinator.sepBy
+    import parsley.implicits.lift.Lift2
     import wacc.Parser.ExpressionParser.expression
+    import wacc.Parser.PairParser.{pairElement, pairValue}
 
     private lazy val newPair = "newpair" ~> pairValue
 
@@ -105,19 +113,28 @@ object Parser {
 
     lazy val rValue: Parsley[RVal] =
       expression <|>
-      newPair <|>
-      arrayLiteral <|>
-      pairElement <|>
+        newPair <|>
+        arrayLiteral <|>
+        pairElement <|>
         call
   }
 
+  def noReturnStat(stat: Stat): Boolean = stat match {
+    case IfStat(cond, stat1, stat2) => noReturnStat(stat1) || noReturnStat(stat2)
+    case WhileLoop(cond, stat1) => noReturnStat(stat1)
+    case BeginEndStat(stat1) => noReturnStat(stat1)
+    case StatList(statList) => noReturnStat(statList.last)
+    case Command(CmdT.Exit, _) | Command(CmdT.Ret, _) => false
+    case _ => true
+  }
+
   object StatementParser {
-    import parsley.implicits.lift.{Lift1, Lift2, Lift3}
-    import wacc.AbstractSyntaxTree.CmdT._
+
+    import DeclarationTypeParser.declarationType
     import LValueParser.lValue
     import RValueParser.rValue
-    import DeclarationTypeParser.declarationType
-
+    import parsley.implicits.lift.{Lift1, Lift2, Lift3}
+    import wacc.AbstractSyntaxTree.CmdT._
 
     private lazy val commandType =
       "free" #> Free <|> "return" #> Ret <|> "exit" #> Exit <|> "print" #> Print <|> "println" #> PrintLn
@@ -130,8 +147,8 @@ object Parser {
     private lazy val command = Command.lift(commandType, expression)
     private lazy val ifStat =
       IfStat.lift("if" ~> expression, "then" ~> statement, "else" ~> statement <~ "fi")
-    private lazy val whileLoop = WhileLoop.lift("while" ~> expression, "do" ~> statement<~ "done")
-    private lazy val program = BeginEndStat.lift("begin" ~> statement <~ "end")
+    private lazy val whileLoop = WhileLoop.lift("while" ~> expression, "do" ~> statement <~ "done")
+    private lazy val scopeStat = BeginEndStat.lift("begin" ~> statement <~ "end")
 
     private lazy val statementAtom: Parsley[Stat] =
       skipStat <|>
@@ -141,30 +158,35 @@ object Parser {
         command <|>
         ifStat <|>
         whileLoop <|>
-        program
+        scopeStat
 
     lazy val statement: Parsley[Stat] =
       attempt(((statementAtom <~ ";") <::> sepBy1(statementAtom, ";")).map(StatList)) <|> statementAtom
   }
 
   object FunctionParser {
+
     import DeclarationTypeParser.declarationType
-    import parsley.implicits.lift.{Lift4, Lift1}
     import StatementParser.statement
+    import parsley.implicits.lift.{Lift1, Lift4}
 
     private lazy val ident = IdentLiteral.lift(identifier)
     lazy val func = Func.lift(
       declarationType,
       ident,
       "(" ~> sepBy(declarationType <~> ident, ","),
-      ")" ~> "is" ~> statement <~ "end"
+      ")" ~> "is" ~> statement.filterOut {
+        case s if noReturnStat(s) => s"No exit or return statement"
+      } <~ "end"
     )
   }
 
   object ProgramParser {
-    import parsley.implicits.lift.Lift2
+
     import FunctionParser.func
     import StatementParser.statement
+    import parsley.implicits.lift.Lift2
+
     lazy val program = fully("begin" ~> Program.lift(many(attempt(func)), statement <~ "end"))
   }
 

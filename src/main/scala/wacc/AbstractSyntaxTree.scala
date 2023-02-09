@@ -135,7 +135,7 @@ object AbstractSyntaxTree {
   case class StatList(stats: List[Stat]) extends Stat
 
   object CmdT extends Enumeration {
-    type Cmd = Value
+    type  Cmd = Value
     val Free, Ret, Exit, Print, PrintLn = Value
   }
 

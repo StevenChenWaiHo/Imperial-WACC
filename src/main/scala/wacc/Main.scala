@@ -41,8 +41,8 @@ object Main {
 
         if (verified.isLeft) {
             verified.left.foreach(errList => {
-                errList.foreach(err => {
-                    println("Semantic Error: %s".format(err))
+                errList.reverse.foreach(err => {
+                  if(err != Nil) println("Semantic Error: %s".format(err))
                 })
             })
             sys.exit(200)

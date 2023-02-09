@@ -1,6 +1,7 @@
 package wacc
 
 import parsley.Parsley
+import parsley.errors.combinator.ErrorMethods
 
 object Lexer {
 
@@ -41,13 +42,13 @@ object Lexer {
   )
 
   private val lexer = new Lexer(desc)
-  val integer: Parsley[Int] = lexer.lexeme.numeric.signed.decimal32
-  val character: Parsley[Char] = lexer.lexeme.text.character.ascii
-  val boolean: Parsley[Boolean] = (lexer.lexeme.symbol.apply("true", "true") #> true) <|>
-    (lexer.lexeme.symbol.apply("false", "false") #> false)
-  val string: Parsley[String] = lexer.lexeme.text.string.ascii
+  val integer: Parsley[Int] = lexer.lexeme.numeric.signed.decimal32.label("Integer")
+  val character: Parsley[Char] = lexer.lexeme.text.character.ascii.label("Character")
+  val boolean: Parsley[Boolean] = ((lexer.lexeme.symbol.apply("true", "true") #> true) <|>
+    (lexer.lexeme.symbol.apply("false", "false") #> false)).label("Boolean")
+  val string: Parsley[String] = lexer.lexeme.text.string.ascii.label("String")
   val emptyPair: Parsley[Unit] = lexer.lexeme.symbol.apply("null", "null")
-  val identifier: Parsley[String] = lexer.lexeme.names.identifier
+  val identifier: Parsley[String] = lexer.lexeme.names.identifier.label("Variable")
 
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
 

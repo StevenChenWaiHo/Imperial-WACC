@@ -143,7 +143,7 @@ object SemanticAnalyser {
     val funcError = funcErrors.find(_.isDefined).flatten
     if(funcError.isDefined) return Left(funcError.get)
 
-    val mainScope = (nominalScope.toOption.get).newScope()
+    val mainScope = (nominalScope.toOption.get).newScope(None_T)
     verifyStatement(program.stats)(mainScope)
   }
 }
