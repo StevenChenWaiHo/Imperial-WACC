@@ -253,9 +253,33 @@ object SemanticAnalyser {
                 returnType(exp1)(context) match {
                   case Left(err) => Left(err)
                   case Right(e1Type) => {
+                    if (e1Type == NestedPair) {
+                      exp1 match {
+                        case IdentLiteral(x) => {
+                          if (context.findVar(x) != PairType) {
+                            Left(List("Not a nestedpair"))
+                          }
+                        }
+                        case default => {
+                          Left(List("Not identifier"))
+                        }
+                      }
+                    }
                     returnType(exp2)(context) match {
                       case Left(err) => Left(err)
                       case Right(e2Type) => {
+                        if (e2Type == NestedPair) {
+                          exp2 match {
+                            case IdentLiteral(x) => {
+                              if (context(findVar(x)) != PairType) {
+                                Left(List("Not a nested pair"))
+                              }
+                            }
+                            case default => {
+                              Left(List("Not identifier"))
+                            }
+                          }
+                        }
                         if (!fstType.equals(e1Type) || !sndType.equals(e2Type)) {
                           Left(List("Pair types do not match {(%s, %s), (%s, %s)}"
                           .format(fstType, sndType, e1Type, e2Type)))
