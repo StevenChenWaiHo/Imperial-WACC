@@ -14,8 +14,9 @@ object SemanticAnalyser {
     (input) =>
       input(0) match {
         case PairType(t1, t2) => Right(if (element == Fst) t1 else t2)
-        case _ => Left(List("Mismatched type: expected a pair but received: \n".format(input)))
-
+        case NestedPair() => Right(Any_T)
+        case _ => Left(List("Mismatched type: expected a pair but received: %s\n"
+          .format(if(input.length == 1) input(0) else input)))
       }
   }
 
