@@ -114,7 +114,7 @@ object AbstractSyntaxTree {
 
   case class Func(returnType: DeclarationType, ident: IdentLiteral, types: List[(DeclarationType, IdentLiteral)], code: Stat) extends ASTNode
 
-  sealed trait Stat extends ASTNode
+  sealed trait Stat extends ASTNode {}
 
   case class SkipStat() extends Stat
 

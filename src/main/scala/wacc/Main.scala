@@ -18,31 +18,23 @@ object Main {
           .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
         val inputProgram = file.mkString
         file.close
-        println(args.head)
 
         /* Compile */
         val ast = program.parse(inputProgram)
         ast match { 
             case Failure(err) => {
-                //println("Syntax Error: %s".format(err))
-                println("syntax")
+                println("Syntax Error: %s".format(err))
                 sys.exit(100)
             }
             case Success(x) =>
         }
 
         val verified = verifyProgram(ast.get)
-//////////////////////////////////////////////////////////
-      if (verified.isLeft) {
-        println("SEMANTIC")
-        sys.exit()
-      }
-      else sys.exit(0)
-
         if (verified.isLeft) {
+          print("Semantic Error: ")
             verified.left.foreach(errList => {
                 errList.reverse.foreach(err => {
-                  if(err != Nil) println("Semantic Error: %s".format(err))
+                  if(err != Nil) println(err)
                 })
             })
             sys.exit(200)
