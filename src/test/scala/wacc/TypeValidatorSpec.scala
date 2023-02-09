@@ -12,7 +12,7 @@ import wacc.ValidateExamples._
 
   implicit val emptyContext = new ScopeContext()
 
-  "Type Validator" can "validate base-type literals" in {
+  "Type Validator" can "validate base literals" in {
     for (base <- BaseLiteralExamples) {
       assert(returnType(base._1) == base._2)
     }
@@ -20,29 +20,34 @@ import wacc.ValidateExamples._
 
   // returnType is a placeholder function below
 
-  /*
-  "Type Validator" can "validate ident-type literals" in {
-    for (ident <- IdentLiteralExamples) {
-      var result = statement.parse(ident._1) // should be IdentLiteral("spam")
-      assert(returnType(result) == ident._2)
+  
+  // "Type Validator" can "validate ident-type literals" in {
+  //   for (ident <- IdentLiteralExamples) {
+  //     assert(returnType(ident._1) == ident._2)
+  //   }
+  // }
+
+  // "Type Validator" can "validate array-type literals" in {
+  //   for (array <- ArrayTypeExamples) {
+  //     assert(returnType(array._1) == array._2)
+  //   }
+  // }
+
+  // "Type Validator" can "validate pair-type literals" in {
+  //   for (pair <- PairTypeExamples) {
+  //     assert(returnType(pair._1) == pair._2)
+  //   }
+  // }
+
+    "Type Validator" can "validate unaryOps" in {
+    for (uop <- UnaryOpExamples) {
+      assert(returnType(uop._1) == uop._2)
     }
   }
 
-  "Type Validator" can "validate array-type literals" in {
-    for (array <- ArrayTypeExamples) {
-      assert(returnType(array._1) == array._2)
-    }
-  }
-
-  "Type Validator" can "validate pair-type literals" in {
-    for (pair <- PairTypeExamples) {
-      assert(returnType(pair._1) == pair._2)
-    }
-  }
-
-    "Type Validator" can "validate op-types" in {
-    for (op <- OpExamples) {
-      assert(returnType(op._1) == op._2)
+    "Type Validator" can "validate binaryOps" in {
+    for (bop <- BinaryOpExamples) {
+      assert(returnType(bop._1) == bop._2)
     }
   }
 }
