@@ -1,13 +1,14 @@
 package wacc
 
 import wacc.AbstractSyntaxTree.BaseT._
-import wacc.AbstractSyntaxTree.PairElemT._
+import wacc.AbstractSyntaxTree.CmdT._
 import wacc.AbstractSyntaxTree._
-import wacc.TypeValidator.{isHomogenousList, returnType, declarationTypeToEither}
-import wacc.TypeProcessor.fromFunction
-import wacc.AbstractSyntaxTree.CmdT.Ret
+import wacc.TypeValidator.{isHomogenousList, returnType}
 
 object SemanticAnalyser {
+
+  import TypeValidator.makeBaseType
+
   private def pairElementType(element: PairElemT.Elem) = simpleExpectation {
     (input) =>
       input match {
@@ -49,376 +50,94 @@ object SemanticAnalyser {
     }
   }
 
+  def verifyStatement(statement: Stat)(implicit scopeContext: ScopeContext): Either[List[String], ScopeContext] =
+    statement match {
+      // Make a new context from 'stat', and feed it to verifyStatement to verify 'stats'
+      case StatList(stat :: stats) => verifyStatement(stat).map(verifyStatement(StatList(stats))(_)).joinRight
+      case StatList(Nil) => Right(scopeContext)
+      case SkipStat() => Right(scopeContext)
+      case Declaration(dataType, ident, rValue) => {
+        // Make sure rValue and dataType are a pair of (any) matching data types
+        (TypeMatcher.identicalTypes(BaseType(Any_T)) matchedWith List(Right(dataType), rValType(rValue)))
+          // Drop the return type and replace it with the new context
+          .map(_ => scopeContext.addVar(ident.name, dataType)).joinRight
+      }
+      // Accept any two identical types. Drop the return type and replace it with the (unchanged) context.
+      case Assignment(lVal, rVal) => {
+        (TypeMatcher.identicalTypes(BaseType(Any_T)) matchedWith List(lValType(lVal), rValType(rVal)))
+          .map(_ => scopeContext)
+      }
+      // Only bools can't be written into (I think).
+      case Read(lVal) => (simpleExpectation((input) => input.head match {
+        case BaseType(Bool_T) => Left(List("Attempted to read into a boolean"))
+        case _ => Right(BaseType(None_T))
+      }) matchedWith List(lValType(lVal)))
+        .map(_ => scopeContext)
 
+      case Command(cmd, input) => {
+        val expectation = cmd match {
+          case Free => TypeMatcher.oneOf(List(PairType(Any_T, Any_T), ArrayType(Any_T)))
+          case Ret => scopeContext.expectedReturn
+          case Exit => TypeMatcher.oneOf(List(Int_T))
+          case Print => (TypeMatcher.oneOf(List(String_T)))
+          case PrintLn => (TypeMatcher.oneOf(List(String_T)))
+        }
+        (expectation matchedWith List(returnType(input)))
+          .map(_ => scopeContext)
+      }
+
+      case IfStat(cond, stat1, stat2) => {
+        val condReturn = TypeMatcher.oneOf(List(String_T)) matchedWith List(returnType(cond))
+        val stat1Return = verifyStatement(stat1)(scopeContext.newScope(TypeMatcher.oneOf(List(None_T))))
+        val stat2Return = verifyStatement(stat2)(scopeContext.newScope(TypeMatcher.oneOf(List(None_T))))
+
+        val returns = List(condReturn.map(_ => scopeContext), stat1Return, stat2Return)
+        returns.find(_.isLeft).getOrElse(Right(scopeContext))
+      }
+
+      case WhileLoop(cond, stat) => {
+        val condReturn = TypeMatcher.oneOf(List(String_T)) matchedWith List(returnType(cond))
+        val statReturn = verifyStatement(stat)(scopeContext.newScope(TypeMatcher.oneOf(List(None_T))))
+
+        val returns = List(condReturn.map(_ => scopeContext), statReturn)
+        returns.find(_.isLeft).getOrElse(Right(scopeContext))
+      }
+
+      case BeginEndStat(stat) => verifyStatement(stat)(scopeContext.newScope(TypeMatcher.oneOf(List(None_T))))
+    }
+
+  def verifyFunction(f: Func)(implicit scopeContext: ScopeContext): Either[List[String], ScopeContext] = {
+    val updatedScope = scopeContext.addFunc(
+      f.ident.name,
+      TypeProcessor.simple(f.types.map(_._1) -> f.returnType))
+    val functionScope = f.types.foldLeft(updatedScope) { (scope, arg) =>
+      scope match {
+        case Left(_) => scope
+        case Right(x) => x.addVar(arg._2.name, arg._1)
+      }
+    }
+    if (updatedScope.isLeft) updatedScope
+    if (functionScope.isLeft) functionScope
+
+    val success = verifyStatement(f.code)
+    if (success.isLeft) success
+    else updatedScope
+  }
 
   def verifyProgram(program: Program): Either[List[String], ScopeContext] = {
-    var topLevelContext = new ScopeContext()
-    for (func <- program.funcs) {
-      /* Ensure that funcs are added to top level symbol table */
-      topLevelContext = 
-        topLevelContext.addFunc(func.ident.name, fromFunction(func)) match {
-        case Left(err) => return Left(err)
-        case Right(newContext) => newContext
-      }
+    val emptyScope: Either[List[String], ScopeContext] = Right(new ScopeContext())
+
+    val initialScope = program.funcs.foldLeft(emptyScope) {
+      (scope, func) =>
+        scope match {
+          case Right(x) => verifyFunction(func)(x)
+          case Left(x) => Left(x)
+        }
     }
-    /* Verify each functions code */
-    for (func <- program.funcs) {
-      verifyFunc(topLevelContext, func) match {
-        case Left(err) => return Left(err)
-        case Right(value) => 
-      }
-    }
-    verifyStat(topLevelContext, program.stats)
-  }
 
-  private def verifyFunc(context: ScopeContext, func: Func): Either[List[String], ScopeContext] = {
-    var funcContext = context
-    /* Add all arguments to symbol table for func to use */
-    func.types.foreach(elem => {
-      funcContext = funcContext.addVar(elem._2.name, elem._1) match {
-        case Left(err) => return Left(err)
-        case Right(newContext) => newContext
-      }
-    })
-    verifyStat(funcContext, func.code)
-  }
+    if (initialScope.isLeft) initialScope
+    val mainScope = (initialScope.toOption.get).newScope(TypeMatcher.oneOf(List(None_T)))
 
-  private def verifyRValue(rVal: RVal): Unit = {
-
-  }
-
-  private def verifyStat(context: ScopeContext, stat: Stat): Either[List[String], ScopeContext] = {
-    //println(stat)
-    stat match {
-      case SkipStat() => Right(context)
-      case dec: Declaration => verifyDeclaration(context, dec)
-      case assignment: Assignment => verifyAssignment(context, assignment)
-      case ifStat: IfStat => verifyIf(context, ifStat)
-      case whileLoop: WhileLoop => verifyWhile(context, whileLoop)
-      case statList: StatList => verifyStatList(context, statList)
-      case Read(lvalue) => {
-        /*Not sure what this is*/
-        lValType(lvalue)(context) match {
-          case Left(err) => Left(err)
-          case Right(lType) => {
-            if (lType == BaseType(Int_T) || lType == BaseType(Char_T)) {
-              Right(context)
-            } else {
-              Left(List("Left value not character or integer"))
-            }
-          }
-        }
-      }
-      case Command(command, input) => {
-        /*Not sure what this is*/
-        // TODO: don't allow return in main func
-        if (command == Ret) {
-          /* Ensure correct value type is returned from function */
-          returnType(input)(context) match {
-            case Left(err) => Left(err)
-            case Right(iType) => {
-              val retType = Option(context.returnType())
-              if (retType.isEmpty) {
-                /* Don't allow return statement in main program */
-                return Right(context)
-              }
-              retType.get matchedWith(List(declarationTypeToEither(iType))) match {
-                case Left(err) => Left(List("Return type %s does not match function type %s".format(iType, context.returnType())))
-                case Right(mType) => Right(context)
-              }
-            }
-          }
-        }
-        Right(context)
-      }
-      case BeginEndStat(stat) => {
-        /* Ensure scoping is confined */
-        verifyStat(context, stat) match {
-          case Left(err) => Left(err)
-          case Right(newContext) => context 
-        }
-      }
-      
-    }
-  }
-
-  private def verifyDeclaration(context: ScopeContext, dec: Declaration): Either[List[String], ScopeContext] = {
-    dec match {
-      case Declaration(dataType, ident, rvalue) => {
-        if (context.findVar(ident.name).isRight) {
-          val decType = context.findVar(ident.name)
-          if (decType.equals(dataType)) {
-            Left(List("Variable " + ident.name + " exists in this scope already"))
-          }
-        }
-        dataType match {
-          case BaseType(baseType) => {
-            // int i = 0
-            rvalue match {
-              case IntLiteral(x) => {
-                dataType match {
-                  case BaseType(Int_T) => context.addVar(ident.name, BaseType(Int_T))
-                  case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(Int_T))))
-                }
-              }
-              case BoolLiteral(x) => {
-                dataType match {
-                  case BaseType(Bool_T) => context.addVar(ident.name, BaseType(Bool_T))
-                  case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(Bool_T))))
-                }
-              }
-              case CharLiteral(x) => {
-                dataType match {
-                  case BaseType(Char_T) => context.addVar(ident.name, BaseType(Char_T))
-                  case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(Char_T))))
-               }
-              }
-              case StringLiteral(x) => {
-                dataType match {
-                  case BaseType(String_T) => context.addVar(ident.name, BaseType(String_T))
-                  case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(String_T))))
-               }
-              }
-              // int i = n
-              case IdentLiteral(name) => {
-                context.findVar(name) match {
-                  case Left(err) => return Left(List("Identifier %s not in scope".format(name)))
-                  case Right(iType) => {
-                    if (iType != dataType) {
-                      Left(List("Identifier %s does not match type of %s {%s, %s}".format(name, ident.name, iType, dataType)))
-                    } else {
-                      Right(context)
-                    }
-                  }
-                }
-              }
-              // int i = i + 1
-              case binOp@BinaryOp(op, expr1, expr2) => {
-                returnType(binOp)(context) match {
-                  case Left(err) => Left(err)
-                  case Right(opType) => {
-                    if (!dataType.equals(opType)) {
-                      return Left(List("Incorrect type assignment"))
-                    }
-                    context.addVar(ident.name, opType)
-                  }
-                }
-              }
-              // int i = ord 'a'
-              case unOp@UnaryOp(op, expr) => {
-                returnType(unOp)(context) match {
-                  case Left(err) => Left(err)
-                  case Right(opType) => {
-                    if (dataType.equals(opType)) {
-                      return Left(List("Incorrect type assignment")) 
-                    }
-                    context.addVar(ident.name, opType)
-                  }
-                }
-              }
-              // int i = f()
-              case call@Call(funcIdent, args) => {
-                context.findFunc(funcIdent.name) match {
-                  case Left(err) => Left(List("Function %s not in scope".format(funcIdent.name)))
-                  case Right(exp) => {
-                    exp matchedWith List(declarationTypeToEither(dataType)) match {
-                      case Left(err) => Left(err)
-                      case Right(opType) => {
-                        context.addVar(ident.name, opType)
-                      }
-                    }
-                  }
-                }
-              }
-              case any => Left(List("rvalue %s not implemented".format(any)))
-            }
-          }
-          case NestedPair() => {
-            rvalue match {
-              case IdentLiteral(x) => {
-                if (context.findVar(x) != PairType) {
-                  return Left(List("Not a pair"))
-                }
-              }
-              case default => {
-                return Left(List("Not a pair"))
-              }
-            }
-            Left(List("Not Yet Implemented"))
-          }
-
-          case PairType(fstType, sndType) => {
-            rvalue match {
-              case PairValue(exp1, exp2) => {
-                if (returnType(exp1)(context) != Right(fstType) || returnType(exp2)(context) != Right(sndType)) {
-                  Left(List("Pair values do not match"))
-                } else {
-                  Left(List("Good Pair Value Not Yet Implemented"))
-                }
-              }
-              case _ => {
-                Left(List("Rhs not a pair"))
-              }
-            }
-          }
-          case ArrayType(dataType) => {
-            rvalue match {
-               case ArrayLiteral(elements) => {
-                  var newContext = context
-                 for (element <- elements) {
-                  returnType(element)(context) match {
-                    case Left(err) => Left(err)
-                    case Right(elementType) => {
-                      if (elementType != dataType) {
-                        return Left(List("Invalid Array Typing"))
-                      }
-                      context.addVar(ident.name, ArrayType(elementType)) match {
-                        case Left(err) => return Left(err)
-                        case Right(value) => newContext = value
-                      }
-                    }
-                  }
-                 }
-                 Right(newContext)
-               }
-              case default => {
-                return Left(List("Right side not array literal"))
-              }
-            }
-          }
-        }
-        /*and make sure dataType and rvalue have same type*/
-      }
-    }
-  }
-
-  private def verifyAssignment(context: ScopeContext, assignment: Assignment): Either[List[String], ScopeContext] = {
-    assignment match {
-      case Assignment(lvalue, rvalue) => {
-        /* Check if LHS is in scope */
-        val name = lvalue match {
-          case IdentLiteral(name) => name
-          case ArrayElem(name, indicies) => name
-        }
-        val lType = context.findVar(name) match {
-          case Left(err) => return Left(List("Identifier %s not in scope".format(name)))
-          case Right(t) => t
-        }
-        /* Check LHS and RHS are same type */
-        val rType = rvalue match {
-          case exp:Expr => returnType(exp)(context)
-          case ArrayLiteral(elements) => {
-            if (elements.isEmpty) {
-              // TODO: Can emoty array exist?
-              Left(List("Empty array on RHS"))
-            } else {
-              returnType(elements.head)(context) match {
-                case Left(err) => return Left(err)
-                case Right(aType) => {
-                  for (elem <- elements) {
-                    returnType(elem)(context) match {
-                      case Left(err) => return Left(err)
-                      case Right(eType) => {
-                        if (eType != aType) {
-                          return Left(List("Inconsistent types in RHS array assignment"))
-                        }
-                      }
-                    }
-                  }
-                  Right(ArrayType(aType))
-                }
-              }
-            }
-          }
-          case call@Call(funcIdent, args) => {
-            context.findFunc(funcIdent.name) match {
-              case Left(err) => Left(List("Function %s not in scope".format(funcIdent.name)))
-              case Right(exp) => {
-                exp matchedWith List(declarationTypeToEither(lType)) match {
-                  case Left(err) => Left(err)
-                  case Right(opType) => Right(lType)
-                }
-              }
-            }
-          }
-          case PairElement(elem, lvalue) => Left(List("Not implemented"))
-          case PairValue(exp1, exp2) => Left(List("Not implemented"))
-        }
-        rType match {
-          case Left(err) => Left(err)
-          case Right(t) => {
-            if (!lType.equals(t)) {
-              Left(List("Assignment types are not the same {%s, %s}".format(lType, rType)))
-            }
-            Right(context)
-          }
-        }
-      }
-    }
-  }
-
-  private def verifyIf(context: ScopeContext, ifStat: IfStat): Either[List[String], ScopeContext] = {
-    ifStat match {
-      case IfStat(cond, stat1, stat2) => {
-      /*Make sure cond is boolean, verify stat1 and stat2 and make sure there is fi*/
-      returnType(cond)(context) match {
-        case Left(err) => Left(err)
-        case Right(sType) => {
-          sType match {
-            case BaseType(Bool_T) => {
-              verifyStat(context, stat1) match {
-                case Left(err) => return Left(err)
-                case Right(_) => return verifyStat(context, stat2)
-              }
-            }
-            case _ => Left(List("Semantic Error: if condition is not of type Bool"))
-          }
-        }
-      }
-    }
-    }
-  }
-
-  private def verifyWhile(context: ScopeContext, whileLoop: WhileLoop): Either[List[String], ScopeContext] = {
-    whileLoop match {
-      case WhileLoop(cond, stat) => {
-        /*Make sure cond is boolean, verify stat*/
-        returnType(cond)(context) match {
-          case Left(err) => Left(err)
-          case Right(sType) => {
-            sType match {
-              case BaseType(Bool_T) => verifyStat(context, stat)
-              case _ => Left(List("Semantic Error: while condition is not of type Bool"))
-            }
-          }
-        }
-      }
-    }
-  }
-
-  private def verifyStatList(context: ScopeContext, statList: StatList): Either[List[String], ScopeContext] = {
-    statList match {
-      case StatList(statList) => {
-        /*verify stat in list*/
-        var newContext = context
-        for (stat <- statList) {
-          verifyStat(newContext, stat) match {
-            case Left(err) => return Left(err)
-            case Right(c) => newContext = c
-          }
-        }
-        Right(newContext)
-      }
-    }
+    verifyStatement(program.stats)(mainScope)
   }
 }
-
-/*
-  sealed trait Errors
-  case class DeclarationError(errorMessage: String) extends Errors
-  case class AssignmentError(errorMessage: String) extends Errors
-  case class ReadError(errorMessage: String) extends Errors
-  case class CommandError(errorMessage: String) extends Errors
-  case class ConditionError(errorMessage: String) extends Errors
-  case class ArrayError(errorMessage: String) extends Errors
-*/
