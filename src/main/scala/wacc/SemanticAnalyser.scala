@@ -54,12 +54,15 @@ object SemanticAnalyser {
   def verifyProgram(program: Program): Either[List[String], ScopeContext] = {
     var topLevelContext = new ScopeContext()
     for (func <- program.funcs) {
-      /* Ensure that funcs are added to top levek symbol table */
+      /* Ensure that funcs are added to top level symbol table */
       topLevelContext = 
         topLevelContext.addFunc(func.ident.name, fromFunction(func)) match {
         case Left(err) => return Left(err)
         case Right(newContext) => newContext
       }
+    }
+    /* Verify each functions code */
+    for (func <- program.funcs) {
       verifyFunc(topLevelContext, func) match {
         case Left(err) => return Left(err)
         case Right(value) => 
@@ -109,14 +112,31 @@ object SemanticAnalyser {
       case Command(command, input) => {
         /*Not sure what this is*/
         // TODO: don't allow return in main func
-        // if (command == Ret && context.getDepth() == 1) {
-        //   return Left(List("Cannot return from main program"))
-        // }
+        if (command == Ret) {
+          /* Ensure correct value type is returned from function */
+          returnType(input)(context) match {
+            case Left(err) => Left(err)
+            case Right(iType) => {
+              val retType = Option(context.returnType())
+              if (retType.isEmpty) {
+                /* Don't allow return statement in main program */
+                return Right(context)
+              }
+              retType.get matchedWith(List(declarationTypeToEither(iType))) match {
+                case Left(err) => Left(List("Return type %s does not match function type %s".format(iType, context.returnType())))
+                case Right(mType) => Right(context)
+              }
+            }
+          }
+        }
         Right(context)
       }
       case BeginEndStat(stat) => {
-        /*verify stat (What is this?)*/
-        verifyStat(context, stat)
+        /* Ensure scoping is confined */
+        verifyStat(context, stat) match {
+          case Left(err) => Left(err)
+          case Right(newContext) => context 
+        }
       }
       
     }
@@ -158,6 +178,19 @@ object SemanticAnalyser {
                   case BaseType(String_T) => context.addVar(ident.name, BaseType(String_T))
                   case _ => Left(List("Incorrect types during assignment {%s, %s}".format(dataType, BaseType(String_T))))
                }
+              }
+              // int i = n
+              case IdentLiteral(name) => {
+                context.findVar(name) match {
+                  case Left(err) => return Left(List("Identifier %s not in scope".format(name)))
+                  case Right(iType) => {
+                    if (iType != dataType) {
+                      Left(List("Identifier %s does not match type of %s {%s, %s}".format(name, ident.name, iType, dataType)))
+                    } else {
+                      Right(context)
+                    }
+                  }
+                }
               }
               // int i = i + 1
               case binOp@BinaryOp(op, expr1, expr2) => {
@@ -217,15 +250,60 @@ object SemanticAnalyser {
           case PairType(fstType, sndType) => {
             rvalue match {
               case PairValue(exp1, exp2) => {
-                if (returnType(exp1)(context) != Right(fstType) || returnType(exp2)(context) != Right(sndType)) {
-                  Left(List("Pair values do not match"))
-                } else {
-                  Left(List("Good Pair Value Not Yet Implemented"))
+                returnType(exp1)(context) match {
+                  case Left(err) => Left(err)
+                  case Right(e1Type) => {
+                    returnType(exp2)(context) match {
+                      case Left(err) => Left(err)
+                      case Right(e2Type) => {
+                        if (!fstType.equals(e1Type) || !sndType.equals(e2Type)) {
+                          Left(List("Pair types do not match {(%s, %s), (%s, %s)}"
+                          .format(fstType, sndType, e1Type, e2Type)))
+                        } else {
+                          context.addVar(ident.name, PairType(e1Type, e2Type))
+                        }
+                      }
+                    }
+                  }
                 }
               }
-              case _ => {
-                Left(List("Rhs not a pair"))
+              case PairLiteral() => {
+                // TODO: adjust PairType to allow for nested pairs
+                context.addVar(ident.name, PairType(fstType, sndType))
               }
+              case IdentLiteral(name) => {
+                context.findVar(name) match {
+                  case Left(err) => Left(err)
+                  case Right(rType) => {
+                    if (rType.equals(PairType(fstType, sndType))) {
+                      context.addVar(ident.name, PairType(fstType, sndType))
+                    } else {
+                      Left(List("Pair types do not match {(%s, %s), %s}"
+                      .format(fstType, sndType, rType)))
+                    }
+                  }
+                }
+              }
+              case Call(ident, args) => {
+                context.findFunc(ident.name) match {
+                  case Left(err) => Left(err)
+                  case Right(exp) => {
+                    exp matchedWith(List(declarationTypeToEither(PairType(fstType, sndType)))) match {
+                      case Left(err) => Left(err)
+                      case Right(rType) => {
+                        if (rType.equals(PairType(fstType, sndType))) {
+                          context.addVar(ident.name, PairType(fstType, sndType))
+                        } else {
+                          Left(List("Pair types do not match {(%s, %s), %s}"
+                          .format(fstType, sndType, rType)))
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              case PairElement(elem, lvalue) => Left(List("PairElement not implemented"))
+              case any => Left(List("RHS is not a pair {%s}".format(any)))
             }
           }
           case ArrayType(dataType) => {
