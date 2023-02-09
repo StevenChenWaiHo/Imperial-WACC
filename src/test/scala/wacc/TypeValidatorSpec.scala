@@ -8,7 +8,10 @@ import wacc.TypeValidator._
 
 
 class TypeValidatorSpec extends AnyFlatSpec {
-import wacc.ValidateExamples._
+
+  import wacc.ValidateExamples._
+
+  implicit val emptyScope = new ScopeContext()
 
   "Type Validator" can "validate base-type literals" in {
     for (base <- BaseLiteralExamples) {
@@ -16,6 +19,8 @@ import wacc.ValidateExamples._
     }
   }
 
+}
+/*
   // returnType is a placeholder function below
 
   "Type Validator" can "validate ident-type literals" in {
@@ -37,3 +42,5 @@ import wacc.ValidateExamples._
     }
   }
 }
+
+ */

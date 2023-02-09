@@ -67,7 +67,6 @@ object SemanticAnalyser {
         (TypeMatcher.identicalTypes(BaseType(Any_T)) matchedWith List(lValType(lVal), rValType(rVal)))
           .map(_ => scopeContext)
       }
-      // Only bools can't be written into (I think).
       case Read(lVal) => (simpleExpectation((input) => input.head match {
         case BaseType(Bool_T) => Left(List("Attempted to read into a boolean"))
         case _ => Right(BaseType(None_T))
@@ -79,8 +78,8 @@ object SemanticAnalyser {
           case Free => TypeMatcher.oneOf(List(PairType(Any_T, Any_T), ArrayType(Any_T)))
           case Ret => scopeContext.expectedReturn
           case Exit => TypeMatcher.oneOf(List(Int_T))
-          case Print => (TypeMatcher.oneOf(List(String_T)))
-          case PrintLn => (TypeMatcher.oneOf(List(String_T)))
+          case Print => (TypeMatcher.oneOf(List(Any_T)))
+          case PrintLn => (TypeMatcher.oneOf(List(Any_T)))
         }
         (expectation matchedWith List(returnType(input)))
           .map(_ => scopeContext)

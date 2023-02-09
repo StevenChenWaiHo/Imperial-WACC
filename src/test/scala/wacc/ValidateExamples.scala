@@ -13,7 +13,7 @@ object ValidateExamples {
 
   var IdentLiteralExamples = Set(
     "int spam = 3" -> Right(BaseType(Int_T)),
-    "bool spam = true" -> Right(BaseType(Bool_)),
+    "bool spam = true" -> Right(BaseType(Bool_T)),
     "char spam = 'q'" -> Right(BaseType(Char_T)),
     "string spam = \"spam\"" -> Right(BaseType(String_T)),
     "int[] spam = [1, 2]" -> Right(ArrayType(BaseType(Int_T))),
