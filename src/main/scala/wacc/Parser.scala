@@ -131,7 +131,7 @@ object Parser {
     private lazy val ifStat =
       IfStat.lift("if" ~> expression, "then" ~> statement, "else" ~> statement <~ "fi")
     private lazy val whileLoop = WhileLoop.lift("while" ~> expression, "do" ~> statement<~ "done")
-    private lazy val program = BeginEndStat.lift("begin" ~> statement<~ "end")
+    private lazy val program = BeginEndStat.lift("begin" ~> statement <~ "end")
 
     private lazy val statementAtom: Parsley[Stat] =
       skipStat <|>

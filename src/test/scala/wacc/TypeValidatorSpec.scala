@@ -4,6 +4,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import parsley.Success
 import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree._
+import wacc.Parser.StatementParser
 import wacc.Parser.StatementParser.statement
 import wacc.TypeValidator._
 
@@ -29,6 +30,7 @@ class TypeValidatorSpec extends AnyFlatSpec {
     for(pair <- valids) assert(pair._1 is pair._2)
   }
 }
+
 /*
   // returnType is a placeholder function below
 

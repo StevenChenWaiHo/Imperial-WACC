@@ -21,10 +21,10 @@ object SemanticAnalyser {
   }
 
   private def arrayNestedType(array: DeclarationType, indices: Int): Either[List[String], DeclarationType] = array match {
-    case ArrayType(innerType) if indices != 0 => arrayNestedType(innerType, indices - 1)
-    case someType if indices == 0 => Right(someType)
-    case someType if indices != 0 => Left(List("Attempted to dereference non-array type: %s\n".format(someType)))
-  }
+      case ArrayType(innerType) if indices != 0 => arrayNestedType(innerType, indices - 1)
+      case someType if indices == 0 => Right(someType)
+      case someType if indices != 0 => Left(List("Attempted to dereference non-array type: %s\n".format(someType)))
+    }
 
   def rValType(rVal: RVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = rVal match {
     case rVal: Expr => returnType(rVal)
@@ -54,7 +54,6 @@ object SemanticAnalyser {
   }
 
   def verifyStatement(statement: Stat)(implicit scopeContext: ScopeContext): Either[List[String], ScopeContext] = {
-//    println(scopeContext.expectedReturn() matchedWith(List(Right(BaseType(Char_T)))))
     statement match {
       // Make a new context from 'stat', and feed it to verifyStatement to verify 'stats'
       case StatList(stat :: stats) => verifyStatement(stat).map(verifyStatement(StatList(stats))(_)).joinRight
@@ -63,6 +62,7 @@ object SemanticAnalyser {
       case Declaration(dataType, ident, rValue) => {
         // Make sure rValue and dataType are a pair of (any) matching data types
         val matcher = TypeMatcher.identicalTypes(BaseType(Any_T)) withContext s"In variable declaration for '$ident'\n"
+
         (matcher matchedWith List(Right(dataType), rValType(rValue)))
           // Drop the return type and replace it with the new context
           .map(_ => scopeContext.addVar(ident.name, dataType)).joinRight
@@ -108,7 +108,7 @@ object SemanticAnalyser {
         returns.find(_.isLeft).getOrElse(Right(scopeContext))
       }
 
-      case BeginEndStat(stat) => verifyStatement(stat)(scopeContext.newScope())
+      case BeginEndStat(stat) => verifyStatement(stat)(scopeContext.newScope()).map(_ => scopeContext)
     }
   }
 
