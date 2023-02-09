@@ -27,7 +27,7 @@ class ExpressionParserSpec extends AnyFlatSpec {
   }
 
   "Expression Parser" can "parse a string" in {
-    assert(expression.parse("\"+ - ' true false\"") == Success(StringLiteral("+ - ' true false")))
+    assert(expression.parse("\"+ - \\\' true false\"") == Success(StringLiteral("+ - ' true false")))
   }
 
   "Expression Parser" can "parse null" in {
