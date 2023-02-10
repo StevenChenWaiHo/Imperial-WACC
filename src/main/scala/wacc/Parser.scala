@@ -23,7 +23,8 @@ object Parser {
 
     lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression.label("Expression for array index") <~ "]").map(ArrayElem(_))
     lazy val maybeArrayElem: Parsley[String => Expr with LVal] = choice(arrayIndices, pure(IdentLiteral(_)))
-    lazy val arrayLiteral = ("[" ~> sepBy(expression.label("Expression"), ",") <~ "]").map(ArrayLiteral)
+    lazy val arrayLiteral = ("[".label("End of array declaration") ~> sepBy(expression.label("Expression"), 
+                             ",".label("Comma separator")) <~ "]".label("End of array declaration")).map(ArrayLiteral)
   }
 
 
@@ -34,11 +35,13 @@ object Parser {
 
     lazy val baseTypeType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
     private lazy val baseType = baseTypeType.map(BaseType)
-    private lazy val pairType = PairType.lift("pair" ~> "(" ~> pairElemType.label("Type") <~ ",", pairElemType.label("Type") <~ ")")
+    private lazy val pairType = PairType.lift("pair" ~> "(".label("Start of pair declaration") ~> pairElemType.label("Type of first expression in pair") <~ ",".label("Comma separator"), 
+                                              pairElemType.label("Type of second expression in pair") <~ ")".label("End of pair declaration"))
+                                              .explain("Declaring a pair requires the format pair(type1, type2)")
     private lazy val pairElemType: Parsley[DeclarationType] =
-      (("pair" <~ notFollowedBy("(")) #> NestedPair()) <|> declarationType
+      (("pair" <~ notFollowedBy("(").label("Start of pair declaration")) #> NestedPair()) <|> declarationType
     lazy val declarationType: Parsley[DeclarationType] = precedence[DeclarationType](pairType, baseType)(
-      Ops[DeclarationType](Postfix)("[" ~> "]" #> ArrayType)
+      Ops[DeclarationType](Postfix)("[".label("Start of array declaration") ~> "]".label("End of array declaration") #> ArrayType)
     )
   }
 
@@ -46,7 +49,9 @@ object Parser {
 
     import LValueParser.lValue
 
-    lazy val pairValue = pure(PairValue.tupled) <*> (("(" ~> expression.label("First element in pair") <~ ",") <~> (expression.label("Second element in pair") <~ ")"))
+    lazy val pairValue = pure(PairValue.tupled) <*> (("(".label("Start of pair") ~> expression.label("First expression in pair") <~ ",".label("Comma separator")) 
+                                                      <~> (expression.label("Second expression in pair") <~ ")".label("End of pair")))
+                                                           .explain("Assigning a pair requires the format newpair(fst, snd)")
     private lazy val pairElementType = ("fst" #> PairElemT.Fst <|> "snd" #> PairElemT.Snd)
     lazy val pairElement = pure(PairElement.tupled) <*> (pairElementType <~> lValue)
     lazy val pairLiteral = emptyPair #> PairLiteral()
@@ -85,7 +90,7 @@ object Parser {
       Ops[Expr](InfixL)("==" #> BinaryOp(Eq), "!=" #> BinaryOp(Neq)),
       Ops[Expr](InfixL)("&&" #> BinaryOp(And)),
       Ops[Expr](InfixL)("||" #> BinaryOp(Or))
-    )
+    ).hide
 
     lazy val expression: Parsley[Expr] = _parseExpr
   }
@@ -106,7 +111,7 @@ object Parser {
     import wacc.Parser.ExpressionParser.expression
     import wacc.Parser.PairParser.{pairElement, pairValue}
 
-    private lazy val newPair = "newpair" ~> pairValue
+    private lazy val newPair = "newpair".label("Pair assignment keyword").explain("Assigning a pair requires the format newpair(fst, snd)") ~> pairValue
 
     private lazy val call = Call.lift("call" ~> identifier.map(IdentLiteral),
       "(" ~> (sepBy(expression, ",") <~ ")"))
