@@ -17,6 +17,15 @@ object Parser {
   import wacc.Lexer._
   import wacc.Lexer.implicits._
 
+  def noReturnStat(stat: Stat): Boolean = stat match {
+    case IfStat(cond, stat1, stat2) => noReturnStat(stat1) || noReturnStat(stat2)
+    case WhileLoop(cond, stat1) => noReturnStat(stat1)
+    case BeginEndStat(stat1) => noReturnStat(stat1)
+    case StatList(statList) => noReturnStat(statList.last)
+    case Command(CmdT.Exit, _) | Command(CmdT.Ret, _) => false
+    case _ => true
+  }
+
   object ArrayParser {
 
     import Parser.ExpressionParser.expression

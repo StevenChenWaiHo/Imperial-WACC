@@ -13,7 +13,7 @@ object ParseExamples {
     "[3 + exp, 12]" -> ArrayLiteral(List(BinaryOp(BinaryOpType.Add, IntLiteral(3), IdentLiteral("exp")), IntLiteral(12))),
     "newpair (3 + exp, 12)" -> PairValue(BinaryOp(BinaryOpType.Add, IntLiteral(3), IdentLiteral("exp")), IntLiteral(12)),
     "fst fst_var" -> PairElement(PairElemT.Fst, IdentLiteral("fst_var")),
-    "call call_ident" -> Call(IdentLiteral("call_ident"), List())
+    "call call_ident()" -> Call(IdentLiteral("call_ident"), List())
   )
 
   var lValExamples = Set(
@@ -27,7 +27,7 @@ object ParseExamples {
   )
 
   var statExamples = Set(
-    "skip" -> SkipStat(),
+    "println \"b\";\nreturn 3" -> StatList(List(Command(CmdT.PrintLn, StringLiteral("b")),Command(CmdT.Ret, IntLiteral(3)))),
     "return 12;\nreturn 13" -> StatList(List(Command(CmdT.Ret, IntLiteral(12)), Command(CmdT.Ret, IntLiteral(13))))
   )
 
