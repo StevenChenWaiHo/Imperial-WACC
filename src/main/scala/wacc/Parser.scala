@@ -178,7 +178,7 @@ object Parser {
       ")" ~> "is" ~> statement.filterOut {
         case s if noReturnStat(s) => s"No exit or return statement"
       } <~ "end"
-    ).label("Function Declaration").explain("Function declaration are <type> <function_name> (<parameter_list> is <body>)")
+    ).label("Function Declaration").explain("Function declaration are <type> <function_name> (<parameter_list>) is <body>")
   }
 
   object ProgramParser {
