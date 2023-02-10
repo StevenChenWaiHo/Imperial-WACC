@@ -23,8 +23,10 @@ object Parser {
 
     lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression.label("Expression for array index") <~ "]").map(ArrayElem(_))
     lazy val maybeArrayElem: Parsley[String => Expr with LVal] = choice(arrayIndices, pure(IdentLiteral(_)))
-    lazy val arrayLiteral = ("[".label("End of array declaration") ~> sepBy(expression.label("Expression"), 
-                             ",".label("Comma separator")) <~ "]".label("End of array declaration")).map(ArrayLiteral)
+    lazy val arrayLiteral = ("[".label("End of array declaration").explain("Declaring an array requires the format <type>[]") ~> 
+                             sepBy(expression.label("Expression").explain("Declaring an array requires the format <type>[]"), 
+                             ",".label("Comma separator")).explain("Declaring an array requires the format <type>[]") 
+                             <~ "]".label("End of array declaration").explain("Declaring an array requires the format <type>[]")).map(ArrayLiteral)
   }
 
 
@@ -35,9 +37,11 @@ object Parser {
 
     lazy val baseTypeType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
     private lazy val baseType = baseTypeType.map(BaseType)
-    private lazy val pairType = PairType.lift("pair" ~> "(".label("Start of pair declaration") ~> pairElemType.label("Type of first expression in pair") <~ ",".label("Comma separator"), 
-                                              pairElemType.label("Type of second expression in pair") <~ ")".label("End of pair declaration"))
-                                              .explain("Declaring a pair requires the format pair(type1, type2)")
+    private lazy val pairType = PairType.lift("pair" ~> "(".label("Start of pair declaration").explain("Declaring a pair requires the format pair(type1, type2)") 
+                                              ~> pairElemType.label("Type of first expression in pair").explain("Declaring a pair requires the format pair(type1, type2)") 
+                                              <~ ",".label("Comma separator").explain("Declaring a pair requires the format pair(type1, type2)"), 
+                                              pairElemType.label("Type of second expression in pair").explain("Declaring a pair requires the format pair(type1, type2)") 
+                                              <~ ")".label("End of pair declaration").explain("Declaring a pair requires the format pair(type1, type2)"))
     private lazy val pairElemType: Parsley[DeclarationType] =
       (("pair" <~ notFollowedBy("(").label("Start of pair declaration")) #> NestedPair()) <|> declarationType
     lazy val declarationType: Parsley[DeclarationType] = precedence[DeclarationType](pairType, baseType)(
@@ -142,18 +146,18 @@ object Parser {
     import wacc.AbstractSyntaxTree.CmdT._
 
     private lazy val commandType =
-      "free" #> Free <|> "return" #> Ret <|> "exit" #> Exit <|> "print" #> Print <|> "println" #> PrintLn
+      "free".hide #> Free <|> "return".hide #> Ret <|> "exit".hide #> Exit <|> "print".hide #> Print <|> "println".hide #> PrintLn
 
-    private lazy val skipStat = "skip" #> SkipStat()
+    private lazy val skipStat = "skip".hide #> SkipStat()
     private lazy val identLiteral = IdentLiteral.lift(identifier)
     private lazy val declaration = Declaration.lift(declarationType.label("Variable type"), identLiteral.label("Variable name"), "=" ~> rValue.label("Value"))
     private lazy val assignment = Assignment.lift(lValue.label("Variable name"), "=" ~> rValue.label("Value"))
-    private lazy val read = "read" ~> Read.lift(lValue)
+    private lazy val read = "read".hide ~> Read.lift(lValue)
     private lazy val command = Command.lift(commandType, expression.label("Expression"))
     private lazy val ifStat =
-      IfStat.lift("if" ~> expression.label("Conditions"), "then" ~> statement.label("Statement for true"), "else" ~> statement.label("Statement for false") <~ "fi")
-    private lazy val whileLoop = WhileLoop.lift("while" ~> expression.label("Conditions"), "do" ~> statement <~ "done")
-    private lazy val scopeStat = BeginEndStat.lift("begin" ~> statement <~ "end")
+      IfStat.lift("if" ~> expression.label("Conditions"), "then" ~> statement.label("Statement for true"), "else" ~> statement.label("Statement for false") <~ "fi").hide
+    private lazy val whileLoop = WhileLoop.lift("while" ~> expression.label("Conditions"), "do" ~> statement <~ "done").hide
+    private lazy val scopeStat = BeginEndStat.lift("begin".hide ~> statement.label("Statements") <~ "end").explain("Declaring a program requires the format: begin <statements> end")
 
     private lazy val statementAtom: Parsley[Stat] =
       skipStat <|>
