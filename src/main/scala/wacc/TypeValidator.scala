@@ -4,24 +4,19 @@ import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree._
+import wacc.SemanticAnalyser.{lValType, rValType}
 
 import javax.management.InvalidAttributeValueException
 
 
 case class Scope(val vars: Map[String, DeclarationType],
                  val funcs: Map[String, Expectation],
-                 val nextReturn: Expectation)
+                 val nextReturn: DeclarationType)
 
 class ScopeContext(scopeStack: List[Scope]) {
   if (scopeStack.isEmpty) throw new InvalidAttributeValueException("Context cannot be empty")
 
   def this() = this(List(new Scope(Map(), Map(), null)))
-
-  def returnType(): Expectation = this.scopeStack match {
-      case Scope(_, _, retType) :: scopes => {
-        retType
-      }
-    } 
 
   def findVar(name: String): Either[List[String], DeclarationType] = {
 
@@ -38,7 +33,6 @@ class ScopeContext(scopeStack: List[Scope]) {
 
 
   def findFunc(name: String): Either[List[String], Expectation] = {
-
     def findFunc1(stack: List[Scope]): Either[List[String], Expectation] = stack match {
       case Scope(_, funcs, _) :: scopes => {
         funcs.get(name).map(Right(_))
@@ -52,12 +46,14 @@ class ScopeContext(scopeStack: List[Scope]) {
 
   def addVar(name: String,
              decType: DeclarationType,
-            ): Either[List[String], ScopeContext] = scopeStack match {
-    case Scope(vars, funcs, returnType) :: scopes => {
-      if (vars.contains(name) && vars.get(name).equals(decType)) Left(List("Variable %s has already been defined in this scope\n".format(name)))
-      else Right(new ScopeContext(Scope(vars.updated(name, decType), funcs, returnType) :: scopes))
+            ): Either[List[String], ScopeContext] = {
+    scopeStack match {
+      case Scope(vars, funcs, returnType) :: scopes => {
+        if (vars.contains(name)) Left(List("Variable %s has already been defined in this scope\n".format(name)))
+        else Right(new ScopeContext(Scope(vars.updated(name, decType), funcs, returnType) :: scopes))
+      }
+      case _ => throw new InvalidAttributeValueException("Empty context: this should never happen.")
     }
-    case _ => throw new InvalidAttributeValueException("Empty context: this should never happen.")
   }
 
   def addFunc(name: String, expects: Expectation): Either[List[String], ScopeContext] = scopeStack match {
@@ -70,8 +66,14 @@ class ScopeContext(scopeStack: List[Scope]) {
         Right(new ScopeContext(List(Scope(currentScope.vars, currentScope.funcs.updated(name, expects), returnType))))
       }
   }
+  def expectedReturn(): Expectation = TypeMatcher.oneOf(List(nextReturn()))
 
-  def getDepth(): Int = scopeStack.length
+  def nextReturn(): DeclarationType = scopeStack.head.nextReturn
+
+  def newScope(returnType: DeclarationType): ScopeContext =
+    new ScopeContext(new Scope(Map(), Map(), returnType) :: scopeStack)
+
+  def newScope(): ScopeContext = newScope(nextReturn())
 }
 
 
@@ -92,6 +94,9 @@ object TypeValidator {
     case BoolLiteral(_) => BaseType(Bool_T)
     case CharLiteral(_) => BaseType(Char_T)
     case StringLiteral(_) => BaseType(String_T)
+    case PairLiteral() => PairType(Any_T, Any_T)
+    case expr: ArrayElem => lValType(expr)
+    case expr: PairLiteral => rValType(expr)
     case IdentLiteral(name) => context.findVar(name)
     case UnaryOp(op, x) => UnaryOpExpectations(op) matchedWith returnType(x)
     case BinaryOp(op, x1, x2) => BinaryOpExpectations(op) matchedWith List(returnType(x1), returnType(x2))
@@ -104,7 +109,7 @@ object TypeValidator {
         case Right(retType) => TypeProcessor.simple(List(retType) -> retType) matchedWith (isHomogenousList(exprs))
         case Left(errors) => Left(errors)
       }
-      case Nil => Right(BaseType(None_T))
+      case Nil => Right(BaseType(Any_T))
     }
   }
 
@@ -120,11 +125,6 @@ object TypeValidator {
   private val boolComparisonTypes =
     TypeProcessor.conditional(List(List(Int_T, Int_T) -> Bool_T, List(Char_T, Char_T) -> Bool_T))
 
-  private val identicalTypes = (returnType: DeclarationType) => simpleExpectation((inputs: List[DeclarationType]) => {
-    if (inputs(0) == inputs(1)) Right(returnType)
-    else Left(List("Only matching types may be compared using == and !=\n"))
-  })
-
   private val BinaryOpExpectations = Map[BinOp, Expectation](
     BinaryOpType.Mul -> TypeProcessor.simple(List(Int_T, Int_T) -> Int_T),
     BinaryOpType.Div -> TypeProcessor.simple(List(Int_T, Int_T) -> Int_T),
@@ -135,8 +135,8 @@ object TypeValidator {
     BinaryOpType.Gte -> boolComparisonTypes,
     BinaryOpType.Lt -> boolComparisonTypes,
     BinaryOpType.Lte -> boolComparisonTypes,
-    BinaryOpType.Eq -> identicalTypes(BaseType(Bool_T)),
-    BinaryOpType.Neq -> identicalTypes(BaseType(Bool_T)),
+    BinaryOpType.Eq -> TypeMatcher.identicalTypes(Bool_T),
+    BinaryOpType.Neq -> TypeMatcher.identicalTypes(Bool_T),
     BinaryOpType.And -> TypeProcessor.simple(List(Bool_T, Bool_T) -> Bool_T),
     BinaryOpType.Or -> TypeProcessor.simple(List(Bool_T, Bool_T) -> Bool_T)
   )

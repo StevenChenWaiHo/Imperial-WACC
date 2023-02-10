@@ -2,13 +2,18 @@ package wacc
 
 import org.scalatest.flatspec.AnyFlatSpec
 import parsley.Success
+import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree._
+import wacc.Parser.StatementParser
 import wacc.Parser.StatementParser.statement
 import wacc.TypeValidator._
 
 
 class TypeValidatorSpec extends AnyFlatSpec {
-import wacc.ValidateExamples._
+
+  import wacc.ValidateExamples._
+
+  implicit val emptyScope = new ScopeContext()
 
   implicit val emptyContext = new ScopeContext()
 
@@ -18,6 +23,17 @@ import wacc.ValidateExamples._
     }
   }
 
+  "DeclarationTypes" can "be compared" in {
+    val valids = Set(
+      BaseType(Int_T) -> BaseType(Any_T),
+      BaseType(Any_T) -> BaseType(Int_T),
+      BaseType(Int_T) -> BaseType(Int_T)
+    )
+    for(pair <- valids) assert(pair._1 is pair._2)
+  }
+}
+
+/*
   // returnType is a placeholder function below
 
   
@@ -52,3 +68,11 @@ import wacc.ValidateExamples._
   }
 }
 
+  "Type Validator" can "validate pair-type literals" in {
+    for (pair <- PairTypeExamples) {
+      assert(returnType(pair._1) == pair._2)
+    }
+  }
+}
+
+ */

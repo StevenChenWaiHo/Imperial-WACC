@@ -26,14 +26,15 @@ object Main {
                 println("Syntax Error: %s".format(err))
                 sys.exit(100)
             }
-            case Success(x) => 
+            case Success(x) =>
         }
 
         val verified = verifyProgram(ast.get)
         if (verified.isLeft) {
+          print("Semantic Error: ")
             verified.left.foreach(errList => {
-                errList.foreach(err => {
-                    println("Semantic Error: %s".format(err))
+                errList.reverse.foreach(err => {
+                  if(err != Nil) println(err)
                 })
             })
             sys.exit(200)
