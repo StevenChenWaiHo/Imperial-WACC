@@ -21,9 +21,9 @@ object Parser {
 
     import Parser.ExpressionParser.expression
 
-    lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression <~ "]").map(ArrayElem(_))
+    lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression.label("Expression for array index") <~ "]").map(ArrayElem(_))
     lazy val maybeArrayElem: Parsley[String => Expr with LVal] = choice(arrayIndices, pure(IdentLiteral(_)))
-    lazy val arrayLiteral = ("[" ~> sepBy(expression, ",") <~ "]").map(ArrayLiteral)
+    lazy val arrayLiteral = ("[" ~> sepBy(expression.label("Expression"), ",") <~ "]").map(ArrayLiteral)
   }
 
 
@@ -34,7 +34,7 @@ object Parser {
 
     lazy val baseTypeType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
     private lazy val baseType = baseTypeType.map(BaseType)
-    private lazy val pairType = PairType.lift("pair" ~> "(" ~> pairElemType <~ ",", pairElemType <~ ")")
+    private lazy val pairType = PairType.lift("pair" ~> "(" ~> pairElemType.label("Type") <~ ",", pairElemType.label("Type") <~ ")")
     private lazy val pairElemType: Parsley[DeclarationType] =
       (("pair" <~ notFollowedBy("(")) #> NestedPair()) <|> declarationType
     lazy val declarationType: Parsley[DeclarationType] = precedence[DeclarationType](pairType, baseType)(
@@ -46,7 +46,7 @@ object Parser {
 
     import LValueParser.lValue
 
-    lazy val pairValue = pure(PairValue.tupled) <*> (("(" ~> expression <~ ",") <~> (expression <~ ")"))
+    lazy val pairValue = pure(PairValue.tupled) <*> (("(" ~> expression.label("First element in pair") <~ ",") <~> (expression.label("Second element in pair") <~ ")"))
     private lazy val pairElementType = ("fst" #> PairElemT.Fst <|> "snd" #> PairElemT.Snd)
     lazy val pairElement = pure(PairElement.tupled) <*> (pairElementType <~> lValue)
     lazy val pairLiteral = emptyPair #> PairLiteral()
@@ -141,13 +141,13 @@ object Parser {
 
     private lazy val skipStat = "skip" #> SkipStat()
     private lazy val identLiteral = IdentLiteral.lift(identifier)
-    private lazy val declaration = Declaration.lift(declarationType, identLiteral, "=" ~> rValue)
-    private lazy val assignment = Assignment.lift(lValue, "=" ~> rValue)
+    private lazy val declaration = Declaration.lift(declarationType.label("Variable type"), identLiteral.label("Variable name"), "=" ~> rValue.label("Value"))
+    private lazy val assignment = Assignment.lift(lValue.label("Variable name"), "=" ~> rValue.label("Value"))
     private lazy val read = "read" ~> Read.lift(lValue)
-    private lazy val command = Command.lift(commandType, expression)
+    private lazy val command = Command.lift(commandType, expression.label("Expression"))
     private lazy val ifStat =
-      IfStat.lift("if" ~> expression, "then" ~> statement, "else" ~> statement <~ "fi")
-    private lazy val whileLoop = WhileLoop.lift("while" ~> expression, "do" ~> statement <~ "done")
+      IfStat.lift("if" ~> expression.label("Conditions"), "then" ~> statement.label("Statement for true"), "else" ~> statement.label("Statement for false") <~ "fi")
+    private lazy val whileLoop = WhileLoop.lift("while" ~> expression.label("Conditions"), "do" ~> statement <~ "done")
     private lazy val scopeStat = BeginEndStat.lift("begin" ~> statement <~ "end")
 
     private lazy val statementAtom: Parsley[Stat] =
@@ -174,7 +174,7 @@ object Parser {
     lazy val func = Func.lift(
       declarationType.label("Function return type"),
       ident.label("Function name"),
-      "(" ~> sepBy(declarationType.label("Type of Parameter") <~> ident.label("Function parameter"), ","),
+      "(" ~> sepBy(declarationType.label("Parameter type") <~> ident.label("Function parameter"), ","),
       ")" ~> "is" ~> statement.filterOut {
         case s if noReturnStat(s) => s"No exit or return statement"
       } <~ "end"
