@@ -15,7 +15,7 @@ class TypeValidatorSpec extends AnyFlatSpec {
 
   implicit val emptyScope = new ScopeContext()
 
-  implicit val emptyContext = new ScopeContext()
+  // implicit val emptyContext = new ScopeContext()
 
   "Type Validator" can "validate base literals" in {
     for (base <- BaseLiteralExamples) {
@@ -31,9 +31,7 @@ class TypeValidatorSpec extends AnyFlatSpec {
     )
     for(pair <- valids) assert(pair._1 is pair._2)
   }
-}
 
-/*
   // returnType is a placeholder function below
 
   
@@ -67,12 +65,3 @@ class TypeValidatorSpec extends AnyFlatSpec {
     }
   }
 }
-
-  "Type Validator" can "validate pair-type literals" in {
-    for (pair <- PairTypeExamples) {
-      assert(returnType(pair._1) == pair._2)
-    }
-  }
-}
-
- */
