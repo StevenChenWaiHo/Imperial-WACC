@@ -25,8 +25,7 @@ object Lexer {
       ),
       hardOperators = Set("!", "*", "/", "%", "+", "-", ">=", ">", "<", "<=", "==", "!=", "&&", "||", ";")
     ),
-    numericDesc = NumericDesc.plain.copy(
-    ),
+    numericDesc = NumericDesc.plain.copy(),
     textDesc = TextDesc.plain.copy(
       escapeSequences = EscapeDesc.plain.copy(
         literals = escapedLiterals,
