@@ -43,6 +43,7 @@ object Lexer {
 
   private val lexer = new Lexer(desc)
   val integer: Parsley[Int] = lexer.lexeme.numeric.signed.decimal32.label("Integer")
+  val unsigned: Parsley[Int] = lexer.lexeme.numeric.unsigned.decimal32.label("Unsigned")
   val character: Parsley[Char] = lexer.lexeme.text.character.ascii.label("Character")
   val boolean: Parsley[Boolean] = ((lexer.lexeme.symbol.apply("true", "true") #> true) <|>
     (lexer.lexeme.symbol.apply("false", "false") #> false)).label("Boolean")

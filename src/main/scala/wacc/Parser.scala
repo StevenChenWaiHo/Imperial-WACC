@@ -58,12 +58,22 @@ object Parser {
     import Parser.PairParser.pairLiteral
 
     private lazy val intLiteral = integer.map(IntLiteral)
+    private lazy val unsignedLiteral = unsigned.map(IntLiteral)
+    private lazy val negLiteral = ("-" ~> attempt(unsignedLiteral)).map(i => {
+      if (i.x - 1 < Int.MaxValue) {
+        IntLiteral(i.x * -1)
+      } else {
+        IntLiteral(i.x)
+      }
+    })
     private lazy val boolLiteral = boolean.map(BoolLiteral)
     private lazy val charLiteral = character.map(CharLiteral)
     private lazy val stringLiteral = string.map(StringLiteral)
 
     lazy val parseExprAtom: Parsley[Expr] =
-      intLiteral <|>
+      negLiteral <|>
+        unsignedLiteral <|>
+        intLiteral <|>
         boolLiteral <|>
         charLiteral <|>
         stringLiteral <|>
