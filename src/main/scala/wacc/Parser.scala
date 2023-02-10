@@ -80,10 +80,12 @@ object Parser {
         pairLiteral <|>
         (identifier <**> maybeArrayElem) // Both an identifier and an array element can start with an 'ident'
 
+    private def without[A](q: Parsley[A], p: Parsley[A]): Parsley[A] = attempt(p <~ notFollowedBy(q))
+
     private lazy val identCont = stringOfMany('_' <|> letterOrDigit)
 
     private lazy val _parseExpr: Parsley[Expr] = precedence(parseExprAtom, "(" ~> _parseExpr <~ ")")(
-      Ops[Expr](Prefix)(attempt("-" <~ notFollowedBy(intLiteral)) #> UnaryOp(Neg),
+      Ops[Expr](Prefix)(without(intLiteral, "-") #> UnaryOp(Neg),
         "!" #> UnaryOp(Not), "len" #> UnaryOp(Len),
         "ord" #> UnaryOp(Ord), "chr" #> UnaryOp(Chr)),
       Ops[Expr](InfixL)("*" #> BinaryOp(Mul), "/" #> BinaryOp(Div), "%" #> BinaryOp(Mod)),
@@ -182,7 +184,7 @@ object Parser {
     lazy val func = Func.lift(
       declarationType.label("Function return type"),
       ident.label("Function name"),
-      "(" ~> sepBy(declarationType.label("Type of Parameter") <~> ident.("Function parameter"), ","),
+      "(" ~> sepBy(declarationType.label("Type of Parameter") <~> ident.label("Function parameter"), ","),
       ")" ~> "is" ~> statement.filterOut {
         case s if noReturnStat(s) => s"No exit or return statement"
       } <~ "end"
