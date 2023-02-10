@@ -2,7 +2,7 @@ package wacc
 
 import parsley.Parsley
 import parsley.Parsley.{attempt, notFollowedBy, pure}
-import parsley.character.{letterOrDigit, stringOfMany}
+import parsley.character.{letterOrDigit, stringOfMany, digit}
 import parsley.combinator._
 import parsley.errors.combinator.ErrorMethods
 import parsley.expr._
@@ -21,9 +21,9 @@ object Parser {
 
     import Parser.ExpressionParser.expression
 
-    lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression <~ "]").map(ArrayElem(_))
+    lazy val arrayIndices: Parsley[String => ArrayElem] = some("[" ~> expression.label("Expression for array index") <~ "]").map(ArrayElem(_))
     lazy val maybeArrayElem: Parsley[String => Expr with LVal] = choice(arrayIndices, pure(IdentLiteral(_)))
-    lazy val arrayLiteral = ("[" ~> sepBy(expression, ",") <~ "]").map(ArrayLiteral)
+    lazy val arrayLiteral = ("[" ~> sepBy(expression.label("Expression"), ",") <~ "]").map(ArrayLiteral)
   }
 
 
@@ -34,7 +34,7 @@ object Parser {
 
     lazy val baseTypeType = "int" #> Int_T <|> "bool" #> Bool_T <|> "char" #> Char_T <|> "string" #> String_T
     private lazy val baseType = baseTypeType.map(BaseType)
-    private lazy val pairType = PairType.lift("pair" ~> "(" ~> pairElemType <~ ",", pairElemType <~ ")")
+    private lazy val pairType = PairType.lift("pair" ~> "(" ~> pairElemType.label("Pair type") <~ ",", pairElemType <~ ")")
     private lazy val pairElemType: Parsley[DeclarationType] =
       (("pair" <~ notFollowedBy("(")) #> NestedPair()) <|> declarationType
     lazy val declarationType: Parsley[DeclarationType] = precedence[DeclarationType](pairType, baseType)(
@@ -58,15 +58,12 @@ object Parser {
     import Parser.PairParser.pairLiteral
 
     private lazy val intLiteral = integer.map(IntLiteral)
-    private lazy val negLiteral = (attempt("-") ~> attempt(unsigned.map(IntLiteral))
-      .filter(i => i.x - 1 <= Int.MaxValue))
     private lazy val boolLiteral = boolean.map(BoolLiteral)
     private lazy val charLiteral = character.map(CharLiteral)
     private lazy val stringLiteral = string.map(StringLiteral)
 
     lazy val parseExprAtom: Parsley[Expr] =
-        intLiteral <|>
-        negLiteral <|>
+      intLiteral <|>
         boolLiteral <|>
         charLiteral <|>
         stringLiteral <|>
@@ -78,7 +75,7 @@ object Parser {
     private lazy val identCont = stringOfMany('_' <|> letterOrDigit)
 
     private lazy val _parseExpr: Parsley[Expr] = precedence(parseExprAtom, "(" ~> _parseExpr <~ ")")(
-      Ops[Expr](Prefix)(without(unsigned, "-") #> UnaryOp(Neg),
+      Ops[Expr](Prefix)(attempt("-" <~ notFollowedBy(digit)) #> UnaryOp(Neg),
         "!" #> UnaryOp(Not), "len" #> UnaryOp(Len),
         "ord" #> UnaryOp(Ord), "chr" #> UnaryOp(Chr)),
       Ops[Expr](InfixL)("*" #> BinaryOp(Mul), "/" #> BinaryOp(Div), "%" #> BinaryOp(Mod)),
@@ -144,13 +141,13 @@ object Parser {
 
     private lazy val skipStat = "skip" #> SkipStat()
     private lazy val identLiteral = IdentLiteral.lift(identifier)
-    private lazy val declaration = Declaration.lift(declarationType, identLiteral, "=" ~> rValue)
-    private lazy val assignment = Assignment.lift(lValue, "=" ~> rValue)
+    private lazy val declaration = Declaration.lift(declarationType.label("Variable type"), identLiteral.label("Variable name"), "=" ~> rValue.label("Value"))
+    private lazy val assignment = Assignment.lift(lValue.label("Variable name"), "=" ~> rValue.label("Value"))
     private lazy val read = "read" ~> Read.lift(lValue)
-    private lazy val command = Command.lift(commandType, expression)
+    private lazy val command = Command.lift(commandType, expression.label("Expression"))
     private lazy val ifStat =
-      IfStat.lift("if" ~> expression, "then" ~> statement, "else" ~> statement <~ "fi")
-    private lazy val whileLoop = WhileLoop.lift("while" ~> expression, "do" ~> statement <~ "done")
+      IfStat.lift("if" ~> expression.label("Conditions"), "then" ~> statement.label("Statement for true"), "else" ~> statement.label("Statement for false") <~ "fi")
+    private lazy val whileLoop = WhileLoop.lift("while" ~> expression.label("Conditions"), "do" ~> statement <~ "done")
     private lazy val scopeStat = BeginEndStat.lift("begin" ~> statement <~ "end")
 
     private lazy val statementAtom: Parsley[Stat] =
@@ -174,14 +171,14 @@ object Parser {
     import parsley.implicits.lift.{Lift1, Lift4}
 
     private lazy val ident = IdentLiteral.lift(identifier)
-    lazy val func = Func.lift(
+    lazy val func = (Func.lift(
       declarationType.label("Function return type"),
       ident.label("Function name"),
-      "(" ~> sepBy(declarationType.label("Type of Parameter") <~> ident.label("Function parameter"), ","),
+      "(" ~> sepBy(declarationType.label("Parameter type") <~> ident.label("Function parameter"), ","),
       ")" ~> "is" ~> statement.filterOut {
         case s if noReturnStat(s) => s"No exit or return statement"
       } <~ "end"
-    ).label("Function Declaration").explain("Function declaration are <type> <function_name> (<parameter_list> is <body>)")
+    )).label("Function Declaration").explain("Function declaration are <type> <function_name> (<parameter_list>) is <body>")
   }
 
   object ProgramParser {
