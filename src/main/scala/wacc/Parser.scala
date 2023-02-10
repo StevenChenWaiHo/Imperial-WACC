@@ -70,12 +70,10 @@ object Parser {
         pairLiteral <|>
         (identifier <**> maybeArrayElem) // Both an identifier and an array element can start with an 'ident'
 
-    private def without[A](q: Parsley[A], p: Parsley[A]): Parsley[A] = attempt(p <~ notFollowedBy(q))
-
     private lazy val identCont = stringOfMany('_' <|> letterOrDigit)
 
     private lazy val _parseExpr: Parsley[Expr] = precedence(parseExprAtom, "(" ~> _parseExpr <~ ")")(
-      Ops[Expr](Prefix)(without(intLiteral, "-") #> UnaryOp(Neg),
+      Ops[Expr](Prefix)(attempt("-" <~ notFollowedBy(intLiteral)) #> UnaryOp(Neg),
         "!" #> UnaryOp(Not), "len" #> UnaryOp(Len),
         "ord" #> UnaryOp(Ord), "chr" #> UnaryOp(Chr)),
       Ops[Expr](InfixL)("*" #> BinaryOp(Mul), "/" #> BinaryOp(Div), "%" #> BinaryOp(Mod)),
@@ -172,13 +170,13 @@ object Parser {
 
     private lazy val ident = IdentLiteral.lift(identifier)
     lazy val func = Func.lift(
-      declarationType,
-      ident,
-      "(" ~> sepBy(declarationType <~> ident, ","),
+      declarationType.label("Function return type"),
+      ident.label("Function name"),
+      "(" ~> sepBy(declarationType.label("Type of Parameter") <~> ident.("Function parameter"), ","),
       ")" ~> "is" ~> statement.filterOut {
         case s if noReturnStat(s) => s"No exit or return statement"
       } <~ "end"
-    )
+    ).label("Function Declaration").explain("Function declaration are <type> <function_name> (<parameter_list> is <body>)")
   }
 
   object ProgramParser {
@@ -187,7 +185,7 @@ object Parser {
     import StatementParser.statement
     import parsley.implicits.lift.Lift2
 
-    lazy val program = fully("begin" ~> Program.lift(many(attempt(func)), statement <~ "end"))
+    lazy val program = fully("begin" ~> Program.lift(many(attempt(func)).label("Program"), statement <~ "end"))
   }
 
 }
