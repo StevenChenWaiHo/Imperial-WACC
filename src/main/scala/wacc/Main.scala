@@ -34,7 +34,7 @@ object Main {
           print("Semantic Error: ")
             verified.left.foreach(errList => {
                 errList.reverse.foreach(err => {
-                  if(err != Nil) println(err)
+                  if(err != Nil && err.nonEmpty) println(err)
                 })
             })
             sys.exit(200)

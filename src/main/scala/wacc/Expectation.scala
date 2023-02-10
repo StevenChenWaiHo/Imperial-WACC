@@ -29,19 +29,19 @@ object TypeMatcher {
   /** Matches if both types are identical, returning returnType. Returns an error otherwise. */
   def identicalTypes(returnType: DeclarationType): Expectation = simpleExpectation((inputs: List[DeclarationType]) => {
     if (inputs(0) is inputs(1)) Right(returnType)
-    else Left(List("Type mismatch: %s does not match %s\n".format(inputs(0), inputs(1))))
+    else Left(List("Type mismatch: %s does not match %s".format(inputs(0), inputs(1))))
   })
 
   /** Matches if both types are identical, returning the first one. Returns an error otherwise. */
   def identicalTypes: Expectation = simpleExpectation((inputs: List[DeclarationType]) => {
     if (inputs(0) is inputs(1)) Right(inputs(0))
-    else Left(List("Type mismatch: %s does not match %s\n".format(inputs(0), inputs(1))))
+    else Left(List("Type mismatch: %s does not match %s".format(inputs(0), inputs(1))))
   })
 
   /** Matches if 'valids' contains the type it is matched with. Returns an error otherwise. */
   def oneOf(valids: List[DeclarationType]): Expectation = simpleExpectation((input: List[DeclarationType]) => {
     if (valids.find(_ is input(0)).isDefined) Right(input(0))
-    else Left(List(s"Type mismatch - Expected one of:  ${if (valids.length == 1) valids(0) else valids}  " +
+    else Left(List(s"Type mismatch - Expected one of: ${if (valids.length == 1) valids(0) else valids} " +
       s"but received ${input(0)}"))
   })
 }
@@ -55,12 +55,16 @@ object TypeProcessor {
   }
 
   private def firstMismatch(expected: List[DeclarationType], inputs: List[DeclarationType]): Int = {
-    var count = 1
-    for ((expectedInput, input) <- expected zip inputs) {
-      if (!expectedInput.is(input)) return count
-      count += 1
+    val zipped = (expected zip inputs).zipWithIndex
+    zipped.find(elem => {
+      elem match {
+        case ((e, i), _) => !e.is(i)
+        case _ => false
+      }
+    }) match {
+      case None => zipped.length + 1
+      case Some(((_, _), count)) => count + 1
     }
-    count
   }
 
   /* Returns a function that matches the input types ('inputs') to the first in a list of valid input types ('valids'),

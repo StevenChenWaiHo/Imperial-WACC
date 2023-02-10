@@ -15,7 +15,7 @@ object SemanticAnalyser {
       input(0) match {
         case PairType(t1, t2) => Right(if (element == Fst) t1 else t2)
         case NestedPair() => Right(Any_T)
-        case _ => Left(List("Mismatched type: expected a pair but received: %s\n"
+        case _ => Left(List("Mismatched type: expected a pair but received: %s"
           .format(if(input.length == 1) input(0) else input)))
       }
   }
@@ -23,7 +23,7 @@ object SemanticAnalyser {
   private def arrayNestedType(array: DeclarationType, indices: Int): Either[List[String], DeclarationType] = array match {
       case ArrayType(innerType) if indices != 0 => arrayNestedType(innerType, indices - 1)
       case someType if indices == 0 => Right(someType)
-      case someType if indices != 0 => Left(List("Attempted to dereference non-array type: %s\n".format(someType)))
+      case someType if indices != 0 => Left(List("Attempted to dereference non-array type: %s".format(someType)))
     }
 
   def rValType(rVal: RVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = rVal match {
@@ -61,7 +61,7 @@ object SemanticAnalyser {
       case SkipStat() => Right(scopeContext)
       case Declaration(dataType, ident, rValue) => {
         // Make sure rValue and dataType are a pair of (any) matching data types
-        val matcher = TypeMatcher.identicalTypes(BaseType(Any_T)) withContext s"In variable declaration for '$ident'\n"
+        val matcher = TypeMatcher.identicalTypes(BaseType(Any_T)) withContext s"In variable declaration for '$ident'"
 
         (matcher matchedWith List(Right(dataType), rValType(rValue)))
           // Drop the return type and replace it with the new context
@@ -72,7 +72,7 @@ object SemanticAnalyser {
         val lValT = lValType(lVal)
         val rValT = rValType(rVal)
         if(lValT.isRight && rValT.isRight && lValT.toOption.get.isAny && rValT.toOption.get.isAny)
-          return Left(List(s"Assignment between two ambiguous types: ${lValT.toOption.get}, ${rValT.toOption.get}\n"))
+          return Left(List(s"Assignment between two ambiguous types: ${lValT.toOption.get}, ${rValT.toOption.get}"))
 
         val matcher = TypeMatcher.identicalTypes withContext s"In variable assignment on line: ${0}" //TODO
         (matcher matchedWith List(lValType(lVal), rValType(rVal)))
@@ -80,8 +80,8 @@ object SemanticAnalyser {
       }
       case Read(lVal) =>
         (simpleExpectation((input) => input.head match {
-          case BaseType(x) if x is Bool_T => Left(List("Attempted to read into an invalid type: %s\n".format(x)))
-          case PairType(a, b) if (a is Any_T) && (b is Any_T) => Left(List("Attempted to read into a pair\n"))
+          case BaseType(x) if x is Bool_T => Left(List("Attempted to read into an invalid type: %s".format(x)))
+          case PairType(a, b) if (a is Any_T) && (b is Any_T) => Left(List("Attempted to read into a pair"))
           case _ => Right(BaseType(None_T))
         }) matchedWith List(lValType(lVal)))
           .map(_ => scopeContext)
@@ -95,7 +95,7 @@ object SemanticAnalyser {
           case Print => (TypeMatcher.oneOf(List(Any_T)))
           case PrintLn => (TypeMatcher.oneOf(List(Any_T)))
         }
-        (expectation.withContext(s"Inside command: $cmd\n") matchedWith List(returnType(input)))
+        (expectation.withContext(s"Inside command: $cmd") matchedWith List(returnType(input)))
           .map(_ => scopeContext)
       }
 

@@ -38,7 +38,7 @@ class ScopeContext(scopeStack: List[Scope]) {
         funcs.get(name).map(Right(_))
           .getOrElse(findFunc1(scopes))
       }
-      case Nil => Left(List("Function %s not found.\n"))
+      case Nil => Left(List("Function %s not found."))
     }
 
     findFunc1(this.scopeStack)
@@ -49,7 +49,7 @@ class ScopeContext(scopeStack: List[Scope]) {
             ): Either[List[String], ScopeContext] = {
     scopeStack match {
       case Scope(vars, funcs, returnType) :: scopes => {
-        if (vars.contains(name)) Left(List("Variable %s has already been defined in this scope\n".format(name)))
+        if (vars.contains(name)) Left(List("Variable %s has already been defined in this scope".format(name)))
         else Right(new ScopeContext(Scope(vars.updated(name, decType), funcs, returnType) :: scopes))
       }
       case _ => throw new InvalidAttributeValueException("Empty context: this should never happen.")
@@ -96,7 +96,6 @@ object TypeValidator {
     case StringLiteral(_) => BaseType(String_T)
     case PairLiteral() => PairType(Any_T, Any_T)
     case expr: ArrayElem => lValType(expr)
-    case expr: PairLiteral => rValType(expr)
     case IdentLiteral(name) => context.findVar(name)
     case UnaryOp(op, x) => UnaryOpExpectations(op) matchedWith returnType(x)
     case BinaryOp(op, x1, x2) => BinaryOpExpectations(op) matchedWith List(returnType(x1), returnType(x2))

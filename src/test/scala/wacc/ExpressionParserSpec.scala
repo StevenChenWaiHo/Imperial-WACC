@@ -11,7 +11,7 @@ class ExpressionParserSpec extends AnyFlatSpec {
     assert(expression.parse("123") == Success(IntLiteral(123)))
   }
   "Expression Parser" can "parse negative integers" in {
-    assert(expression.parse("-123") == Success(IntLiteral(-123)))
+    assert(expression.parse("-2147483648") == Success(IntLiteral(-2147483648)))
   }
 
   "Expression Parser" can "parse 'true'" in {

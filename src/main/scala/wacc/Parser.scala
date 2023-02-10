@@ -2,7 +2,7 @@ package wacc
 
 import parsley.Parsley
 import parsley.Parsley.{attempt, notFollowedBy, pure}
-import parsley.character.{letterOrDigit, stringOfMany}
+import parsley.character.{letterOrDigit, stringOfMany, digit}
 import parsley.combinator._
 import parsley.errors.combinator.ErrorMethods
 import parsley.expr._
@@ -79,12 +79,10 @@ object Parser {
         pairLiteral <|>
         (identifier <**> maybeArrayElem) // Both an identifier and an array element can start with an 'ident'
 
-    private def without[A](q: Parsley[A], p: Parsley[A]): Parsley[A] = attempt(p <~ notFollowedBy(q))
-
     private lazy val identCont = stringOfMany('_' <|> letterOrDigit)
 
     private lazy val _parseExpr: Parsley[Expr] = precedence(parseExprAtom, "(" ~> _parseExpr <~ ")")(
-      Ops[Expr](Prefix)(without(intLiteral, "-") #> UnaryOp(Neg),
+      Ops[Expr](Prefix)(attempt("-" <~ notFollowedBy(digit)) #> UnaryOp(Neg),
         "!" #> UnaryOp(Not), "len" #> UnaryOp(Len),
         "ord" #> UnaryOp(Ord), "chr" #> UnaryOp(Chr)),
       Ops[Expr](InfixL)("*" #> BinaryOp(Mul), "/" #> BinaryOp(Div), "%" #> BinaryOp(Mod)),
@@ -180,14 +178,14 @@ object Parser {
     import parsley.implicits.lift.{Lift1, Lift4}
 
     private lazy val ident = IdentLiteral.lift(identifier)
-    lazy val func = Func.lift(
+    lazy val func = (Func.lift(
       declarationType.label("Function return type"),
       ident.label("Function name"),
       "(" ~> sepBy(declarationType.label("Parameter type") <~> ident.label("Function parameter"), ","),
       ")" ~> "is" ~> statement.filterOut {
         case s if noReturnStat(s) => s"No exit or return statement"
       } <~ "end"
-    ).label("Function Declaration").explain("Function declaration are <type> <function_name> (<parameter_list>) is <body>")
+    )).label("Function Declaration").explain("Function declaration are <type> <function_name> (<parameter_list>) is <body>")
   }
 
   object ProgramParser {
