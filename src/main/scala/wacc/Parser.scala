@@ -70,8 +70,6 @@ object Parser {
         pairLiteral <|>
         (identifier <**> maybeArrayElem) // Both an identifier and an array element can start with an 'ident'
 
-    private def without[A](q: Parsley[A], p: Parsley[A]): Parsley[A] = attempt(p <~ notFollowedBy(q))
-
     private lazy val identCont = stringOfMany('_' <|> letterOrDigit)
 
     private lazy val _parseExpr: Parsley[Expr] = precedence(parseExprAtom, "(" ~> _parseExpr <~ ")")(
