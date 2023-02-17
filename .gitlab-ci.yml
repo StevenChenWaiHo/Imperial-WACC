@@ -32,12 +32,23 @@ before_script:
 build:
   stage: build
   script:
+    - make
     - sbt compile
-
 test:
   stage: test
   script:
-    # Execute your project's tests
-    - sbt clean test
+    #Execute your project's tests
+    -sbt clean test
+
+#labtest:
+#  stage: labtest
+#  script:
+#    # Execute your project's tests
+#    # get compiler
+#    - apt-get install gcc-arm* #note that there may be a better way to do this
+#    # get qemu emulator
+#    - apt-get install qemu-user
+#    -
+
 
 
