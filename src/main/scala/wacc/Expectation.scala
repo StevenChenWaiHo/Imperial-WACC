@@ -35,7 +35,7 @@ object TypeMatcher {
   /** Matches if both types are identical, returning the first one. Returns an error otherwise. */
   def identicalTypes: Expectation = simpleExpectation((inputs: List[DeclarationType]) => {
     if (inputs(0) is inputs(1)) Right(inputs(0))
-    else Left(List("Type mismatch: %s does not match %s".format(inputs(0), inputs(1))))
+    else Left(List("Type or size mismatch: %s does not match %s".format(inputs(0), inputs(1))))
   })
 
   /** Matches if 'valids' contains the type it is matched with. Returns an error otherwise. */

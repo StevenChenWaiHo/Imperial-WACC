@@ -6,30 +6,35 @@ import wacc.AbstractSyntaxTree.PairElemT._
 import wacc.AbstractSyntaxTree._
 import wacc.TypeValidator.{isHomogenousList, returnType}
 
+import scala.annotation.tailrec
+
 object SemanticAnalyser {
 
   import TypeValidator.makeBaseType
 
   private def pairElementType(element: PairElemT.Elem): Expectation = simpleExpectation {
     (input) =>
-      input(0) match {
+      input.head match {
         case PairType(t1, t2) => Right(if (element == Fst) t1 else t2)
         case NestedPair() => Right(Any_T)
         case _ => Left(List("Mismatched type: expected a pair but received: %s"
-          .format(if(input.length == 1) input(0) else input)))
+          .format(if(input.length == 1) input.head else input)))
       }
   }
 
-  private def arrayNestedType(array: DeclarationType, indices: Int): Either[List[String], DeclarationType] = array match {
-      case ArrayType(innerType) if indices != 0 => arrayNestedType(innerType, indices - 1)
+  @tailrec
+  private def arrayNestedType(array: DeclarationType, indices: Int): Either[List[String], DeclarationType] = {
+    array match {
+      case ArrayType(innerType, _) if indices > 0 => arrayNestedType(innerType, indices - 1)
       case someType if indices == 0 => Right(someType)
-      case someType if indices != 0 => Left(List("Attempted to dereference non-array type: %s".format(someType)))
+      case someType if indices > 0 => Left(List("Attempted to dereference non-array type: %s".format(someType)))
     }
+  }
 
   def rValType(rVal: RVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = rVal match {
     case rVal: Expr => returnType(rVal)
-    case ArrayLiteral(exprs) => isHomogenousList(exprs).map(ArrayType(_))
-    case PairValue(exp1, exp2) => simpleExpectation { (inputs) => Right(PairType(inputs(0), inputs(1))) }
+    case ArrayLiteral(exprs) => isHomogenousList(exprs).map(ArrayType(_, exprs.length))
+    case PairValue(exp1, exp2) => simpleExpectation { (inputs) => Right(PairType(inputs.head, inputs(1))) }
       .matchedWith(List(returnType(exp1), returnType(exp2)))
     case Call(ident, args) => {
       val funcExpectation = scopeContext.findFunc(ident.name)
@@ -43,12 +48,13 @@ object SemanticAnalyser {
     case PairElement(element, pair) => pairElementType(element) matchedWith List(lValType(pair))
     case IdentLiteral(name) => scopeContext.findVar(name)
     case ArrayElem(name, indices) => {
-      if (indices.map(returnType(_)).find((x) => x match {
+      val types = indices.map(returnType(_))
+      if (types.exists((x) => x match {
         case Right(x) if x is Int_T => false
         case _ => true
-      }).isDefined) Left(List("Non-integer indices in array access."))
+      })) Left(List("Non-integer indices in array access."))
       else simpleExpectation(
-        (input) => arrayNestedType(input(0), indices.length)) matchedWith List(scopeContext.findVar(name)
+        (input) => arrayNestedType(input(0), types.length)) matchedWith List(scopeContext.findVar(name)
       )
     }
   }
