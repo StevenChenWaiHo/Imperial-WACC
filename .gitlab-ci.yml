@@ -33,22 +33,27 @@ build:
   stage: build
   script:
     - make
-    - sbt compile
+
 test:
   stage: test
   script:
-    #Execute your project's tests
+    # Execute your project's tests
     -sbt clean test
 
-#labtest:
-#  stage: labtest
-#  script:
-#    # Execute your project's tests
-#    # get compiler
-#    - apt-get install gcc-arm* #note that there may be a better way to do this
-#    # get qemu emulator
-#    - apt-get install qemu-user
-#    -
+wacc_examples:
+  stage: test
+  script:
+    # Execute wacc_examples
+    # Get wacc_examples
+    - git clone git@gitlab.doc.ic.ac.uk:lab2223_spring/wacc_examples.git
+    # Get compiler
+    - apt-get install gcc-arm* #note that there may be a better way to do this
+    # Get qemu emulator
+    - apt-get install qemu-user
+    # Compile example
+    # Cross-compile assembly
+    # Run compiled code
+    # Check output
 
 
 
