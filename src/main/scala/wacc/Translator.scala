@@ -4,6 +4,14 @@ import wacc.AbstractSyntaxTree.{ASTNode, Stat, SkipStat, BeginEndStat, Command, 
 
 object Translator {
   //TODO: Translate each ASTNode into ARM
+  def translateProgram(l: List[Func], s: Stat, context: ScopeContext): List[String] = {
+    val str = List("")
+    for (function: Func <- l) {
+      str = str ++ delegateASTNode(function, context)//Not actually sure about the structure of this thing
+    }
+    str = str ++ delegateASTNode(s, context)
+    return str
+  }
   def delegateASTNode(node: ASTNode, context : ScopeContext) : List[String] = {
     node match {
       case Program(funcs, stat) => translateProgram(funcs, stat)
