@@ -43,6 +43,8 @@ test:
 wacc_examples:
   stage: test
   script:
+    # Build??
+    - sbt compile assembly
     # Get wacc_examples
     - git clone https://gitlab.doc.ic.ac.uk/lab2223_spring/wacc_examples.git ../wacc_examples
     # Get compiler and emulator
