@@ -44,7 +44,7 @@ wacc_examples:
   stage: test
   script:
     # Get wacc_examples
-    - git clone git@gitlab.doc.ic.ac.uk:lab2223_spring/wacc_examples.git ../wacc_examples
+    - git clone https://gitlab.doc.ic.ac.uk/lab2223_spring/wacc_examples.git ../wacc_examples
     # Get compiler and emulator
     - apt-get install gcc-arm* #note that there may be a better way to do this
     - apt-get install qemu-use
