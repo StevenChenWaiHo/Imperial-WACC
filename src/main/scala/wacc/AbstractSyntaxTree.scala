@@ -87,8 +87,8 @@ object AbstractSyntaxTree {
           case BaseType(b) => ((a != None_T && b != None_T) && a == b) || (a == Any_T) || (b == Any_T)
           case _ => false
         }
-        case ArrayType(a, aSize) => other match {
-          case ArrayType(b, bSize) => (aSize == -1 || bSize == -1 || aSize == bSize) && (a is b)
+        case ArrayType(a) => other match {
+          case ArrayType(b) => (a is b)
           case _ => false
         }
         case PairType(a, b) => other match {
@@ -106,7 +106,7 @@ object AbstractSyntaxTree {
 
   case class BaseType(baseType: BaseTypeType) extends DeclarationType
 
-  case class ArrayType(dataType: DeclarationType, length: Int = -1) extends DeclarationType
+  case class ArrayType(dataType: DeclarationType) extends DeclarationType
 
   case class PairType(fstType: DeclarationType, sndType: DeclarationType) extends DeclarationType
 
