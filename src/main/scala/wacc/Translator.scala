@@ -1,6 +1,8 @@
 package wacc
 
 import wacc.AbstractSyntaxTree.{ASTNode, Stat, SkipStat, BeginEndStat, Command, Program, Func}
+import wacc.AbstractSyntaxTree.CmdT
+import wacc.Assembler.Register
 
 object Translator {
   //TODO: Translate each ASTNode into ARM
@@ -33,8 +35,19 @@ object Translator {
     List("")
   }
 
-  def translateCommand(cmd : AbstractSyntaxTree.CmdT.Cmd, expr : AbstractSyntaxTree.Expr) : List[String] = {
+  // Compute the expression and return it to the first elem of the register list
+  def translateExpr(expr : AbstractSyntaxTree.Expr, freeRegs : Array[Register]) : List[String] = {
     List("")
+  }
+
+  def translateCommand(cmd : AbstractSyntaxTree.CmdT.Cmd, expr : AbstractSyntaxTree.Expr, freeRegs : Array[Register]) : List[String] = {
+    cmd match {
+      case CmdT.Free => List("")
+      case CmdT.Ret => translateExpr(expr, Register.r0 +: (freeRegs.filter(! _.equals(Register.r0))))
+      case CmdT.Exit => translateExpr(expr, Register.r0 +: (freeRegs.filter(! _.equals(Register.r0)))).appended(List("bl exit"))
+      case CmdT.Print => List("")
+      case CmdT.PrintLn => List("")
+    }
   }
 
   def translateFunction(returnType : AbstractSyntaxTree.DeclarationType, 
