@@ -1,7 +1,9 @@
 #!/bin/bash
 ERRORS=0
+TOTAL=0
 for f in $(find ../wacc_examples/valid -name '*.wacc');
 do 
+    let TOTAL++
     #echo $f;
     # Compile file recording output
     SUCC=$(./compile $f)
@@ -33,7 +35,7 @@ do
     fi
 done
 
-echo "${ERRORS} tests failed."
+echo "${ERRORS}/${TOTAL} tests failed."
 
 # Exit with success/failure
 if [ $ERRORS -gt 0 ]; then

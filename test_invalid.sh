@@ -3,9 +3,11 @@ SUCCESS=0
 SYNTAX_ERR=100
 SEMANTIC_ERR=200
 ERRORS=0
+TOTAL=0
 # Check all invalid syntax programs
 for f in $(find ../wacc_examples/invalid/syntaxErr -name '*.wacc');
 do 
+    let TOTAL++
     # Compile file recording output
     SUCC=$(./compile $f)
     if [ !($? -eq SYNTAX_ERR) ]; then 
@@ -19,6 +21,7 @@ done
 # Check all invalid semantic programs
 for f in $(find ../wacc_examples/invalid/semanticErr -name '*.wacc');
 do 
+    let TOTAL++
     # Compile file recording output
     SUCC=$(./compile $f)
     if [ !($? -eq SEMANTIC_ERR) ]; then 
@@ -29,7 +32,7 @@ do
     fi
 done
 
-echo "${ERRORS} tests failed."
+echo "${ERRORS}/${TOTAL} tests failed."
 
 # Exit with success/failure
 if [ $ERRORS -gt 0 ]; then
