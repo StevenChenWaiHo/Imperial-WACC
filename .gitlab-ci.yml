@@ -38,7 +38,7 @@ test:
   stage: test
   script:
     # Execute your project's tests
-    -sbt clean test
+    - sbt clean test
 
 wacc_examples:
   stage: test
