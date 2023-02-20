@@ -10,7 +10,7 @@ do
         let ERRORS++
         echo "[ERROR] Compilation Failed for ${f}"
         echo "${SUCC}"
-        echo "Exit code: ${$?}"
+        echo "Exit code: ${?}"
         continue
     fi
 
