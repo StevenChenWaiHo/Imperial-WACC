@@ -43,17 +43,16 @@ test:
 wacc_examples:
   stage: test
   script:
-    # Execute wacc_examples
     # Get wacc_examples
-    - git clone git@gitlab.doc.ic.ac.uk:lab2223_spring/wacc_examples.git
-    # Get compiler
+    - git clone git@gitlab.doc.ic.ac.uk:lab2223_spring/wacc_examples.git ../wacc_examples
+    # Get compiler and emulator
     - apt-get install gcc-arm* #note that there may be a better way to do this
-    # Get qemu emulator
-    - apt-get install qemu-user
-    # Compile example
-    # Cross-compile assembly
-    # Run compiled code
-    # Check output
+    - apt-get install qemu-use
+    # Test wacc examples
+    - ./test_valid.sh
+    - ./test_invalid.sh
+
+
 
 
 
