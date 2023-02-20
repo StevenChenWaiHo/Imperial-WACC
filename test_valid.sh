@@ -26,12 +26,16 @@ do
         # Print outputs if different
         let ERRORS++
         echo "[ERROR] Difference in expected output in ${f}"
-        echo "Output:"
+        echo "- Output:"
         echo "${OUT}"
-        echo "Expected:"
+        echo "- Expected:"
         echo "${EXP_OUT}"
     fi
 done
 
 echo "${ERRORS} tests failed."
 
+# Exit with success/failure
+if [ $ERRORS -gt 0 ]; then
+    exit 1
+fi
