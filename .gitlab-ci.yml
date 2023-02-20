@@ -46,8 +46,8 @@ wacc_examples:
     # Get wacc_examples
     - git clone https://gitlab.doc.ic.ac.uk/lab2223_spring/wacc_examples.git ../wacc_examples
     # Get compiler and emulator
-    - apt-get install gcc-arm* -yqq # TODO change this to better way
-    - apt-get install qemu-use -yqq
+    - apt-get install gcc-arm-linux-gnueabi -yqq
+    - apt-get install qemu-user -yqq
     # Test wacc examples
     - ./test_valid.sh
     - ./test_invalid.sh
