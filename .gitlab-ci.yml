@@ -34,7 +34,7 @@ build:
   script:
     - sbt compile assembly
 
-test:
+scalatest:
   stage: test
   script:
     # Execute your project's tests
