@@ -30,6 +30,11 @@ object Translator {
           case SkipStat() => translateSkip()
           case Program(funcs, stats) => translateProgram(funcs, stats)
           case StatList(stats) => translateStatList(stats)
+          case Command(command, input) => translateCommand(command, input)
+          case IntLiteral(x) => {
+            val next = nextRegister()
+            (List(AssignmentTAC(new Literal(x), next)), next)
+          }
           case _ => (List(new Label("Not Implemented")), null)
         }
       }
@@ -93,7 +98,6 @@ object Translator {
 
   def translateProgram(l: List[Func], s: Stat): (List[TAC], TRegister) = {
     // TODO: translate funcs
-    println(delegateASTNode(s))
     delegateASTNode(s) match {
       case (tacList, reg) => {
         (List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC()), reg)

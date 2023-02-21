@@ -42,7 +42,11 @@ object Main {
             sys.exit(200)
         }
         // Intermediate Code Gen
-        delegateASTNode(ast.get)
+        delegateASTNode(ast.get) match {
+            case (tacList, _) => {
+                tacList.foreach(s => println(s))
+            }
+        }
         // Output Code Gen
         //assemble()
         println("Compilation Successful!")

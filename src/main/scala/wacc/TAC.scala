@@ -22,6 +22,6 @@ object TAC {
 
   sealed trait Operand
   class TRegister(num: Int) extends Operand with TAC
-  class Literal() extends Operand
+  class Literal(int: Int) extends Operand
   
 }
