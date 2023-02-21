@@ -5,7 +5,7 @@ import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.TAC._
 
-class Translator {
+object Translator {
 
   private val map = collection.mutable.Map[ASTNode, TRegister]()
   private val regList = collection.mutable.ListBuffer[TRegister]()
@@ -94,7 +94,11 @@ class Translator {
   def translateProgram(l: List[Func], s: Stat): (List[TAC], TRegister) = {
     // TODO: translate funcs
     println(delegateASTNode(s))
-    delegateASTNode(s)
+    delegateASTNode(s) match {
+      case (tacList, reg) => {
+        (List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC()), reg)
+      }
+    }
   }
 
   def translateStatList(stats: List[Stat]): (List[TAC], TRegister) = {

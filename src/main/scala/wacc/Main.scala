@@ -1,7 +1,8 @@
 package wacc
 
-import wacc.Parser.ProgramParser.program
+import wacc.Parser.ProgramParser.program.parse
 import wacc.SemanticAnalyser.verifyProgram
+import wacc.Translator.delegateASTNode
 
 import java.io.FileNotFoundException
 import scala.io.Source
@@ -20,7 +21,8 @@ object Main {
         file.close
 
         /* Compile */
-        val ast = program.parse(inputProgram)
+        // Lexing and Parsing
+        val ast = parse(inputProgram)
         ast match { 
             case Failure(err) => {
                 println("Syntax Error: %s".format(err))
@@ -28,7 +30,7 @@ object Main {
             }
             case Success(x) =>
         }
-
+        // Semantic Analysis
         val verified = verifyProgram(ast.get)
         if (verified.isLeft) {
           print("Semantic Error: ")
@@ -39,6 +41,10 @@ object Main {
             })
             sys.exit(200)
         }
+        // Intermediate Code Gen
+        delegateASTNode(ast.get)
+        // Output Code Gen
+        //assemble()
         println("Compilation Successful!")
         sys.exit(0)
     }
