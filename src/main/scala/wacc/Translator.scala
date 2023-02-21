@@ -5,43 +5,38 @@ import wacc.AbstractSyntaxTree.{ASTNode, Stat, SkipStat, BeginEndStat, Command, 
 object Translator {
   //TODO: Translate each ASTNode into ARM
   
-  def delegateASTNode(node: ASTNode, context : ScopeContext) : List[String] = {
+  def delegateASTNode(node: ASTNode, context : ScopeContext) : List[TAC] = {
     node match {
       case Program(funcs, stat) => translateProgram(funcs, stat, context)
       case BeginEndStat(stat) => translateBeginEnd(stat)
       case SkipStat() => translateSkip()
       case Command(cmd, expr) => translateCommand(cmd, expr)
       case Func(returnType, ident, types, code) => translateFunction(returnType, ident, types, code)
-      case _ => List("")
+      case _ => List()
     }
   }
 
-  def translateProgram(l: List[Func], s: Stat, context: ScopeContext): List[String] = {
-    var str = List("")
-    for (function: Func <- l) {
-      str = str ++ delegateASTNode(function, context) // Not actually sure about the structure of this thing
-    }
-    str = str ++ delegateASTNode(s, context)
-    return str
+  def translateProgram(l: List[Func], s: Stat, context: ScopeContext): List[TAC] = {
+    List()
   }
 
-  def translateBeginEnd(stat : Stat) : List[String] = {
-    List("")
+  def translateBeginEnd(stat : Stat) : List[TAC] = {
+    List()
   }
 
-  def translateSkip() : List[String] = {
-    List("")
+  def translateSkip() : List[TAC] = {
+    List()
   }
 
-  def translateCommand(cmd : AbstractSyntaxTree.CmdT.Cmd, expr : AbstractSyntaxTree.Expr) : List[String] = {
-    List("")
+  def translateCommand(cmd : AbstractSyntaxTree.CmdT.Cmd, expr : AbstractSyntaxTree.Expr) : List[TAC] = {
+    List()
   }
 
   def translateFunction(returnType : AbstractSyntaxTree.DeclarationType, 
                           ident : AbstractSyntaxTree.IdentLiteral, 
                           types : List[(AbstractSyntaxTree.DeclarationType, 
                             AbstractSyntaxTree.IdentLiteral)], 
-                          code : Stat) : List[String] = {
-    List("")
+                          code : Stat) : List[TAC] = {
+    List()
   }
 }
