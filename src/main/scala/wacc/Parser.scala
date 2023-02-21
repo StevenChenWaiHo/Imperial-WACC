@@ -45,7 +45,7 @@ object Parser {
     private lazy val pairElemType: Parsley[DeclarationType] =
       (("pair" <~ notFollowedBy("(").label("Start of pair declaration")) #> NestedPair()) <|> declarationType
     lazy val declarationType: Parsley[DeclarationType] = precedence[DeclarationType](pairType, baseType)(
-      Ops[DeclarationType](Postfix)("[".label("Start of array declaration") ~> "]".label("End of array declaration") #> ArrayType)
+      Ops[DeclarationType](Postfix)("[".label("Start of array declaration") ~> "]".label("End of array declaration") #> (x => ArrayType(x)))
     )
   }
 
