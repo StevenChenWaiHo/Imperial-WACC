@@ -25,7 +25,7 @@ object SemanticAnalyser {
   @tailrec
   private def arrayNestedType(array: DeclarationType, indices: Int): Either[List[String], DeclarationType] = {
     array match {
-      case ArrayType(innerType) if indices > 0 => arrayNestedType(innerType, indices - 1)
+      case ArrayType(innerType, _) if indices > 0 => arrayNestedType(innerType, indices - 1)
       case someType if indices == 0 => Right(someType)
       case someType if indices > 0 => Left(List("Attempted to dereference non-array type: %s".format(someType)))
     }
@@ -33,7 +33,7 @@ object SemanticAnalyser {
 
   def rValType(rVal: RVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = rVal match {
     case rVal: Expr => returnType(rVal)
-    case ArrayLiteral(exprs) => isHomogenousList(exprs).map(ArrayType(_))
+    case ArrayLiteral(exprs) => isHomogenousList(exprs).map(ArrayType(_, exprs.length))
     case PairValue(exp1, exp2) => simpleExpectation { (inputs) => Right(PairType(inputs.head, inputs(1))) }
       .matchedWith(List(returnType(exp1), returnType(exp2)))
     case Call(ident, args) => {
