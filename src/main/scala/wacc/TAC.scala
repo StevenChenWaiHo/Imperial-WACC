@@ -18,10 +18,10 @@ object TAC {
   case class BeginFuncTAC() extends TAC
   case class EndFuncTAC() extends TAC
   case class GOTO(label: Label) extends TAC
-  case class Label() extends TAC
+  case class Label(name: String = "label") extends TAC
 
   sealed trait Operand
   class TRegister(num: Int) extends Operand with TAC
-  class Literal(name: String) extends Operand
+  class Literal() extends Operand
   
 }
