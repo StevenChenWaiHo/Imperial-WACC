@@ -8,20 +8,26 @@ import wacc.TAC._
 import wacc.AbstractSyntaxTree.IfStat
 import wacc.AbstractSyntaxTree.Assignment
 
-object Translator {
-  //TODO: Translate each ASTNode into TAC
+class Translator {
+
+  private val map = collection.mutable.Map[ASTNode, TRegister]()
+
+  def nextRegister(): TRegister = {
+    new TRegister(0)
+  }
   
   def delegateASTNode(node: ASTNode, context : ScopeContext) : (List[TAC], TRegister) = {
     // Check if ASTNode has already been calculated
-    checkMap() match {
-      case Something => 
-      case Nothing => 
-    }
-    node match {
-      case BinaryOp(op, expr1, expr2) => translateBinOp(op, expr1, expr2)
-      case UnaryOp(op, expr) => translateUnOp(op, expr)
-      case IfStat(cond, stat1, stat2) => translateIfStat(cond, stat1, stat2)
-      case _ => (List(), null)
+    map.get(node) match {
+      case Some(reg) => (List(reg), reg)
+      case None => {
+        node match {
+          case BinaryOp(op, expr1, expr2) => translateBinOp(op, expr1, expr2)
+          case UnaryOp(op, expr) => translateUnOp(op, expr)
+          case IfStat(cond, stat1, stat2) => translateIfStat(cond, stat1, stat2)
+          case _ => (List(), null)
+        }
+      }
     }
   }
 

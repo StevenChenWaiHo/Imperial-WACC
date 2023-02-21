@@ -21,7 +21,7 @@ object TAC {
   case class Label() extends TAC
 
   sealed trait Operand
-  class TRegister() extends Operand
-  class Literal() extends Operand
+  class TRegister(num: Int) extends Operand with TAC
+  class Literal(name: String) extends Operand
   
 }
