@@ -11,9 +11,12 @@ import wacc.AbstractSyntaxTree.Assignment
 class Translator {
 
   private val map = collection.mutable.Map[ASTNode, TRegister]()
+  private val regList = collection.mutable.ListBuffer[TRegister]()
 
   def nextRegister(): TRegister = {
-    new TRegister(0)
+    val next = new TRegister(regList.length)
+    regList += next
+    next
   }
   
   def delegateASTNode(node: ASTNode, context : ScopeContext) : (List[TAC], TRegister) = {
