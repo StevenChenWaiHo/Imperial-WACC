@@ -35,6 +35,7 @@ object Translator {
           case lit: Literal => translateLiteral(lit)
           // TODO: check this if can be included in translate literal
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
+          case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
         map.addOne(node, tac._2)
@@ -56,6 +57,20 @@ object Translator {
     }
     (List(AssignmentTAC(lhs, next)), next)
   } 
+
+  def translateWhileLoop(expr: Expr, stat: Stat): (List[TAC], TRegister) = {
+    delegateASTNode(expr) match {
+      case (expList, expReg) => {
+        delegateASTNode(stat) match {
+          case (statList, statReg) => {
+            (List(Label("start")) ++ expList 
+            ++ List(IfTAC(expReg, Label("body")), GOTO(Label("end")), Label("body"))
+            ++ statList ++ List(GOTO(Label("start")), Label("end")), statReg)
+          }
+        }
+      }
+    }
+  }
 
   def translateBinOp(op: BinOp, exp1: Expr, exp2: Expr) = {
     delegateASTNode(exp1) match {

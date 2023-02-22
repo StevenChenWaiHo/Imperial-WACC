@@ -10,7 +10,7 @@ object TAC {
   case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC
   case class UnaryOpTAC(op: UnOp, t1: Operand, res: TRegister) extends TAC
   final case class AssignmentTAC(t1: Operand, res: TRegister) extends TAC {
-    override def toString(): String = res.toString + " = " + t1.toString()
+    override def toString(): String = res + " = " + t1
   }
   case class IfTAC(t1: Operand, goto: Label) extends TAC
   case class CommandTAC(cmd: Cmd, t1: Operand) extends TAC
