@@ -7,20 +7,28 @@ import wacc.AbstractSyntaxTree.CmdT.Cmd
 object TAC {
     sealed trait TAC
 
-  case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC
+  case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC {
+    override def toString(): String = res + " = " + t1 + " " + op + " " + t2
+  }
   case class UnaryOpTAC(op: UnOp, t1: Operand, res: TRegister) extends TAC
   final case class AssignmentTAC(t1: Operand, res: TRegister) extends TAC {
     override def toString(): String = res + " = " + t1
   }
-  case class IfTAC(t1: Operand, goto: Label) extends TAC
+  case class IfTAC(t1: Operand, goto: Label) extends TAC {
+    override def toString(): String = "if " + t1 + " then goto " + goto.name
+  }
   case class CommandTAC(cmd: Cmd, t1: Operand) extends TAC
   case class PushParamTAC(t1: Operand) extends TAC
   case class PopParamTAC(t1: TRegister) extends TAC
   case class CallTAC(f: Label) extends TAC
   case class BeginFuncTAC() extends TAC
   case class EndFuncTAC() extends TAC
-  case class GOTO(label: Label) extends TAC
-  case class Label(name: String = "label") extends TAC
+  case class GOTO(label: Label) extends TAC {
+    override def toString(): String = "goto: " + label.name
+  }
+  case class Label(name: String = "label") extends TAC {
+    override def toString(): String = name + ":"
+  }
 
   sealed trait Operand
   class TRegister(num: Int) extends Operand {
