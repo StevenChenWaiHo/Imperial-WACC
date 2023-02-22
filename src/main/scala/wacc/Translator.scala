@@ -35,6 +35,7 @@ object Translator {
           case lit: Literal => translateLiteral(lit)
           // TODO: check this if can be included in translate literal
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
+          case ArrayElem(name, indices) => translateArrayElem(name, indices)
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
@@ -58,14 +59,35 @@ object Translator {
     (List(AssignmentTAC(lhs, next)), next)
   } 
 
+  def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
+    delegateASTNode(IdentLiteral(name)) match {
+      // Hopefully find the identifier in the map already
+      case (_, aReg) => {
+        val is = collection.mutable.ListBuffer[TAC]()
+        val rs = collection.mutable.ListBuffer[TRegister]()
+        indices.foreach(i => delegateASTNode(i) match {
+          case (iList, iReg) => {
+            is.addAll(iList)
+            rs.addOne(iReg)
+          }
+        })
+        val next = nextRegister()
+        (is.toList ++ List(AssignmentTAC(new ArrayElemTAC(aReg, rs.toList), next)), next)
+      }
+    }
+  }
+
   def translateWhileLoop(expr: Expr, stat: Stat): (List[TAC], TRegister) = {
     delegateASTNode(expr) match {
       case (expList, expReg) => {
         delegateASTNode(stat) match {
           case (statList, statReg) => {
-            (List(Label("start")) ++ expList 
-            ++ List(IfTAC(expReg, Label("body")), GOTO(Label("end")), Label("body"))
-            ++ statList ++ List(GOTO(Label("start")), Label("end")), statReg)
+            val startLabel = new Label("start")
+            val bodyLabel = new Label("body")
+            val endLabel = new Label("end")
+            (List(startLabel) ++ expList 
+            ++ List(IfTAC(expReg, bodyLabel), GOTO(endLabel), bodyLabel)
+            ++ statList ++ List(GOTO(startLabel), endLabel), statReg)
           }
         }
       }
@@ -103,8 +125,8 @@ object Translator {
             case (trueList, reg2) => {
               delegateASTNode(stat2) match {
                 case (falseList, reg3) => {
-                  val l1 = new Label()
-                  val l2 = new Label()
+                  val l1 = new Label("true")
+                  val l2 = new Label("false")
                   (condList ++ List(IfTAC(reg1, l1)) ++ falseList ++ List(GOTO(l2), l1) ++ trueList ++ List(l2),
                     null)
                 }

@@ -47,7 +47,10 @@ object TAC {
     class BoolLiteralTAC(b: Boolean) extends LiteralTAC
     class CharLiteralTAC(c: Char) extends LiteralTAC
   class ArrayOp(elems: List[Operand]) extends Operand {
-    override def toString(): String = "[" + elems + "]"
+    override def toString(): String = elems.toString()
+  }
+  class ArrayElemTAC(arr: Operand, indices: List[Operand]) extends Operand {
+    override def toString(): String = arr + "[" + indices + "]"
   }
   
 }
