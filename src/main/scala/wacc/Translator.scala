@@ -1,6 +1,8 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.{ASTNode, Stat, SkipStat, BeginEndStat, Command, Program, Func}
+import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, Command, Func, Program, SkipStat, Stat}
+
+import javax.print.attribute.standard.Destination
 
 object Translator {
   //TODO: Translate each ASTNode into ARM
@@ -44,7 +46,7 @@ object Translator {
     str = str ++ translatePush(List("fp", "lr")) //Maybe not meant to be in BeginEnd
     str = str ++ translatePush(defaultRegistersList) //dependent on context
     str = str ++ delegateASTNode(stat, context)
-    str = str ++ translatePop(List(defaultRegistersList)) // dependent on context
+    str = str ++ translatePop(defaultRegistersList) // dependent on context
     str = str ++ translatePop(List("fp", "pc")) //Maybe meant to be in prog
     return str
   }
@@ -91,6 +93,26 @@ object Translator {
   }
 
   def translatePop(registers: List[String]): String = {
-     return "pop" ++ pushPopAssist(registers)
+     return "pop " ++ pushPopAssist(registers)
+  }
+
+  def ldrStrAssist(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)) : String = {
+    var str = destinationRegister.toString() ++ " "
+    operand match {
+      case Left(x) => {str = str ++ ", [" ++ sourceRegister ++ ", " ++ x.toString ++ "]"}
+      case Right(0) => {str = str ++ ", " ++ sourceRegister}
+      case Right(x) => {str = str ++ ", [" ++ sourceRegister ++ ", " ++ "#" ++ x.toString ++ "]"}
+    }
+    return str
+  }
+
+  def translateLdr(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)): String = {
+    //Incomplete
+    return "ldr " ++ ldrStrAssist(destinationRegister, sourceRegister, operand)
+  }
+
+  def translateStr(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)): String = {
+    //Incomplete
+    return "str " ++ ldrStrAssist(destinationRegister, sourceRegister, operand)
   }
 }
