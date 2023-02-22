@@ -1,6 +1,9 @@
 package wacc
 
+import sun.jvm.hotspot.asm.Operand
 import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, Command, Func, Program, SkipStat, Stat}
+
+import javax.print.attribute.standard.Destination
 
 object Assembler {
   val stack = Array[Register]()
@@ -170,7 +173,7 @@ object Assembler {
   }
 
   def ldrStrAssist(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)) : String = {
-    var str = destinationRegister.toString + " "
+    var str = destinationRegister.toString
     operand match {
       case Left(x) => {str = str + ", [" + sourceRegister + ", " + x.toString + "]"}
       case Right(0) => {str = str + ", " + sourceRegister}
@@ -188,7 +191,27 @@ object Assembler {
     //Incomplete
     return "str " + ldrStrAssist(destinationRegister, sourceRegister, operand)
   }
+
+  def addSubMulAssist(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): Unit = {
+    var str = destinationRegister.toString
+    operand match {
+      case Left(x) => {str = str + ", " + sourceRegister + ", " + operand}
+      case Right(x) => {str = str + ", " + sourceRegister + ", #" + operand}
+    }
+    return str
+  }
+
+  //Incomplete, no condition
+  def translateAdd(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+    return "add" + addSubMulAssist(destinationRegister, sourceRegister, operand)
+  }
+
+  def translateSub(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+    return "sub" + addSubMulAssist(destinationRegister, sourceRegister, operand)
+  }
+
+  def translateMul(destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
+    return "mul" + addSubMulAssist(destinationRegister, sourceRegister, Left(sourceRegisterTwo))
+  }
   //TODO: implement other commands
-
-
 }
