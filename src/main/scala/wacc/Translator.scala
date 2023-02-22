@@ -25,21 +25,43 @@ object Translator {
           case BinaryOp(op, expr1, expr2) => translateBinOp(op, expr1, expr2)
           case UnaryOp(op, expr) => translateUnOp(op, expr)
           case IfStat(cond, stat1, stat2) => translateIfStat(cond, stat1, stat2)
+          case Declaration(dataType, ident, rvalue) => translateAssignment(ident, rvalue)
           case Assignment(lvalue, rvalue) => translateAssignment(lvalue, rvalue)
           case BeginEndStat(stat) => translateBeginEnd(stat)
           case SkipStat() => translateSkip()
           case Program(funcs, stats) => translateProgram(funcs, stats)
           case StatList(stats) => translateStatList(stats)
           case Command(command, input) => translateCommand(command, input)
+          case lit: Literal => translateLiteral(lit)
+          case IdentLiteral(name) => {
+            val next = nextRegister()
+            (List(AssignmentTAC(new IdentLiteralTAC(name), next)), next)
+          }
           case IntLiteral(x) => {
             val next = nextRegister()
-            (List(AssignmentTAC(new Literal(x), next)), next)
+            (List(AssignmentTAC(new IntLiteralTAC(x), next)), next)
           }
-          case _ => (List(new Label("Not Implemented")), null)
+          // TODO: check this if can be included in translate literal
+          case ArrayLiteral(elements) => translateArrayLiteral(elements)
+          case na => (List(new Label("Not Implemented " + na)), null)
         }
       }
     }
   }
+
+  def translateLiteral(lit: Literal): (List[TAC], TRegister) = {
+    val next = nextRegister()
+    val lhs = lit match {
+      case BoolLiteral(x) => new BoolLiteralTAC(x)
+      case CharLiteral(x) => new CharLiteralTAC(x)
+      case IntLiteral(x) => new IntLiteralTAC(x)
+      case StringLiteral(x) => new StringLiteralTAC(x)
+      case IdentLiteral(x) => new IdentLiteralTAC(x)
+      //case PairLiteral(x) => new PairLiteralTAC(x)
+      //case ArrayLiteral(x) => translateArrayLiteral(x)
+    }
+    (List(AssignmentTAC(lhs, next)), next)
+  } 
 
   def translateBinOp(op: BinOp, exp1: Expr, exp2: Expr) = {
     delegateASTNode(exp1) match {
@@ -89,7 +111,7 @@ object Translator {
       case (lList, lReg) => {
         delegateASTNode(rvalue) match {
           case (rList, rReg) => {
-            (lList ++ rList ++ List(AssignmentTAC(rReg, lReg)), lReg) // TODO: Check this
+            (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), lReg) // TODO: Check this
           }
         }
       }
@@ -109,7 +131,7 @@ object Translator {
     // TODO: Change to not use mutable list?
     val TAClist = collection.mutable.ListBuffer[TAC]()
     stats.foreach(s => {
-      TAClist ++ delegateASTNode(s)._1
+      TAClist.addAll(delegateASTNode(s)._1)
     })
     (TAClist.toList, null)
   }
@@ -120,6 +142,23 @@ object Translator {
         (List(new Label()) ++ sList, null)
       }
     } 
+  }
+
+  def translateArrayLiteral(elems: List[Expr]): (List[TAC], TRegister) = {
+    val instrs = collection.mutable.ListBuffer[TAC]()
+    val regs = collection.mutable.ListBuffer[TRegister]()
+    elems.foreach(e => {
+      val node = delegateASTNode(e)
+      node match {
+        case (instr, reg) => {
+          instrs.addAll(instr)
+          regs += reg
+        }
+      }
+    })
+    val next = nextRegister()
+    (instrs.toList ++ List(AssignmentTAC(new ArrayOp(regs.toList), next)),
+      next)
   }
 
   def translateSkip(): (List[TAC], TRegister) = {
