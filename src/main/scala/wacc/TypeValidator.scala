@@ -78,6 +78,10 @@ class ScopeContext(scopeStack: List[Scope]) {
   def scopeVarSize(): Int = {
     return scopeStack.last.vars.size // returns the size of the variables in this scope
   }
+
+  def scopeLevel(): Int = {
+    return scopeStack.length - 1;
+  }
 }
 
 
