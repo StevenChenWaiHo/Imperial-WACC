@@ -19,9 +19,9 @@ object Translator {
   def delegateASTNode(node: ASTNode) : (List[TAC], TRegister) = {
     // Check if ASTNode has already been calculated
     map.get(node) match {
-      case Some(reg) => (List(reg), reg)
+      case Some(reg) => (List(), reg)
       case None => {
-        node match {
+        val tac = node match {
           case BinaryOp(op, expr1, expr2) => translateBinOp(op, expr1, expr2)
           case UnaryOp(op, expr) => translateUnOp(op, expr)
           case IfStat(cond, stat1, stat2) => translateIfStat(cond, stat1, stat2)
@@ -33,18 +33,12 @@ object Translator {
           case StatList(stats) => translateStatList(stats)
           case Command(command, input) => translateCommand(command, input)
           case lit: Literal => translateLiteral(lit)
-          case IdentLiteral(name) => {
-            val next = nextRegister()
-            (List(AssignmentTAC(new IdentLiteralTAC(name), next)), next)
-          }
-          case IntLiteral(x) => {
-            val next = nextRegister()
-            (List(AssignmentTAC(new IntLiteralTAC(x), next)), next)
-          }
           // TODO: check this if can be included in translate literal
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
+        map.addOne(node, tac._2)
+        tac
       }
     }
   }

@@ -23,7 +23,7 @@ object TAC {
   case class Label(name: String = "label") extends TAC
 
   sealed trait Operand
-  class TRegister(num: Int) extends Operand with TAC {
+  class TRegister(num: Int) extends Operand {
     override def toString(): String = "_T" + num
   }
   class LiteralTAC() extends Operand
