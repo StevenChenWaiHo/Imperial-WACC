@@ -195,8 +195,8 @@ object Assembler {
   def addSubMulAssist(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): Unit = {
     var str = destinationRegister.toString
     operand match {
-      case Left(x) => {str = str + ", " + sourceRegister + ", " + operand}
-      case Right(x) => {str = str + ", " + sourceRegister + ", #" + operand}
+      case Left(x) => {str = str + ", " + sourceRegister + ", " + x.toString}
+      case Right(x) => {str = str + ", " + sourceRegister + ", " + "#" + x.toString}
     }
     return str
   }
@@ -213,5 +213,31 @@ object Assembler {
   def translateMul(destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
     return "mul" + addSubMulAssist(destinationRegister, sourceRegister, Left(sourceRegisterTwo))
   }
+
+  def translateCompare(register1: Register, operand: Either[Register, Int]): String = {
+    var str = "cmp " + register1.toString
+    operand match {
+      case Left(x) => {return str + ", " + x.toString}
+      case Right(x) => {return str + ", " + "#" + x.toString}
+    }
+  }
+
+  def translateMove(destinationRegister: Register, operand: Either[Register, Int]) : String = {
+    var str = "cmp " + destinationRegister
+    operand match {
+      case Left(x) => {str = str + ", " + x.toString}
+      case Right(x) => {str = str + ", " + "#" + x.toString}
+    }
+    return str
+  }
+
+  def translateBranch(operand: String): String = {
+    return "b " + operand
+  }
+
+  def translateBranchLink(operand: String): String = {
+    return "bl " + operand
+  }
   //TODO: implement other commands
+
 }
