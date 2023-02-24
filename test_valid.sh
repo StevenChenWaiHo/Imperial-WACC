@@ -23,7 +23,7 @@ do
     OUT=$(qemu-arm -L /usr/arm-linux-gnueabi/ testEXE)
     
     # Retrieve the expected output from the example file
-    EXP_OUT=$(sed -n -e '/# Output:/,$p' $f | sed '1d' | sed -e '/# Program:/,$d' | sed 's/# //')
+    EXP_OUT=$(sed -n -e '/# Output:/,$p' $f | sed '1d' | sed -e '/# Program:/,$d' | sed 's/# //' | sed 's/#//')
     
     # Check for differences
     if [ "${OUT}" != "${EXP_OUT}" ]; then
