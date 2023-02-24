@@ -120,11 +120,11 @@ object Assembler {
     } else {
       defaultRegistersList = defaultRegistersList ++ registersList.slice(0, context.scopeVarSize())
     }
-    str = str ++ translatePush(List(fp, lr)) //Maybe not meant to be in BeginEnd
-    str = str ++ translatePush(defaultRegistersList) //dependent on context
+    str = str ++ translatePush("", List(fp, lr)) //Maybe not meant to be in BeginEnd
+    str = str ++ translatePush("", defaultRegistersList) //dependent on context
     str = str ++ delegateASTNode(stat, context)
-    str = str ++ translatePop(defaultRegistersList) // dependent on context
-    str = str ++ translatePop(List(fp, pc)) //Maybe meant to be in prog
+    str = str ++ translatePop("", defaultRegistersList) // dependent on context
+    str = str ++ translatePop("", List(fp, pc)) //Maybe meant to be in prog
     return str
   }
 
@@ -152,7 +152,7 @@ object Assembler {
     command + " " + operand + ", " + operand2
   }
 
-  def pushPopAssist(/*command: String,*/condition: String, registers: List[Register]): String = {
+  def pushPopAssist(condition: String, registers: List[Register]): String = {
     var str = condition + " {"
     for (register <- registers) {
       if (register != registers.last) {
@@ -166,11 +166,11 @@ object Assembler {
   }
 
   def translatePush(condition: String, registers: List[Register]): String = {
-    return "push" + pushPopAssist(registers)
+    return "push" + pushPopAssist(condition, registers)
   }
 
   def translatePop(condition: String, registers: List[Register]): String = {
-    return "pop" + pushPopAssist(registers)
+    return "pop" + pushPopAssist(condition, registers)
   }
 
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)) : String = {
