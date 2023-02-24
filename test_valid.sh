@@ -16,7 +16,9 @@ do
         continue
     fi
 
-    arm-linux-gnueabi-gcc -o testEXE -mcpu=arm1176jzf-s -mtune=arm1176jzf-s ARMCode.s
+    FNAME=$(sed 's/.wacc/.s/' "${f##*/}")
+    echo FNAME
+    arm-linux-gnueabi-gcc -o testEXE -mcpu=arm1176jzf-s -mtune=arm1176jzf-s $FNAME
     # Get output produced by compiled code
     OUT=$(qemu-arm -L /usr/arm-linux-gnueabi/ testEXE)
     
