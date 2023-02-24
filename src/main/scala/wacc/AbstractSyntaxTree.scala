@@ -10,7 +10,7 @@ object AbstractSyntaxTree {
 
   sealed trait PairLit extends Expr with RVal
 
-  case class PairLiteral() extends PairLit
+  case class PairLiteral() extends PairLit  
 
   sealed trait ArrayE extends Expr with LVal
 
@@ -18,18 +18,19 @@ object AbstractSyntaxTree {
 
   sealed trait IdentLit extends Expr with LVal
 
-  case class IdentLiteral(name: String) extends IdentLit
+  case class IdentLiteral(name: String) extends IdentLit with Literal
 
 
   sealed trait Expr extends RVal
+  sealed trait Literal
 
-  case class IntLiteral(x: Int) extends Expr
+  case class IntLiteral(x: Int) extends Expr with Literal
 
-  case class BoolLiteral(x: Boolean) extends Expr
+  case class BoolLiteral(x: Boolean) extends Expr with Literal
 
-  case class CharLiteral(x: Char) extends Expr
+  case class CharLiteral(x: Char) extends Expr with Literal
 
-  case class StringLiteral(x: String) extends Expr
+  case class StringLiteral(x: String) extends Expr with Literal
 
   case class UnaryOp(op: UnOp, expr: Expr) extends Expr
 
