@@ -16,9 +16,9 @@ do
         continue
     fi
 
-    FNAME=$(sed 's/.wacc/.s/' "${f##*/}")
-    echo FNAME
+    FNAME=$(sed 's/.wacc/.s/' <<< "${f##*/}")
     arm-linux-gnueabi-gcc -o testEXE -mcpu=arm1176jzf-s -mtune=arm1176jzf-s $FNAME
+    rm -rf $FNAME
     # Get output produced by compiled code
     OUT=$(qemu-arm -L /usr/arm-linux-gnueabi/ testEXE)
     
