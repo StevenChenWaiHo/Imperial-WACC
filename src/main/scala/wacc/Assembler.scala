@@ -173,8 +173,8 @@ object Assembler {
     return "pop " + pushPopAssist(registers)
   }
 
-  def ldrStrAssist(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)) : String = {
-    var str = destinationRegister.toString
+  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)) : String = {
+    var str = condition + " " + destinationRegister.toString
     operand match {
       case Left(x) => {str = str + ", [" + sourceRegister + ", " + x.toString + "]"}
       case Right(0) => {str = str + ", " + sourceRegister}
@@ -183,18 +183,18 @@ object Assembler {
     return str
   }
 
-  def translateLdr(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)): String = {
+  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)): String = {
     //Incomplete
-    return "ldr " + ldrStrAssist(destinationRegister, sourceRegister, operand)
+    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def translateStr(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)): String = {
+  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)): String = {
     //Incomplete
-    return "str " + ldrStrAssist(destinationRegister, sourceRegister, operand)
+    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def addSubMulAssist(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): Unit = {
-    var str = destinationRegister.toString
+  def addSubMulAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): Unit = {
+    var str = condition + " " + destinationRegister.toString
     operand match {
       case Left(x) => {str = str + ", " + sourceRegister + ", " + x.toString}
       case Right(x) => {str = str + ", " + sourceRegister + ", " + "#" + x.toString}
@@ -203,28 +203,28 @@ object Assembler {
   }
 
   //Incomplete, no condition
-  def translateAdd(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
-    return "add" + addSubMulAssist(destinationRegister, sourceRegister, operand)
+  def translateAdd(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+    return "add" + addSubMulAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def translateSub(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
-    return "sub" + addSubMulAssist(destinationRegister, sourceRegister, operand)
+  def translateSub(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+    return "sub" + addSubMulAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def translateMul(destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
-    return "mul" + addSubMulAssist(destinationRegister, sourceRegister, Left(sourceRegisterTwo))
+  def translateMul(condition: String, destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
+    return "mul" + addSubMulAssist(condition, destinationRegister, sourceRegister, Left(sourceRegisterTwo))
   }
 
-  def translateCompare(register1: Register, operand: Either[Register, Int]): String = {
-    var str = "cmp " + register1.toString
+  def translateCompare(condition: String, register1: Register, operand: Either[Register, Int]): String = {
+    var str = "cmp" + condition + " " + register1.toString
     operand match {
       case Left(x) => {return str + ", " + x.toString}
       case Right(x) => {return str + ", " + "#" + x.toString}
     }
   }
 
-  def translateMove(destinationRegister: Register, operand: Either[Register, Int]) : String = {
-    var str = "cmp " + destinationRegister
+  def translateMove(condition: String, destinationRegister: Register, operand: Either[Register, Int]) : String = {
+    var str = "cmp" + condition + " " + destinationRegister
     operand match {
       case Left(x) => {str = str + ", " + x.toString}
       case Right(x) => {str = str + ", " + "#" + x.toString}
@@ -232,15 +232,15 @@ object Assembler {
     return str
   }
 
-  def translateBranch(operand: String): String = {
-    return "b " + operand
+  def translateBranch(condition: String, operand: String): String = {
+    return "b" + condition + " " + operand
   }
 
-  def translateBranchLink(operand: String): String = {
-    return "bl " + operand
+  def translateBranchLink(condition: String, operand: String): String = {
+    return "bl" + condition + " " + operand
   }
-  //TODO: implement other commands
   /*
+  //TODO: implement other commands
   val OperandToLiteral: Map[TAC.Operand, Either[String, Either[Register, Int]]]
   def translateOperand(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
     if (!(!OperandToLiteral.contains(operand))) {
@@ -284,13 +284,6 @@ object Assembler {
       }
     }
   }
-  */
-  /*
-  def translateLiteralTAC(operand: LiteralTAC): Either[String, Either[Register, Int]] = {
-    operand match {
-      case CharLiteralTAC(c)
-    }
-  }
 
   def translateTAC(tripleAddressCode: TAC): List[String] = {
     var strList = List("")
@@ -298,12 +291,17 @@ object Assembler {
       case BinaryOpTAC(op, t1, t2, res) => {
         op match {
           case BinaryOpType.Add=> {
-
-            strList ++ List(translateAdd(translateOperand() t1, t2))
+            strList ++ List(translateAdd(translateOperand(res), translateOperand(t1), translateOperand(t2)))
+          }
+          case BinaryOpType.Sub => {
+            strList ++ List(translateSub(translateOperand(res), translateOperand(t1), translateOperand(t2)))
+          }
+          case BinaryOpType.Mul => {
+            strList ++ List(translateMul())
           }
         }
       }
     }
   }
-  */
+*/
 }
