@@ -13,11 +13,11 @@ object CFG {
   type Id = Int
 
   sealed trait CFGReg
-  class DReg() extends CFGReg
-  class TReg() extends CFGReg
+  class DReg(x: Int) extends CFGReg
+  class TReg(x: Int) extends CFGReg
 
   case class CFGNode(id: Id, instr: TAC, uses: ListBuffer[CFGReg],
-                     defs: ListBuffer[CFGReg], succs: ListBuffer[Int], preds: ListBuffer[Int])
+                     defs: ListBuffer[CFGReg], succs: ListBuffer[Id], preds: ListBuffer[Id])
   
   case class LiveIn(id: Id, regs: ListBuffer[CFGReg])
   case class LiveOut(id: Id, regs: ListBuffer[CFGReg])
