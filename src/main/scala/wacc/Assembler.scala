@@ -152,7 +152,7 @@ object Assembler {
     command + " " + operand + ", " + operand2
   }
 
-  def pushPopAssist(condition: String, registers: List[Register]): String = {
+  def pushPopAssist(/*command: String,*/condition: String, registers: List[Register]): String = {
     var str = condition + " {"
     for (register <- registers) {
       if (register != registers.last) {
