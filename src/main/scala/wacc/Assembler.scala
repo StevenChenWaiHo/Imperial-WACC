@@ -1,7 +1,8 @@
 package wacc
 
 import sun.jvm.hotspot.asm.Operand
-import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, Command, Func, Program, SkipStat, Stat}
+import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Func, Program, SkipStat, Stat}
+import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteralTAC, IdentLiteralTAC, IntLiteralTAC, LiteralTAC, StringLiteralTAC, TAC, TRegister}
 
 import javax.print.attribute.standard.Destination
 
@@ -239,5 +240,70 @@ object Assembler {
     return "bl " + operand
   }
   //TODO: implement other commands
+  /*
+  val OperandToLiteral: Map[TAC.Operand, Either[String, Either[Register, Int]]]
+  def translateOperand(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
+    if (!(!OperandToLiteral.contains(operand))) {
+      return OperandToLiteral(operand)
+    } else {
+      operand match {
+        case TRegister(num) => {
+          OperandToLiteral.updated(operand, Right(Left(r0)))
+          return Right(Left(r0))
+        }
+        case LiteralTAC() => {
+          case CharLiteralTAC(c) => {
+            OperandToLiteral.updated(operand, Left(c.toString))
+            return Left(c.toString)
+          }
+          case StringLiteralTAC(s) => {
+            OperandToLiteral.updated(operand, Left(s))
+            return Left(s)
+          }
+          case IntLiteralTAC(int) => {
+            OperandToLiteral.updated(operand,Right(Right(Int)))
+            return Right(Right(int))
+          }
+          case IdentLiteralTAC(ident) => {
+            OperandToLiteral.updated(operand, Left(ident))
+            return Left(ident)
+          }
+          case BoolLiteralTAC(bool) => {
+            OperandToLiteral.updated(operand, Left("Not complete"))
+            return Left("Not complete")
+          }
+        }
+        case ArrayOp(elems) => {
+          OperandToLiteral.updated(operand, Left("Not complete"))
+          Left("Not complete")
+        }
+        case ArrayElemTAC(ar, in) => {
+          OperandToLiteral.updated(operand, Left("Not complete"))
+          Left("Not complete")
+        }
+      }
+    }
+  }
+  */
+  /*
+  def translateLiteralTAC(operand: LiteralTAC): Either[String, Either[Register, Int]] = {
+    operand match {
+      case CharLiteralTAC(c)
+    }
+  }
 
+  def translateTAC(tripleAddressCode: TAC): List[String] = {
+    var strList = List("")
+    tripleAddressCode match {
+      case BinaryOpTAC(op, t1, t2, res) => {
+        op match {
+          case BinaryOpType.Add=> {
+
+            strList ++ List(translateAdd(translateOperand() t1, t2))
+          }
+        }
+      }
+    }
+  }
+  */
 }
