@@ -52,7 +52,7 @@ object Main {
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
-      val fileName = args.head.split('.')[0] + ".s"
+      val fileName = args.head.split(".").head + ".s"
       val outputFile = new File(fileName)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))
       for(line <- result.reverse) fileWriter.write(line)
