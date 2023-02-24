@@ -1,6 +1,10 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, Command, Func, Program, SkipStat, Stat}
+import sun.jvm.hotspot.asm.Operand
+import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Func, Program, SkipStat, Stat}
+import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteralTAC, IdentLiteralTAC, IntLiteralTAC, LiteralTAC, StringLiteralTAC, TAC, TRegister}
+
+import javax.print.attribute.standard.Destination
 
 object Assembler {
   val stack = Array[Register]()
@@ -170,7 +174,7 @@ object Assembler {
   }
 
   def ldrStrAssist(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)) : String = {
-    var str = destinationRegister.toString + " "
+    var str = destinationRegister.toString
     operand match {
       case Left(x) => {str = str + ", [" + sourceRegister + ", " + x.toString + "]"}
       case Right(0) => {str = str + ", " + sourceRegister}
@@ -188,7 +192,118 @@ object Assembler {
     //Incomplete
     return "str " + ldrStrAssist(destinationRegister, sourceRegister, operand)
   }
+
+  def addSubMulAssist(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): Unit = {
+    var str = destinationRegister.toString
+    operand match {
+      case Left(x) => {str = str + ", " + sourceRegister + ", " + x.toString}
+      case Right(x) => {str = str + ", " + sourceRegister + ", " + "#" + x.toString}
+    }
+    return str
+  }
+
+  //Incomplete, no condition
+  def translateAdd(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+    return "add" + addSubMulAssist(destinationRegister, sourceRegister, operand)
+  }
+
+  def translateSub(destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+    return "sub" + addSubMulAssist(destinationRegister, sourceRegister, operand)
+  }
+
+  def translateMul(destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
+    return "mul" + addSubMulAssist(destinationRegister, sourceRegister, Left(sourceRegisterTwo))
+  }
+
+  def translateCompare(register1: Register, operand: Either[Register, Int]): String = {
+    var str = "cmp " + register1.toString
+    operand match {
+      case Left(x) => {return str + ", " + x.toString}
+      case Right(x) => {return str + ", " + "#" + x.toString}
+    }
+  }
+
+  def translateMove(destinationRegister: Register, operand: Either[Register, Int]) : String = {
+    var str = "cmp " + destinationRegister
+    operand match {
+      case Left(x) => {str = str + ", " + x.toString}
+      case Right(x) => {str = str + ", " + "#" + x.toString}
+    }
+    return str
+  }
+
+  def translateBranch(operand: String): String = {
+    return "b " + operand
+  }
+
+  def translateBranchLink(operand: String): String = {
+    return "bl " + operand
+  }
   //TODO: implement other commands
+  /*
+  val OperandToLiteral: Map[TAC.Operand, Either[String, Either[Register, Int]]]
+  def translateOperand(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
+    if (!(!OperandToLiteral.contains(operand))) {
+      return OperandToLiteral(operand)
+    } else {
+      operand match {
+        case TRegister(num) => {
+          OperandToLiteral.updated(operand, Right(Left(r0)))
+          return Right(Left(r0))
+        }
+        case LiteralTAC() => {
+          case CharLiteralTAC(c) => {
+            OperandToLiteral.updated(operand, Left(c.toString))
+            return Left(c.toString)
+          }
+          case StringLiteralTAC(s) => {
+            OperandToLiteral.updated(operand, Left(s))
+            return Left(s)
+          }
+          case IntLiteralTAC(int) => {
+            OperandToLiteral.updated(operand,Right(Right(Int)))
+            return Right(Right(int))
+          }
+          case IdentLiteralTAC(ident) => {
+            OperandToLiteral.updated(operand, Left(ident))
+            return Left(ident)
+          }
+          case BoolLiteralTAC(bool) => {
+            OperandToLiteral.updated(operand, Left("Not complete"))
+            return Left("Not complete")
+          }
+        }
+        case ArrayOp(elems) => {
+          OperandToLiteral.updated(operand, Left("Not complete"))
+          Left("Not complete")
+        }
+        case ArrayElemTAC(ar, in) => {
+          OperandToLiteral.updated(operand, Left("Not complete"))
+          Left("Not complete")
+        }
+      }
+    }
+  }
+  */
+  /*
+  def translateLiteralTAC(operand: LiteralTAC): Either[String, Either[Register, Int]] = {
+    operand match {
+      case CharLiteralTAC(c)
+    }
+  }
 
+  def translateTAC(tripleAddressCode: TAC): List[String] = {
+    var strList = List("")
+    tripleAddressCode match {
+      case BinaryOpTAC(op, t1, t2, res) => {
+        op match {
+          case BinaryOpType.Add=> {
 
+            strList ++ List(translateAdd(translateOperand() t1, t2))
+          }
+        }
+      }
+    }
+  }
+  */
 }
