@@ -152,8 +152,8 @@ object Assembler {
     command + " " + operand + ", " + operand2
   }
 
-  def pushPopAssist(registers: List[Register]): String = {
-    var str = "{"
+  def pushPopAssist(condition: String, registers: List[Register]): String = {
+    var str = condition + " {"
     for (register <- registers) {
       if (register != registers.last) {
         str = str + register.toString + ", "
@@ -165,12 +165,12 @@ object Assembler {
     return str
   }
 
-  def translatePush(registers: List[Register]): String = {
-    return "push " + pushPopAssist(registers)
+  def translatePush(condition: String, registers: List[Register]): String = {
+    return "push" + pushPopAssist(registers)
   }
 
-  def translatePop(registers: List[Register]): String = {
-    return "pop " + pushPopAssist(registers)
+  def translatePop(condition: String, registers: List[Register]): String = {
+    return "pop" + pushPopAssist(registers)
   }
 
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)) : String = {
