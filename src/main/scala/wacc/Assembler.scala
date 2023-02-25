@@ -7,7 +7,6 @@ import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteral
 import javax.print.attribute.standard.Destination
 
 object Assembler {
-  val movLim: Int = 8192
   val stack = Array[Register]()
   val memory = Array[Int]()
   /*object Registers extends Enumeration {
@@ -171,8 +170,8 @@ object Assembler {
   case class LogicalShiftLeft(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
     override def toString: String = {
       operand match {
-        case Left(x) => {sourceRegister + ", " + "LSL, " + x}
-        case Right(value) => {sourceRegister + ", " + "LSL, " + "#" + value}
+        case Left(x) => {sourceRegister + ", " + "LSL " + x}
+        case Right(value) => {sourceRegister + ", " + "LSL " + "#" + value}
       }
     }
   }
@@ -180,8 +179,8 @@ object Assembler {
   case class LogicalShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
     override def toString: String = {
       operand match {
-        case Left(x) => {sourceRegister + ", " + "LSR, " + x}
-        case Right(value) => {sourceRegister + ", " + "LSR, " + " " + "#" + value}
+        case Left(x) => {sourceRegister + ", " + "LSR " + x}
+        case Right(value) => {sourceRegister + ", " + "LSR " + " " + "#" + value}
       }
     }
   }
@@ -189,8 +188,8 @@ object Assembler {
   case class ArithmeticShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
     override def toString: String = {
       operand match {
-        case Left(x) => {sourceRegister + ", " + "ASR, " + x}
-        case Right(value) => {sourceRegister + ", " + "ASR, " + "#" + value}
+        case Left(x) => {sourceRegister + ", " + "ASR " + x}
+        case Right(value) => {sourceRegister + ", " + "ASR " + "#" + value}
       }
     }
   }
@@ -198,8 +197,8 @@ object Assembler {
   case class RotateRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
     override def toString: String = {
       operand match {
-        case Left(x) => {sourceRegister + ", " + "LSL, " + x}
-        case Right(value) => {sourceRegister + ", " + "LSL, " + "#" + value}
+        case Left(x) => {sourceRegister + ", " + "LSL " + x}
+        case Right(value) => {sourceRegister + ", " + "LSL " + "#" + value}
       }
     }
   }
@@ -391,9 +390,23 @@ object Assembler {
   }
   */
 
-
+  def determineLdr(x: Int): Boolean = {
+    if (x <= 255) {
+      return false
+    } else {
+      for (i <- 1 to 16) {
+        if ((x >> i) << i == x) {
+          return false //false
+        }
+      }
+      return true //true
+    }
+  }
 
   def translateTAC(tripleAddressCode: TAC): List[String] = {
+    //Need to figure out how registers work
+    //Push and pop might not be in right place
+    //Algorithm for determining if ldr is needed
     var strList = List("")
     tripleAddressCode match {
       case BinaryOpTAC(op, t1, t2, res) => {
@@ -410,7 +423,7 @@ object Assembler {
               case Left(x) => {
                 t2t match {
                   case Right(x) => {
-                    if (x > movLim) {
+                    if (determineLdr(x)) {
                       strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
                       t2t = Left(r9)
                     }
@@ -419,7 +432,7 @@ object Assembler {
                 strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
               }
               case Right(x) => {
-                if (x > movLim) {
+                if (determineLdr(x)) {
                   strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
                 } else {
                   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
@@ -435,9 +448,11 @@ object Assembler {
           }
           case BinaryOpType.Mul => {
             strList ++ List(translateSmull(r8, translateOperand(res), translateOperand(t1), translateOperand(t2)))
-            strList ++ List(translateCompare())
+            strList ++ List(translateCompare("", r9, ArithmeticShiftRight(r8, Right(31))))
           }
-          case BinaryOpType.
+          case BinaryOpType.Div => {
+            strList ++ List()
+          }
         }
       }
     }
