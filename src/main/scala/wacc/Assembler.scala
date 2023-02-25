@@ -170,8 +170,8 @@ object Assembler {
   case class LogicalShiftLeft(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
     override def toString: String = {
       operand match {
-        case Left(x) => {sourceRegister + " " + "LSL" + x}
-        case Right(value) => {sourceRegister + " " + "LSL" + "#" + value}
+        case Left(x) => {sourceRegister + ", " + "LSL, " + x}
+        case Right(value) => {sourceRegister + ", " + "LSL, " + "#" + value}
       }
     }
   }
@@ -179,8 +179,8 @@ object Assembler {
   case class LogicalShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
     override def toString: String = {
       operand match {
-        case Left(x) => {sourceRegister + " " + "LSR" + x}
-        case Right(value) => {sourceRegister + " " + "LSR" + " " + "#" + value}
+        case Left(x) => {sourceRegister + ", " + "LSR, " + x}
+        case Right(value) => {sourceRegister + ", " + "LSR, " + " " + "#" + value}
       }
     }
   }
@@ -188,8 +188,8 @@ object Assembler {
   case class ArithmeticShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
     override def toString: String = {
       operand match {
-        case Left(x) => {sourceRegister + " " + "ASR" + x}
-        case Right(value) => {sourceRegister + " " + "ASR" + "#" + value}
+        case Left(x) => {sourceRegister + ", " + "ASR, " + x}
+        case Right(value) => {sourceRegister + ", " + "ASR, " + "#" + value}
       }
     }
   }
@@ -197,15 +197,15 @@ object Assembler {
   case class RotateRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
     override def toString: String = {
       operand match {
-        case Left(x) => {sourceRegister + " " + "LSL" + x}
-        case Right(value) => {sourceRegister + " " + "LSL" + "#" + value}
+        case Left(x) => {sourceRegister + ", " + "LSL, " + x}
+        case Right(value) => {sourceRegister + ", " + "LSL, " + "#" + value}
       }
     }
   }
 
   case class RotateRightExtended(sourceRegister: Register) extends Operand2 {
     override def toString: String = {
-      sourceRegister + " " + "RRX"
+      sourceRegister + ", " + "RRX"
     }
   }
 
@@ -276,21 +276,16 @@ object Assembler {
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): Unit = {
-    var str = condition + setflag + " " + destinationRegister
-    operand match {
-      case Left(x) => {str = str + ", " + sourceRegister + ", " + x.toString}
-      case Right(x) => {str = str + ", " + sourceRegister + ", " + "#" + x.toString}
-    }
-    return str
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
+    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
   }
 
   //Incomplete, no condition
-  def translateAdd(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+  def translateAdd(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
     return "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateSub(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
     return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
@@ -372,7 +367,6 @@ object Assembler {
           }
           case IntLiteralTAC(int) => {
             OperandToLiteral.updated(operand,Right(Right(Int)))
-            return Right(Right(int))
           }
           case IdentLiteralTAC(ident) => {
             OperandToLiteral.updated(operand, Left(ident))
@@ -394,20 +388,37 @@ object Assembler {
       }
     }
   }
-
+  */
   def translateTAC(tripleAddressCode: TAC): List[String] = {
     var strList = List("")
     tripleAddressCode match {
       case BinaryOpTAC(op, t1, t2, res) => {
         op match {
           case BinaryOpType.Add=> {
-            strList = strList ++ List(translateAdd(translateOperand(res), translateOperand(t1), translateOperand(t2)))
+            val destinationRegister: Register = translateOperand(res)
+            var t1t: Either[Register, Int] = translateOperand(t1)
+            val t2t: Either[Register, Int] = translateOperand(t2)
+            var t1Final: Register
+            strList = strList ++ List(translatePush("", List(r8)))
+            strList = strList ++ List(translatePop("", List(r8)))
+            strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
+            strList = strList ++ List(translateMove("", translateMove(translateOperand(res))))
+            t1t match {
+              case Left(x) => {
+                strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
+              }
+              case Right(x) => {
+                strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
+                strList = strList ++ List(translateAdd("", Status(), destinationRegister, r8, ImmediateValueOrRegister(t2t)))
+              }
+            }
+            return strList
           }
           case BinaryOpType.Sub => {
             strList = strList ++ List(translateSub(translateOperand(res), translateOperand(t1), translateOperand(t2)))
           }
           case BinaryOpType.Mul => {
-            strList ++ List(translateSmull(translateOperand(res), translateOperand(t1), translateOperand(t2)))
+            strList ++ List(translateSmull(r8, translateOperand(res), translateOperand(t1), translateOperand(t2)))
             strList ++ List(translateCompare())
           }
           case BinaryOpType.
@@ -415,6 +426,4 @@ object Assembler {
       }
     }
   }
-
-  */
 }
