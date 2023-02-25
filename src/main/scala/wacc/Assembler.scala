@@ -7,6 +7,7 @@ import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteral
 import javax.print.attribute.standard.Destination
 
 object Assembler {
+  val movLim: Int = 8192
   val stack = Array[Register]()
   val memory = Array[Int]()
   /*object Registers extends Enumeration {
@@ -409,7 +410,7 @@ object Assembler {
               case Left(x) => {
                 t2t match {
                   case Right(x) => {
-                    if (x > ) {
+                    if (x > movLim) {
                       strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
                       t2t = Left(r9)
                     }
@@ -418,7 +419,7 @@ object Assembler {
                 strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
               }
               case Right(x) => {
-                if (x > ) {
+                if (x > movLim) {
                   strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
                 } else {
                   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
