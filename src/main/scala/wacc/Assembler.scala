@@ -152,6 +152,90 @@ object Assembler {
     command + " " + operand + ", " + operand2
   }
 
+  sealed trait Operand2
+  case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends Operand2 {
+    @Override
+    override def toString: String = {
+      operand match {
+        case Left(value) => {
+          value.toString
+        }
+        case Right(value) => {
+          "#" + value
+        }
+      }
+    }
+  }
+
+  case class LogicalShiftLeft(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
+    override def toString: String = {
+      operand match {
+        case Left(x) => {sourceRegister + " " + "LSL" + x}
+        case Right(value) => {sourceRegister + " " + "LSL" + "#" + value}
+      }
+    }
+  }
+
+  case class LogicalShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
+    override def toString: String = {
+      operand match {
+        case Left(x) => {sourceRegister + " " + "LSR" + x}
+        case Right(value) => {sourceRegister + " " + "LSR" + " " + "#" + value}
+      }
+    }
+  }
+
+  case class ArithmeticShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
+    override def toString: String = {
+      operand match {
+        case Left(x) => {sourceRegister + " " + "ASR" + x}
+        case Right(value) => {sourceRegister + " " + "ASR" + "#" + value}
+      }
+    }
+  }
+
+  case class RotateRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
+    override def toString: String = {
+      operand match {
+        case Left(x) => {sourceRegister + " " + "LSL" + x}
+        case Right(value) => {sourceRegister + " " + "LSL" + "#" + value}
+      }
+    }
+  }
+
+  case class RotateRightExtended(sourceRegister: Register) extends Operand2 {
+    override def toString: String = {
+      sourceRegister + " " + "RRX"
+    }
+  }
+
+  sealed trait Suffi
+  case class Control() extends Suffi {
+    override def toString : String = {
+    "c"
+    }
+  }
+  case class Extension() extends Suffi {
+    override def toString: String = {
+      "x"
+    }
+  }
+  case class Status() extends Suffi {
+    override def toString: String = {
+      "s"
+    }
+  }
+  case class Flags() extends Suffi {
+    override def toString: String = {
+      "f"
+    }
+  }
+  case class None() extends Suffi {
+    override def toString: String = {
+      ""
+    }
+  }
+
   def pushPopAssist(condition: String, registers: List[Register]): String = {
     var str = condition + " {"
     for (register <- registers) {
@@ -173,32 +257,27 @@ object Assembler {
     return "pop" + pushPopAssist(condition, registers)
   }
 
-  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)) : String = {
-    var str = condition + " " + destinationRegister.toString
+  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]) : String = {
+    var str = condition + " " + destinationRegister.toString + ", "
     operand match {
-      case Left(x) => {str = str + ", [" + sourceRegister + ", " + x.toString + "]"}
-      case Right(0) => {str = str + ", " + sourceRegister}
-      case Right(x) => {str = str + ", [" + sourceRegister + ", " + "#" + x.toString + "]"}
+      case Left(x) => {str = str + "[" + sourceRegister.toString + ", " + x + "]"}
+      case Right(x) => {str + "=" + x}
     }
     return str
   }
 
-  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)): String = {
+  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]): String = {
     //Incomplete
     return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int] = Right(0)): String = {
+  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]): String = {
     //Incomplete
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def addSubMulAssist(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): Unit = {
-    var str = condition
-    if (setflag) {
-      str = str + "s"
-    }
-    str = str  + " " + destinationRegister.toString
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): Unit = {
+    var str = condition + setflag + " " + destinationRegister
     operand match {
       case Left(x) => {str = str + ", " + sourceRegister + ", " + x.toString}
       case Right(x) => {str = str + ", " + sourceRegister + ", " + "#" + x.toString}
@@ -207,71 +286,59 @@ object Assembler {
   }
 
   //Incomplete, no condition
-  def translateAdd(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+  def translateAdd(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
     return "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateSub(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Either[Register, Int]): String = {
     return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateMul(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
+  def translateMul(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
     return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, Left(sourceRegisterTwo))
   }
 
-  def fourMulAssist(condition: String, setflag: Boolean, destinationLow: Register, destinationHigh: Register,
+  def fourMulAssist(condition: String, setflag: Suffi, destinationLow: Register, destinationHigh: Register,
                      sourceRegister: Register, operand: Register): String = {
-    var str = condition
-    if (setflag) {
-      str = str + "s"
-    }
-    str = str + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister + ", " + " " +
-      operand
+    var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
+    "," + " " + operand
     return str
   }
 
-  def translateMla(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): Unit = {
+  def translateMla(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
     return "mla" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateUmull(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): Unit = {
+  def translateUmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
     return "umull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateUmlal(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): Unit = {
+  def translateUmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
     return "umlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateSmull(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): Unit = {
+  def translateSmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
     return "smull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateSmlal(condition: String, setflag: Boolean, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): Unit = {
+  def translateSmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
     return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def CompareAssist(condition: String, register1: Register, operand: Either[Register, Int]): String = {
-    var str = condition + " " + register1.toString
-    operand match {
-      case Left(x) => {return str + ", " + x.toString}
-      case Right(x) => {return str + ", " + "#" + x.toString}
-    }
+  def CompareAssist(condition: String, register1: Register, operand: Operand2): String = {
+    return condition + " " + register1.toString + ", " + operand.toString
   }
 
-  def translateCompare(condition: String, register1: Register, operand: Either[Register, Int]): String = {
+  def translateCompare(condition: String, register1: Register, operand: Operand2): String = {
     return "cmp" + CompareAssist(condition, register1, operand)
   }
 
-  def translateCompareNeg(condition: String, register1: Register, operand: Either[Register, Int]): String = {
+  def translateCompareNeg(condition: String, register1: Register, operand: Operand2): String = {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
-  def translateMove(condition: String, destinationRegister: Register, operand: Either[Register, Int]) : String = {
-    var str = "cmp" + condition + " " + destinationRegister
-    operand match {
-      case Left(x) => {str = str + ", " + x.toString}
-      case Right(x) => {str = str + ", " + "#" + x.toString}
-    }
+  def translateMove(condition: String, destinationRegister: Register, operand: Operand2) : String = {
+    var str = "cmp" + condition + " " + destinationRegister + ", " + operand
     return str
   }
 
@@ -334,17 +401,20 @@ object Assembler {
       case BinaryOpTAC(op, t1, t2, res) => {
         op match {
           case BinaryOpType.Add=> {
-            strList ++ List(translateAdd(translateOperand(res), translateOperand(t1), translateOperand(t2)))
+            strList = strList ++ List(translateAdd(translateOperand(res), translateOperand(t1), translateOperand(t2)))
           }
           case BinaryOpType.Sub => {
-            strList ++ List(translateSub(translateOperand(res), translateOperand(t1), translateOperand(t2)))
+            strList = strList ++ List(translateSub(translateOperand(res), translateOperand(t1), translateOperand(t2)))
           }
           case BinaryOpType.Mul => {
-            strList ++ List(translateMul(translateOperand(res), translateOper))
+            strList ++ List(translateSmull(translateOperand(res), translateOperand(t1), translateOperand(t2)))
+            strList ++ List(translateCompare())
           }
+          case BinaryOpType.
         }
       }
     }
   }
-*/
+
+  */
 }
