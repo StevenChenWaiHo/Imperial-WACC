@@ -389,6 +389,9 @@ object Assembler {
     }
   }
   */
+
+
+
   def translateTAC(tripleAddressCode: TAC): List[String] = {
     var strList = List("")
     tripleAddressCode match {
@@ -397,21 +400,33 @@ object Assembler {
           case BinaryOpType.Add=> {
             val destinationRegister: Register = translateOperand(res)
             var t1t: Either[Register, Int] = translateOperand(t1)
-            val t2t: Either[Register, Int] = translateOperand(t2)
-            var t1Final: Register
+            var t2t: Either[Register, Int] = translateOperand(t2)
             strList = strList ++ List(translatePush("", List(r8)))
             strList = strList ++ List(translatePop("", List(r8)))
             strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
             strList = strList ++ List(translateMove("", translateMove(translateOperand(res))))
             t1t match {
               case Left(x) => {
+                t2t match {
+                  case Right(x) => {
+                    if (x > ) {
+                      strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
+                      t2t = Left(r9)
+                    }
+                  }
+                }
                 strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
               }
               case Right(x) => {
-                strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
+                if (x > ) {
+                  strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
+                } else {
+                  strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
+                }
                 strList = strList ++ List(translateAdd("", Status(), destinationRegister, r8, ImmediateValueOrRegister(t2t)))
               }
             }
+            strList = strList ++ List(translateBranchLink("vs","_errOverflow" ))
             return strList
           }
           case BinaryOpType.Sub => {
