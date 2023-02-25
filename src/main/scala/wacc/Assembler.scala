@@ -402,7 +402,6 @@ object Assembler {
       return true //true
     }
   }
-
   def translateTAC(tripleAddressCode: TAC): List[String] = {
     //Need to figure out how registers work
     //Push and pop might not be in right place
