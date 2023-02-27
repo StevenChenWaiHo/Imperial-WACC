@@ -8,24 +8,31 @@ import wacc.TAC._
 object Translator {
 
   private val scopes = collection.mutable.ListBuffer[collection.mutable.Map[ASTNode, TRegister]]()
+  private val regCountStack = collection.mutable.Stack[Int]()
   private val regList = collection.mutable.ListBuffer[TRegister]()
 
   def newMap(): collection.mutable.Map[ASTNode, TRegister] = { 
     // Push scope on to stack when entering new context
     val map = collection.mutable.Map[ASTNode, TRegister]()
     scopes.addOne(map)
+    // Push the current highest register for use later
+    regCountStack.push(regList.length)
     map
   }
 
   def popMap(): Int = {
     // Pop scope off the stack when exiting a context
     scopes.remove(scopes.length - 1)
+    // Remove the registers only used within that context
+    val oldLength = regCountStack.pop()
+    regList.remove(oldLength, regList.length - oldLength)
+    // Return scope depth
     scopes.length
   }
 
   def findNode(node: ASTNode): Option[TRegister] = {
     // Returns register the value of node is stored in
-    scopes.foreach(m => {
+    scopes.reverse.foreach(m => {
       m.get(node) match {
         case Some(x) => return Some(x)
         case _ =>
@@ -70,7 +77,11 @@ object Translator {
           //case PairValue(expr, expr) => translatePairValue(expr, expr)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
-        addNode(node, tac._2)
+        // Only add literal assignments/declarations to the scope
+        node match {
+          case x: Literal => addNode(node, tac._2)
+          case _ =>
+        }
         tac
       }
     }
@@ -236,7 +247,7 @@ object Translator {
     delegateASTNode(stat) match {
       case (sList, sReg) => {
         popMap()
-        (List(new Label()) ++ sList, null)
+        (List(new Label("newScope")) ++ sList, sReg)
       }
     } 
   }
