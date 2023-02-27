@@ -212,7 +212,7 @@ object Translator {
         case Func(returnType, ident, types, code) => {
           delegateASTNode(code) match {
             case (tacList, outReg) => {
-              List(new Label("beginFunc")) ++ tacList ++ List(new Label("endFunc"))
+              List(new Label("beginFunc"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
             }
           }
         }
