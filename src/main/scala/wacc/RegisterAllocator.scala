@@ -1,8 +1,7 @@
 package wacc
 
 import wacc.TAC._
-import wacc.Translator._
-import scala.collection.mutable.Stack
+import scala.collection.mutable
 
 object RegisterAllocator {
   //also in assembler
@@ -25,24 +24,36 @@ object RegisterAllocator {
   object fp extends Register
   object lr extends Register
   object pc extends Register
-  var stackOfRegisters = Stack(r4, r5, r6, r7, r8, r9, r10, r11, r12)
+  var stackOfRegisters = collection.mutable.Stack(r4, r5, r6, r7, r8, r9, r10, r11, r12)
+  var registerMap = mutable.Map[Register, TRegister]()
 
-  //def allocateRegisters(tacs: List[TAC], regs: List[Register]): List[Register] = {
-    // tacs.foreach(t => {
-    //   t match {
-    //     case BinaryOpTAC(op, t1, t2, res) => regs ++ List(getRegister())
-    //     case UnaryOpTAC(op, t1, res) => regs ++ List(getRegister())
-    //     case AssignmentTAC(t1, res) => regs ++ List(getRegister())
-    //     case PopParamTAC(t1) => regs ++ List(getRegister())
-    //   }
-    // })
-  //}
+  def allocateRegisters(tacs: List[TAC]): List[Register] = {
+    val regs = collection.mutable.ListBuffer[Register]()
+    tacs.foreach(t => {
+      t match {
+        case BinaryOpTAC(op, t1, t2, res) => regs += getRegister(res)
+        case UnaryOpTAC(op, t1, res) => regs += getRegister(res)
+        case AssignmentTAC(t1, res) => regs += getRegister(res)
+        case PopParamTAC(t1) => regs += getRegister(t1)
+      }
+    })
+    regs.toList
+  }
 
-  def getRegister(): Register = {
+  def getRegister(tReg: TRegister): Register = {
     if (stackOfRegisters.isEmpty) {
-      //push into stack
+      //push into stack, map tReg to stack
       //return
     }
-    stackOfRegisters.pop()
+    val r = stackOfRegisters.pop()
+    registerMap.addOne(r, tReg)
+    r
   }
+
+  def releaseRegister(reg: Register) = {
+    registerMap -= reg
+    stackOfRegisters.push(reg)
+  }
+
+  //release tReg from stack
 }
