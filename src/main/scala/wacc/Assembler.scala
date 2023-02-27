@@ -1,6 +1,6 @@
 package wacc
 
-import sun.jvm.hotspot.asm.Operand
+
 import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Func, IdentLiteral, Program, SkipStat, Stat}
 import wacc.TAC.TAC
 import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteralTAC, IdentLiteralTAC, IntLiteralTAC, LiteralTAC, StringLiteralTAC, TAC, TRegister}
@@ -140,11 +140,13 @@ object Assembler {
     } else {
       defaultRegistersList = defaultRegistersList ++ registersList.slice(0, context.scopeVarSize())
     }
+    /*
     str = str ++ translatePush("", List(fp, lr)) //Maybe not meant to be in BeginEnd
     str = str ++ translatePush("", defaultRegistersList) //dependent on context
     str = str ++ delegateASTNode(stat, context)
     str = str ++ translatePop("", defaultRegistersList) // dependent on context
     str = str ++ translatePop("", List(fp, pc)) //Maybe meant to be in prog
+    */
     return str
   }
 
