@@ -48,16 +48,16 @@ object Translator {
   }
 
   def translateLiteral(lit: Literal): (List[TAC], TRegister) = {
+    val next = nextRegister()
     val lhs = lit match {
       case BoolLiteral(x) => new BoolLiteralTAC(x)
       case CharLiteral(x) => new CharLiteralTAC(x)
       case IntLiteral(x) => new IntLiteralTAC(x)
       case StringLiteral(x) => new StringLiteralTAC(x)
-      case IdentLiteral(x) => return (List(), null)
+      case IdentLiteral(x) => return (List(), next)
       //case PairLiteral(x) => new PairLiteralTAC(x)
       //case ArrayLiteral(x) => translateArrayLiteral(x)
     }
-    val next = nextRegister()
     (List(AssignmentTAC(lhs, next)), next)
   } 
 
@@ -147,8 +147,13 @@ object Translator {
     }
   }
 
-  def translateDeclaration(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
-    delegateASTNode(rvalue)
+  def translateDeclaration(ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
+    delegateASTNode(rvalue) match {
+      case (rList, rReg) => {
+        map.addOne(ident, rReg)
+        (rList, rReg)
+      }
+    }
   }
 
   def translateAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
