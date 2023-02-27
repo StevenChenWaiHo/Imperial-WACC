@@ -29,7 +29,7 @@ object Translator {
           case Assignment(lvalue, rvalue) => translateAssignment(lvalue, rvalue)
           case BeginEndStat(stat) => translateBeginEnd(stat)
           case SkipStat() => translateSkip()
-          case Program(funcs, stats) => translateProgram(funcs, stats)
+          case Program(funcs, stats) => (translateProgram(funcs, stats), null)
           case StatList(stats) => translateStatList(stats)
           case Command(command, input) => translateCommand(command, input)
           case lit: Literal => translateLiteral(lit)
@@ -149,11 +149,14 @@ object Translator {
     }
   }
 
-  def translateProgram(l: List[Func], s: Stat): (List[TAC], TRegister) = {
-    // TODO: translate funcs
+  def translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
+    val funcTAClist = collection.mutable.ListBuffer[TAC]()
+    funcs.foreach(f => {
+      funcTAClist.addAll(translateFunction(f))
+    })
     delegateASTNode(s) match {
       case (tacList, reg) => {
-        (List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC()), reg)
+        funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
       }
     }
   }
@@ -204,11 +207,15 @@ object Translator {
     }
   }
 
-  def translateFunction(returnType : AbstractSyntaxTree.DeclarationType, 
-                          ident : AbstractSyntaxTree.IdentLiteral, 
-                          types : List[(AbstractSyntaxTree.DeclarationType, 
-                            AbstractSyntaxTree.IdentLiteral)], 
-                          code : Stat) : List[TAC] = {
-    List()
+  def translateFunction(func: Func) : List[TAC] = {
+    func match {
+        case Func(returnType, ident, types, code) => {
+          delegateASTNode(code) match {
+            case (tacList, outReg) => {
+              List(new Label("beginFunc")) ++ tacList ++ List(new Label("endFunc"))
+            }
+          }
+        }
+      }
   }
 }
