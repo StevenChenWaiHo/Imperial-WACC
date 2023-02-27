@@ -20,7 +20,7 @@ object TAC {
   case class CommandTAC(cmd: Cmd, t1: Operand) extends TAC
   case class PushParamTAC(t1: Operand) extends TAC
   case class PopParamTAC(t1: TRegister) extends TAC
-  case class CallTAC(f: Label) extends TAC
+  case class CallTAC(lbl: Label, args: List[TRegister]) extends TAC
   case class BeginFuncTAC() extends TAC
   case class EndFuncTAC() extends TAC
   case class GOTO(label: Label) extends TAC {

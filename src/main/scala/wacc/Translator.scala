@@ -37,6 +37,7 @@ object Translator {
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
           case ArrayElem(name, indices) => translateArrayElem(name, indices)
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
+          case Call(ident, args) => translateCall(ident, args)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
         map.addOne(node, tac._2)
@@ -207,12 +208,27 @@ object Translator {
     }
   }
 
+  def translateCall(ident: IdentLiteral, args: List[Expr]): (List[TAC], TRegister) = {
+    var argOutList = List[TRegister]()
+    var argTacList = List[TAC]()
+    args.foreach(a => {
+      delegateASTNode(a) match {
+        case (tacList, outReg) => {
+          argTacList = argTacList ++ tacList
+          argOutList = argOutList ++ List(outReg)
+        }
+      }
+    })
+    (argTacList ++ List(CallTAC(new Label(ident.name), argOutList)), new TRegister(999))
+  }
+
+
   def translateFunction(func: Func) : List[TAC] = {
     func match {
         case Func(returnType, ident, types, code) => {
           delegateASTNode(code) match {
             case (tacList, outReg) => {
-              List(new Label("beginFunc"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
+              List(new Label(ident.name), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
             }
           }
         }
