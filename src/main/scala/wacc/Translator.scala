@@ -25,7 +25,7 @@ object Translator {
           case BinaryOp(op, expr1, expr2) => translateBinOp(op, expr1, expr2)
           case UnaryOp(op, expr) => translateUnOp(op, expr)
           case IfStat(cond, stat1, stat2) => translateIfStat(cond, stat1, stat2)
-          case Declaration(dataType, ident, rvalue) => translateAssignment(ident, rvalue)
+          case Declaration(dataType, ident, rvalue) => translateDeclaration(ident, rvalue)
           case Assignment(lvalue, rvalue) => translateAssignment(lvalue, rvalue)
           case BeginEndStat(stat) => translateBeginEnd(stat)
           case SkipStat() => translateSkip()
@@ -37,6 +37,8 @@ object Translator {
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
           case ArrayElem(name, indices) => translateArrayElem(name, indices)
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
+          case Call(ident, args) => translateCall(ident, args)
+          case Read(lval) => translateRead(lval)
           case PairValue(expr, expr) => translatePairValue(expr, expr)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
@@ -53,12 +55,20 @@ object Translator {
       case CharLiteral(x) => new CharLiteralTAC(x)
       case IntLiteral(x) => new IntLiteralTAC(x)
       case StringLiteral(x) => new StringLiteralTAC(x)
-      case IdentLiteral(x) => new IdentLiteralTAC(x)
+      case IdentLiteral(x) => return (List(), next)
       //case PairLiteral(x) => new PairLiteralTAC(x)
       //case ArrayLiteral(x) => translateArrayLiteral(x)
     }
     (List(AssignmentTAC(lhs, next)), next)
   } 
+
+  def translateRead(lval: LVal): (List[TAC], TRegister) = {
+    delegateASTNode(lval) match {
+      case (tacList, outReg) => {
+        (tacList ++ List(AssignmentTAC(new TRegister(998), outReg)), outReg)
+      }
+    }
+  }
 
   def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
     delegateASTNode(IdentLiteral(name)) match {
@@ -150,6 +160,15 @@ object Translator {
     }
   }
 
+  def translateDeclaration(ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
+    delegateASTNode(rvalue) match {
+      case (rList, rReg) => {
+        map.addOne(ident, rReg)
+        (rList, rReg)
+      }
+    }
+  }
+
   def translateAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
     delegateASTNode(lvalue) match {
       case (lList, lReg) => {
@@ -220,12 +239,27 @@ object Translator {
     }
   }
 
+  def translateCall(ident: IdentLiteral, args: List[Expr]): (List[TAC], TRegister) = {
+    var argOutList = List[TRegister]()
+    var argTacList = List[TAC]()
+    args.foreach(a => {
+      delegateASTNode(a) match {
+        case (tacList, outReg) => {
+          argTacList = argTacList ++ tacList
+          argOutList = argOutList ++ List(outReg)
+        }
+      }
+    })
+    (argTacList ++ List(CallTAC(new Label(ident.name), argOutList)), new TRegister(999))
+  }
+
+
   def translateFunction(func: Func) : List[TAC] = {
     func match {
         case Func(returnType, ident, types, code) => {
           delegateASTNode(code) match {
             case (tacList, outReg) => {
-              List(new Label("beginFunc")) ++ tacList ++ List(new Label("endFunc"))
+              List(new Label(ident.name), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
             }
           }
         }

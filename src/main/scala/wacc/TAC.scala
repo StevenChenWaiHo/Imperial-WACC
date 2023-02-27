@@ -20,7 +20,7 @@ object TAC {
   case class CommandTAC(cmd: Cmd, t1: Operand) extends TAC
   case class PushParamTAC(t1: Operand) extends TAC
   case class PopParamTAC(t1: TRegister) extends TAC
-  case class CallTAC(f: Label) extends TAC
+  case class CallTAC(lbl: Label, args: List[TRegister]) extends TAC 
   case class BeginFuncTAC() extends TAC
   case class EndFuncTAC() extends TAC
   case class GOTO(label: Label) extends TAC {
@@ -45,8 +45,12 @@ object TAC {
     class StringLiteralTAC(str: String) extends LiteralTAC {
       override def toString(): String = "\"" + str + "\""
     }
-    class BoolLiteralTAC(b: Boolean) extends LiteralTAC
-    class CharLiteralTAC(c: Char) extends LiteralTAC
+    class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
+      override def toString(): String = b.toString()
+    }
+    class CharLiteralTAC(c: Char) extends LiteralTAC {
+      override def toString(): String = "\'" + c + "\'"
+    }
   class ArrayOp(elems: List[Operand]) extends Operand {
     override def toString(): String = elems.toString()
   }
