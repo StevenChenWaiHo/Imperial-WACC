@@ -78,26 +78,6 @@ object Assembler {
     listOfRegisters(registerDest) == listOfRegisters(registerSrc)
   }
 
-  def delegateASTNode(node: ASTNode, context: ScopeContext): List[String] = {
-    node match {
-      case Program(funcs, stat) => translateProgram(funcs, stat, context)
-      case BeginEndStat(stat) => translateBeginEnd(stat, context)
-      case SkipStat() => translateSkip()
-      case Command(cmd, expr) => translateCommand(cmd, expr)
-      case Func(returnType, ident, types, code) => translateFunction(returnType, ident, types, code)
-      case _ => List("")
-    }
-  }
-
-  def translateProgram(l: List[Func], s: Stat, context: ScopeContext): List[String] = {
-    var str = List("")
-    for (function: Func <- l) {
-      str = str ++ delegateASTNode(function, context) // Not actually sure about the structure of this thing
-    }
-    str = str ++ delegateASTNode(s, context)
-    return str
-  }
-
   def translateBeginEnd(stat: Stat, context: ScopeContext): List[String] = {
     //Seems like it takes as many variables as it can find in every scope and pushes the corresponding
     //number of registers, instead of just this scope.
@@ -524,5 +504,13 @@ object Assembler {
       }
 
     }
+  }
+
+  def translateProgram(tacList: List[TAC]) : List[String] = {
+    var output = List[String]()
+    tacList.foreach(tac => {
+      output = output ++ translateTAC(tac)
+    })
+    output
   }
 }
