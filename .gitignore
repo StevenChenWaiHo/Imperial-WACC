@@ -12,3 +12,6 @@ src/antlr
 project
 target
 *.jar
+
+#ignore output assembly files
+*.s

@@ -32,23 +32,30 @@ before_script:
 build:
   stage: build
   script:
-    - make
-    - sbt compile
-test:
+    - sbt compile assembly
+
+scalatest:
   stage: test
   script:
-    #Execute your project's tests
-    -sbt clean test
+    # Execute your project's tests
+    - sbt clean test
 
-#labtest:
-#  stage: labtest
-#  script:
-#    # Execute your project's tests
-#    # get compiler
-#    - apt-get install gcc-arm* #note that there may be a better way to do this
-#    # get qemu emulator
-#    - apt-get install qemu-user
-#    -
+wacc_examples:
+  stage: test
+  script:
+    # Build??
+    - sbt compile assembly
+    # Get wacc_examples
+    - rm -rf ../wacc_examples
+    - git clone https://gitlab.doc.ic.ac.uk/lab2223_spring/wacc_examples.git ../wacc_examples
+    # Get compiler and emulator
+    - apt-get install gcc-arm-linux-gnueabi -yqq
+    - apt-get install qemu-user -yqq
+    # Test wacc examples
+    - ./test_valid.sh
+    - ./test_invalid.sh
+
+
 
 
 

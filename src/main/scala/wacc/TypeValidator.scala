@@ -74,6 +74,14 @@ class ScopeContext(scopeStack: List[Scope]) {
     new ScopeContext(new Scope(Map(), Map(), returnType) :: scopeStack)
 
   def newScope(): ScopeContext = newScope(nextReturn())
+
+  def scopeVarSize(): Int = {
+    return scopeStack.last.vars.size // returns the size of the variables in this scope
+  }
+
+  def scopeLevel(): Int = {
+    return scopeStack.length - 1;
+  }
 }
 
 
