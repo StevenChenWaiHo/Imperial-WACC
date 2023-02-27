@@ -2,7 +2,7 @@ package wacc
 
 import sun.jvm.hotspot.asm.Operand
 import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Func, IdentLiteral, Program, SkipStat, Stat}
-import .TAC
+import wacc.TAC
 
 object Assembler {
   val stack = Array[Register]()
