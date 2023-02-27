@@ -39,6 +39,7 @@ object Translator {
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
           case Call(ident, args) => translateCall(ident, args)
           case Read(lval) => translateRead(lval)
+          case PairValue(expr, expr) => translatePairValue(expr, expr)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
         map.addOne(node, tac._2)
@@ -83,6 +84,18 @@ object Translator {
         })
         val next = nextRegister()
         (is.toList ++ List(AssignmentTAC(new ArrayElemTAC(aReg, rs.toList), next)), next)
+      }
+    }
+  }
+
+  def translatePairValue(expr1: Expr, expr2: Expr): (List[TAC], TRegister) = {
+    delegateASTNode(expr) match {
+      case (exp1List, exp1Reg) => {
+        delegateASTNode(expr2) match {
+          case(exp2List, exp2Reg) => {
+            
+          }
+        }
       }
     }
   }
