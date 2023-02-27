@@ -5,8 +5,6 @@ import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Fu
 import wacc.TAC.TAC
 import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteralTAC, IdentLiteralTAC, IntLiteralTAC, LiteralTAC, StringLiteralTAC, TAC, TRegister}
 
-import javax.print.attribute.standard.Destination
-
 object Assembler {
   val stack = Array[Register]()
   val memory = Array[Int]()
