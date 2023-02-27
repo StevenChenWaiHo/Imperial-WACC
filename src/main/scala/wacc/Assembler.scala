@@ -4,8 +4,6 @@ import sun.jvm.hotspot.asm.Operand
 import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Func, IdentLiteral, Program, SkipStat, Stat}
 import .TAC
 
-import javax.print.attribute.standard.Destination
-
 object Assembler {
   val stack = Array[Register]()
   val memory = Array[Int]()

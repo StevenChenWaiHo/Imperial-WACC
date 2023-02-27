@@ -3,13 +3,14 @@ package wacc
 import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
+import wacc.Translator.delegateASTNode
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
 
 
 object Main {
-  val OutputAssemblyFile = false
+  val OutputAssemblyFile = true
 
   val SyntaxErrorCode = 100
   val SemanticErrorCode = 200
@@ -46,15 +47,19 @@ object Main {
     }
     println("Compilation Successful!")
 
+    delegateASTNode(ast.get)._1.foreach(l => println(l))
+
     //val result = Assembler.translateProgram(...)
-    val result = List("Temporary placeholder!")
+    val result = List(".data", ".text", ".global main", "main:",
+    "push {fp, lr}", "push {r8, r10, r12}", "mov fp, sp", "mov r0, #0", "pop {r8, r10, r12}", "pop {fp, pc}")
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
-      val fileName = args.head.split('.')[0] + ".s"
-      val outputFile = new File(fileName)
+      val inputFilename = args.last.split("/").last
+      val outputFilename = inputFilename.replace(".wacc", ".s")
+      val outputFile = new File(outputFilename)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))
-      for(line <- result.reverse) fileWriter.write(line)
+      for(line <- result) fileWriter.write(line + "\n")
       fileWriter.close()
     }
     sys.exit(SuccessCode)
