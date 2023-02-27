@@ -2,6 +2,7 @@ package wacc
 
 import wacc.AbstractSyntaxTree._
 import wacc.TAC._
+import wacc.AbstractSyntaxTree.CmdT
 
 object Assembler {
   val stack = Array[Register]()
@@ -550,6 +551,16 @@ object Assembler {
         mov(r0, r0) ::
         pop(r8) :: pop(r10) :: pop(r12) ::
         pop(fp) :: pop(pc) :: List()
+      }
+      case AssignmentTAC(operand, reg) => {
+        mov(translateOperand(reg).left.getOrElse(r0), translateOperand(operand).left.getOrElse(r0)) :: List()
+      }
+      case CommandTAC(cmd, operand) => {
+        if (cmd == CmdT.Exit) {
+          translateBranchLink("", translateOperand(operand).left.getOrElse(r0).toString()) :: List() // TODO: should not default to t0
+        } else {
+          List("Command not implemented")
+        }
       }
     }
   }
