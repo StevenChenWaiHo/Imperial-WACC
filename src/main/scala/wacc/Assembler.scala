@@ -2,9 +2,7 @@ package wacc
 
 import sun.jvm.hotspot.asm.Operand
 import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Func, IdentLiteral, Program, SkipStat, Stat}
-import wacc.TAC.TAC
-
-import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteralTAC, IdentLiteralTAC, IntLiteralTAC, LiteralTAC, StringLiteralTAC, TAC, TRegister}
+import .TAC
 
 import javax.print.attribute.standard.Destination
 
