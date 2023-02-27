@@ -442,6 +442,10 @@ object Assembler {
     }
   }
 
+  def translateOperand(op: Operand): Either[Register, Int] = {
+    Left(r0)
+  }
+
   def translateTAC(tripleAddressCode: TAC): List[String] = {
     //Need to figure out how registers work
     //Push and pop might not be in right place
@@ -451,13 +455,13 @@ object Assembler {
       case BinaryOpTAC(op, t1, t2, res) => {
         op match {
           case BinaryOpType.Add => {
-            val destinationRegister: Register = translateOperand(res)
+            val destinationRegister: Register= translateOperand(res).left.getOrElse(r0)
             var t1t: Either[Register, Int] = translateOperand(t1)
             var t2t: Either[Register, Int] = translateOperand(t2)
             strList = strList ++ List(translatePush("", List(r8)))
             strList = strList ++ List(translatePop("", List(r8)))
             strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-            strList = strList ++ List(translateMove("", r8, translate))
+            strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
             t1t match {
               case Left(x) => {
                 t2t match {
@@ -497,24 +501,24 @@ object Assembler {
           */
         }
       }
-      case AssignmentTAC(t1, res) => {
-        t1 match {
-          case TRegister(num) => {
-            strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(num))))
-          }
-          case IdentLiteralTAC(name) => {
-            strList ++ List(translateMove("", r8, nameToAddress(name)))
-            strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
-          }
-          case IntLiteralTAC(value) => {
-            strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
-          }
-          case StringLiteralTAC(str) => {
-            strList ++ List(translateLdr("", translateOperand(res), nameToLabel(str)))
-          }
+      // case AssignmentTAC(t1, res) => {
+      //   t1 match {
+      //     case TRegister(num) => {
+      //       strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(num))))
+      //     }
+      //     case IdentLiteralTAC(name) => {
+      //       strList ++ List(translateMove("", r8, nameToAddress(name)))
+      //       strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
+      //     }
+      //     case IntLiteralTAC(value) => {
+      //       strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
+      //     }
+      //     case StringLiteralTAC(str) => {
+      //       strList ++ List(translateLdr("", translateOperand(res), nameToLabel(str)))
+      //     }
 
-        }
-      }
+      //   }
+      // }
       case Label(name) => {
         List(name + ":")
       }

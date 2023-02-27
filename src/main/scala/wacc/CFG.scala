@@ -22,26 +22,26 @@ object CFG {
   case class LiveIn(id: Id, regs: ListBuffer[CFGReg])
   case class LiveOut(id: Id, regs: ListBuffer[CFGReg])
 
-  def buildCFGNode(instr: TAC, id: Id) : CFGNode = {
-    instr match {
-        case BinaryOpTAC(op, t1, t2, res) => CFGNode(instr, List(t1, t2), List(res), List(id + 1), List())
-        case UnaryOpTAC(op, t1, res) => CFGNode(instr, List(t1), List(res), List(id + 1), List())
-        case AssignmentTAC(t1, res) => CFGNode(instr, List(t1), List(res), List(id + 1), List())
-        case IfTAC(t1, goto) => CFGNode(instr, List(t1), List(), List(id + 1, labelMap.get(goto)), List())
-        case CommandTAC(cmd, t1) => CFGNode(instr, List(t1), List(), List(id + 1), List())
-        case PushParamTAC(t1) => CFGNode(instr, List(t1), List(), List(id + 1), List())
-        case PopParamTAC(t1) => CFGNode(instr, List(t1), List(), List(id + 1), List())
-        case CallTAC(f) => CFGNode(instr, List(), List(), List(label.get(f)), List())
-        case GOTO(label) => CFGNode(instr, List(), List(), List(label.get(label)), List())
-        case Label(name) => CFGNode(instr, List(), List(), List(id + 1), List())
-        case _: TAC => 
-    }
-  }
+  // def buildCFGNode(instr: TAC, id: Id) : CFGNode = {
+  //   instr match {
+  //       case BinaryOpTAC(op, t1, t2, res) => CFGNode(instr, List(t1, t2), List(res), List(id + 1), List())
+  //       case UnaryOpTAC(op, t1, res) => CFGNode(instr, List(t1), List(res), List(id + 1), List())
+  //       case AssignmentTAC(t1, res) => CFGNode(instr, List(t1), List(res), List(id + 1), List())
+  //       case IfTAC(t1, goto) => CFGNode(instr, List(t1), List(), List(id + 1, labelMap.get(goto)), List())
+  //       case CommandTAC(cmd, t1) => CFGNode(instr, List(t1), List(), List(id + 1), List())
+  //       case PushParamTAC(t1) => CFGNode(instr, List(t1), List(), List(id + 1), List())
+  //       case PopParamTAC(t1) => CFGNode(instr, List(t1), List(), List(id + 1), List())
+  //       case CallTAC(f) => CFGNode(instr, List(), List(), List(label.get(f)), List())
+  //       case GOTO(label) => CFGNode(instr, List(), List(), List(label.get(label)), List())
+  //       case Label(name) => CFGNode(instr, List(), List(), List(id + 1), List())
+  //       case _: TAC => 
+  //   }
+  // }
   
-  def buildCFGList(instrs: List[TAC]) : List[CFGNode] = {
+  //def buildCFGList(instrs: List[TAC]) : List[CFGNode] = {
     // Record Label Id
-    instrs.zipWithIndex.foreach{case (Label(name), i) => labelMap.addOne(name, i)}
+    //instrs.zipWithIndex.foreach{case (Label(name), i) => labelMap.addOne(name, i)}
 
-    instrs.zipWithIndex.map(buildCFGNode)
-  }
+    //instrs.zipWithIndex.map(buildCFGNode)
+  //}
 }
