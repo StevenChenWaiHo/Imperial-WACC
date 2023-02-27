@@ -29,6 +29,7 @@ object TAC {
   case class Label(name: String = "label") extends TAC {
     override def toString(): String = name + ":"
   }
+  case class Malloc(size: Integer, t1: TRegister)
 
   sealed trait Operand
   class TRegister(num: Int) extends Operand {
