@@ -1,37 +1,11 @@
 package wacc
 
-
-import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Func, IdentLiteral, Program, SkipStat, Stat}
-import wacc.TAC.TAC
-import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteralTAC, IdentLiteralTAC, IntLiteralTAC, LiteralTAC, StringLiteralTAC, TAC, TRegister}
+import wacc.AbstractSyntaxTree._
+import wacc.TAC._
 
 object Assembler {
   val stack = Array[Register]()
   val memory = Array[Int]()
-  /*object Registers extends Enumeration {
-    sealed case class RegisterNum(name: String)
-    val r1 = RegisterNum("r1")
-    val r2 = RegisterNum("r2")
-    val r3 = RegisterNum("r3")
-    val r4 = RegisterNum("r4")
-    val r5 = RegisterNum("r5")
-    val r6 =RegisterNum("r6")
-    val r7 =RegisterNum("r7")
-    val r8 = RegisterNum("r8")
-    val r9 = RegisterNum("r9")
-    val r10 = RegisterNum("r10")
-    val r11 = RegisterNum("r11")
-    val r12 = RegisterNum("r12")
-    val r13 = RegisterNum("r13")
-    val r14 = RegisterNum("r14")
-    val r15 = RegisterNum("r15")
-  }
-
-  object Registers extends Enumeration {
-    val RegisterNumber = Value
-    val r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15 = Value
-  }
-  */
 
   sealed trait Register
 
@@ -525,24 +499,24 @@ object Assembler {
       }
       case AssignmentTAC(t1, res) => {
         t1 match {
-          case TRegisterNum(Num) => {
-            strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(Num))))
+          case TRegister(num) => {
+            strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(num))))
           }
           case IdentLiteralTAC(name) => {
-            strList = strList ++ List(translateMove("", r8, nameToAddress(name)))
-            strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
+            strList ++ List(translateMove("", r8, nameToAddress(name)))
+            strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
           }
           case IntLiteralTAC(value) => {
-            strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
+            strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
           }
-          case StringLiteralTAC(string) => {
-            strList = strList ++ List(translateLdr("", translateOperand(res), nameToLabel(string)))
+          case StringLiteralTAC(str) => {
+            strList ++ List(translateLdr("", translateOperand(res), nameToLabel(str)))
           }
 
         }
       }
       case Label(name) => {
-
+        List(name + ":")
       }
 
     }
