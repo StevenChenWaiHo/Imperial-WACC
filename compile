@@ -7,6 +7,7 @@ for var in $@
 do
     java -jar wacc-39-compiler.jar "$var"
 done
+rm -rf *.s
 
 exit $?
 
