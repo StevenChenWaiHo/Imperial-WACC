@@ -94,15 +94,15 @@ object Assembler {
   }
 
   def push(register: Register): String = {
-    "push " + register.toString()
+    "push {" + register.toString() + "}"
   }
 
   def pop(register: Register): String = {
-    "pop " + register.toString()
+    "pop {" + register.toString() + "}"
   }
 
   def mov(registerDest: Register, registerSrc: Register): String = {
-    "mov " + registerDest.toString() + " " + registerSrc.toString()
+    "mov " + registerDest.toString() + ", " + registerSrc.toString()
   }
 
   def movImm(registerDest: Register, operand: Int): Unit = {
@@ -557,7 +557,8 @@ object Assembler {
       }
       case CommandTAC(cmd, operand) => {
         if (cmd == CmdT.Exit) {
-          translateBranchLink("", translateOperand(operand).left.getOrElse(r0).toString()) :: List() // TODO: should not default to t0
+          mov(r0, r0) :: // TODO: change from default r0
+          translateBranchLink("", "exit") :: List() // TODO: should not default to t0
         } else {
           List("Command not implemented")
         }
