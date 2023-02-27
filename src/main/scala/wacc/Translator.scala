@@ -29,7 +29,7 @@ object Translator {
           case Assignment(lvalue, rvalue) => translateAssignment(lvalue, rvalue)
           case BeginEndStat(stat) => translateBeginEnd(stat)
           case SkipStat() => translateSkip()
-          case Program(funcs, stats) => translateProgram(funcs, stats)
+          case Program(funcs, stats) => (translateProgram(funcs, stats), null)
           case StatList(stats) => translateStatList(stats)
           case Command(command, input) => translateCommand(command, input)
           case lit: Literal => translateLiteral(lit)
@@ -37,6 +37,7 @@ object Translator {
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
           case ArrayElem(name, indices) => translateArrayElem(name, indices)
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
+          case Call(ident, args) => translateCall(ident, args)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
         map.addOne(node, tac._2)
@@ -149,11 +150,14 @@ object Translator {
     }
   }
 
-  def translateProgram(l: List[Func], s: Stat): (List[TAC], TRegister) = {
-    // TODO: translate funcs
+  def translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
+    val funcTAClist = collection.mutable.ListBuffer[TAC]()
+    funcs.foreach(f => {
+      funcTAClist.addAll(translateFunction(f))
+    })
     delegateASTNode(s) match {
       case (tacList, reg) => {
-        (List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC()), reg)
+        funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
       }
     }
   }
@@ -204,11 +208,30 @@ object Translator {
     }
   }
 
-  def translateFunction(returnType : AbstractSyntaxTree.DeclarationType, 
-                          ident : AbstractSyntaxTree.IdentLiteral, 
-                          types : List[(AbstractSyntaxTree.DeclarationType, 
-                            AbstractSyntaxTree.IdentLiteral)], 
-                          code : Stat) : List[TAC] = {
-    List()
+  def translateCall(ident: IdentLiteral, args: List[Expr]): (List[TAC], TRegister) = {
+    var argOutList = List[TRegister]()
+    var argTacList = List[TAC]()
+    args.foreach(a => {
+      delegateASTNode(a) match {
+        case (tacList, outReg) => {
+          argTacList = argTacList ++ tacList
+          argOutList = argOutList ++ List(outReg)
+        }
+      }
+    })
+    (argTacList ++ List(CallTAC(new Label(ident.name), argOutList)), new TRegister(999))
+  }
+
+
+  def translateFunction(func: Func) : List[TAC] = {
+    func match {
+        case Func(returnType, ident, types, code) => {
+          delegateASTNode(code) match {
+            case (tacList, outReg) => {
+              List(new Label(ident.name), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
+            }
+          }
+        }
+      }
   }
 }
