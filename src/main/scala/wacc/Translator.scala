@@ -142,8 +142,10 @@ object Translator {
   def translateWhileLoop(expr: Expr, stat: Stat): (List[TAC], TRegister) = {
     delegateASTNode(expr) match {
       case (expList, expReg) => {
+        newMap()
         delegateASTNode(stat) match {
           case (statList, statReg) => {
+            popMap()
             val startLabel = new Label("start")
             val bodyLabel = new Label("body")
             val endLabel = new Label("end")
@@ -183,10 +185,14 @@ object Translator {
   def translateIfStat(cond: Expr, stat1: Stat, stat2: Stat): (List[TAC], TRegister) = {
     delegateASTNode(cond) match {
       case (condList, reg1) => {
-          delegateASTNode(stat1) match {
-            case (trueList, reg2) => {
-              delegateASTNode(stat2) match {
-                case (falseList, reg3) => {
+          newMap()
+          delegateASTNode(stat2) match {
+            case (falseList, reg3) => {
+              popMap()
+              newMap()
+              delegateASTNode(stat1) match {
+                case (trueList, reg2) => {
+                  popMap()
                   val l1 = new Label("true")
                   val l2 = new Label("false")
                   (condList ++ List(IfTAC(reg1, l1)) ++ falseList ++ List(GOTO(l2), l1) ++ trueList ++ List(l2),
