@@ -232,6 +232,22 @@ object Translator {
   }
 
   def translateAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
+    lvalue match {
+      case _: IdentLit => translateIdentAssignment(lvalue, rvalue)
+      case _: PairElem => translatePairElemAssignment(lvalue, rvalue)
+      case _: ArrayE =>  translateArrayElemAssignment(lvalue, rvalue)
+    }
+  }
+
+  def translatePairElemAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
+    (List(), null)
+  }
+
+  def translateArrayElemAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
+    (List(), null)
+  }
+
+  def translateIdentAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
     delegateASTNode(lvalue) match {
       case (lList, lReg) => {
         delegateASTNode(rvalue) match {
