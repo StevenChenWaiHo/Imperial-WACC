@@ -45,7 +45,28 @@ object TAC {
   case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
   case class CreatePairSndElem(sndType: DeclarationType, sndReg: TRegister) extends TAC
   case class CreatePair(fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
+  
+  /* array declaration in assembly
+    @ 4 element array, 4 per element and 4 for array pointer
+		mov r0, #20
+		bl malloc
+		mov r12, r0
+		@ array pointers are shifted forwards by 4 bytes (to account for size)
+		add r12, r12, #4
+		mov r8, #4
+		str r8, [r12, #-4]
+		mov r8, #43
+		str r8, [r12, #0]
+		mov r8, #2
+		str r8, [r12, #4]
+		mov r8, #18
+		str r8, [r12, #8]
+		mov r8, #1
+		str r8, [r12, #12]
+  */
+  //delegates each element in an array
   case class CreateArrayElem(elemType: DeclarationType, elemReg: TRegister) extends TAC
+  //delegates an array with all of its elements
   case class CreateArray(elemsReg: List[TRegister], dstReg: TRegister) extends TAC
 
   case class Comments(string: String) extends TAC {
