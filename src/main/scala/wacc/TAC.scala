@@ -74,10 +74,10 @@ object TAC {
                         fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
 
   // StorePairElem
-  // str srcReg [pairReg, pos], where (pairPos == fst) ? #0 : #4
+  // str srcReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
   case class StorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister) extends TAC
   // GetPairElem
-  // ldr dstReg [pairReg, pos], where (pairPos == fst) ? #0 : #4
+  // ldr dstReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
   case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister) extends TAC
 
   
