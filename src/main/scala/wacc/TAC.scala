@@ -58,7 +58,7 @@ object TAC {
   // malloc snd elem with reference to its type
   // mov r8 sndReg
   // mov r12 r0
-  // str r8, [r12, #0]
+  // str r8, [r12, #4]
   // push r12
   //   --- CreatePair() --- 
   // malloc 2 * 4 bytes for 2 pointers
