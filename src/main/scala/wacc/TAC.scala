@@ -3,6 +3,7 @@ package wacc
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.CmdT.Cmd
+import wacc.AbstractSyntaxTree.DeclarationType
 
 object TAC {
     sealed trait TAC
@@ -29,7 +30,9 @@ object TAC {
   case class Label(name: String = "label") extends TAC {
     override def toString(): String = name + ":"
   }
-  case class Malloc(size: Integer, t1: TRegister)
+  case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
+  case class CreatePairSndElem(sndType: DeclarationType, sndReg: TRegister) extends TAC
+  case class CreatePair(fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
 
   sealed trait Operand
   class TRegister(num: Int) extends Operand {

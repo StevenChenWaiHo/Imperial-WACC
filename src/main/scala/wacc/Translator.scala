@@ -4,6 +4,7 @@ import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.TAC._
+import wacc.AbstractSyntaxTree.BaseT
 
 object Translator {
 
@@ -25,7 +26,7 @@ object Translator {
           case BinaryOp(op, expr1, expr2) => translateBinOp(op, expr1, expr2)
           case UnaryOp(op, expr) => translateUnOp(op, expr)
           case IfStat(cond, stat1, stat2) => translateIfStat(cond, stat1, stat2)
-          case Declaration(dataType, ident, rvalue) => translateDeclaration(ident, rvalue)
+          case Declaration(dataType, ident, rvalue) => translateDeclaration(dataType, ident, rvalue)
           case Assignment(lvalue, rvalue) => translateAssignment(lvalue, rvalue)
           case BeginEndStat(stat) => translateBeginEnd(stat)
           case SkipStat() => translateSkip()
@@ -39,7 +40,6 @@ object Translator {
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
           case Call(ident, args) => translateCall(ident, args)
           case Read(lval) => translateRead(lval)
-          case PairValue(expr, expr) => translatePairValue(expr, expr)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
         map.addOne(node, tac._2)
@@ -84,18 +84,6 @@ object Translator {
         })
         val next = nextRegister()
         (is.toList ++ List(AssignmentTAC(new ArrayElemTAC(aReg, rs.toList), next)), next)
-      }
-    }
-  }
-
-  def translatePairValue(expr1: Expr, expr2: Expr): (List[TAC], TRegister) = {
-    delegateASTNode(expr) match {
-      case (exp1List, exp1Reg) => {
-        delegateASTNode(expr2) match {
-          case(exp2List, exp2Reg) => {
-            
-          }
-        }
       }
     }
   }
@@ -160,7 +148,34 @@ object Translator {
     }
   }
 
-  def translateDeclaration(ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
+  def translateDeclaration(dataType: DeclarationType, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
+    dataType match {
+      case BaseType(baseType) => translateBaseDeclaration(baseType, ident, rvalue)
+      case PairType(fstType, sndType) => translatePairDeclaration(fstType, sndType, ident, rvalue)
+      case ArrayType(dataType, length) => translateArrayDeclaration(dataType, length, ident, rvalue)
+    }
+  }
+
+  def translateArrayDeclaration(dataType: DeclarationType, length: Integer, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
+    (List(), null)
+  }
+
+  def translatePairDeclaration(fstType: DeclarationType, sndType: DeclarationType, ident: IdentLiteral, pairValue: RVal): (List[TAC], TRegister) = {
+     pairValue match {
+      case PairValue(exp1, exp2) => {
+        val (exp1List, fstReg) = delegateASTNode(exp1)
+        val (exp2List, sndReg) = delegateASTNode(exp2)
+        val pairReg = nextRegister()
+        map.addOne(ident, pairReg)
+        (exp1List ++ List(CreatePairFstElem(fstType, fstReg)) ++ 
+        exp2List ++ List(CreatePairSndElem(sndType, sndReg), 
+        CreatePair(fstReg, sndReg, pairReg)), pairReg)
+      }
+      case _ => (List(new Label("Pair Type not Matched")), null) 
+    }
+  }
+
+  def translateBaseDeclaration(baseType: BaseT.BaseTypeType, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
     delegateASTNode(rvalue) match {
       case (rList, rReg) => {
         map.addOne(ident, rReg)
