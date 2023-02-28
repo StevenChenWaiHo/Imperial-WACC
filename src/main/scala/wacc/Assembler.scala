@@ -402,8 +402,9 @@ object Assembler {
   //TODO: implement other commands
   val OperandToLiteral: Map[TAC.Operand, Either[String, Either[Register, Int]]]
   def getRegister(TACRegister: TRegister): Register = {
-    return tRegisterToRegister(TACRegister)
+    return (TACRegister)
   }
+  def translate
   def translateOperand(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
     if (!(!OperandToLiteral.contains(operand))) {
       return OperandToLiteral(operand)
@@ -475,7 +476,12 @@ object Assembler {
   def translate_boundsCheck(): List[String] = {
     var str = List("")
     str = str ++ translateLdr("", r0, r0, Right(".L._boundsCheck_str_0"))
-
+    str = str ++ translateBranchLink("", "printf")
+    str = str ++ translateMove("", r0, ImmediateValueOrRegister(Right(0)))
+    str = str ++ translateBranchLink("", "fflush")
+    str = str ++ translateMove("", r0, ImmediateValueOrRegister(Right(255)))
+    str = str ++ translateBranchLink("", "exit")
+    str
   }
 
   def translate_prints(): List[String] = {
@@ -611,7 +617,6 @@ object Assembler {
           case StringLiteralTAC(string) => {
             strList = strList ++ List(translateLdr("", translateOperand(res), nameToLabel(string)))
           }
-
         }
       }
       case TAC.Label(name) => {
