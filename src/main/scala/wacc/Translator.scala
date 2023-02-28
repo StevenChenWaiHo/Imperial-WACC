@@ -226,8 +226,8 @@ object Translator {
         })
         val arrReg = nextRegister()
         addNode(ident, arrReg)
-        (List(Comments("Array Declaration Start")) ++ tacs.toList ++ CreateArray(tRegs.toList, arrReg)
-        ++ List(Comments("Array Declaration End")), arrReg)
+        (List(Comments("Array Declaration Start")) ++ tacs.toList ++ List(CreateArray(tRegs.toList, arrReg),
+         Comments("Array Declaration End")), arrReg)
       }
       case _ => (List(new Label("Array Type not Matched")), null)
     }
