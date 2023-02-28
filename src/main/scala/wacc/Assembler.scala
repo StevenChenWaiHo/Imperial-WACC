@@ -6,170 +6,6 @@ import wacc.AbstractSyntaxTree.CmdT
 import wacc.RegisterAllocator._
 
 object Assembler {
-  val stack = Array[Register]()
-  val memory = Array[Int]()
-
-  sealed trait Register
-
-  object r0 extends Register {
-    override def toString(): String = "r0"
-  }
-
-  object r1 extends Register {
-    override def toString(): String = "r1"
-  }
-
-  object r2 extends Register {
-    override def toString(): String = "r2"
-  }
-
-  object r3 extends Register {
-    override def toString(): String = "r3"
-  }
-
-  object r4 extends Register {
-    override def toString(): String = "r4"
-  }
-
-  object r5 extends Register {
-    override def toString(): String = "r5"
-  }
-
-  object r6 extends Register {
-    override def toString(): String = "r6"
-  }
-
-  object r7 extends Register {
-    override def toString(): String = "r7"
-  }
-
-  object r8 extends Register {
-    override def toString(): String = "r8"
-  }
-
-  object r9 extends Register {
-    override def toString(): String = "r9"
-  }
-
-  object r10 extends Register {
-    override def toString(): String = "r10"
-  }
-
-  object r11 extends Register {
-    override def toString(): String = "r11"
-  }
-
-  object r12 extends Register {
-    override def toString(): String = "r12"
-  }
-
-  object r13 extends Register {
-    override def toString(): String = "r13"
-  }
-
-  object r14 extends Register {
-    override def toString(): String = "r14"
-  }
-
-  object fp extends Register {
-    override def toString(): String = "fp"
-  }
-
-  object lr extends Register {
-    override def toString(): String = "lr"
-  }
-
-  object pc extends Register {
-    override def toString(): String = "pc"
-  }
-  
-  object sp extends Register {
-    override def toString(): String = "sp"
-  }
-
-  val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 0, r2 -> 0, r3 -> 0, r4 -> 0, r5 -> 0, r6 -> 0,
-    r7 -> 0, r8 -> 0, r9 -> 0, r10 -> 0, r11 -> 0, r12 -> 0, r13 -> 0, r14 -> 0)
-
-  def value(): Unit = {
-    //TODO: implement register value func
-  }
-
-  def push(register: Register): String = {
-    "push {" + register.toString() + "}"
-  }
-
-  def pop(register: Register): String = {
-    "pop {" + register.toString() + "}"
-  }
-
-  def mov(registerDest: Register, registerSrc: Register): String = {
-    "mov " + registerDest.toString() + ", " + registerSrc.toString()
-  }
-
-  def movImm(registerDest: Register, operand: Int): Unit = {
-    listOfRegisters.updated(registerDest, operand)
-  }
-
-  def store(registerDest: Register, registerSrc: Register, operand: Int = 0): Unit = {
-    val memoryLocation: Int = listOfRegisters(registerSrc) + operand
-    listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
-  }
-
-  def compare(registerDest: Register, registerSrc: Register): Boolean = {
-    listOfRegisters(registerDest) == listOfRegisters(registerSrc)
-  }
-
-  def translateBeginEnd(stat: Stat, context: ScopeContext): List[String] = {
-    //Seems like it takes as many variables as it can find in every scope and pushes the corresponding
-    //number of registers, instead of just this scope.
-    var str: List[String] = List("")
-    var defaultRegistersList: List[Register] = List()
-    if (context.scopeLevel() == 0) {
-      defaultRegistersList = List(r8, r10, r12)
-    } else {
-      defaultRegistersList = List(r0)
-    }
-    val registersList: List[Register] = List(r6, r4, r7, r5, r1, r2)
-    if (context.scopeVarSize() >= 4) {
-      defaultRegistersList = defaultRegistersList ++ registersList
-    } else {
-      defaultRegistersList = defaultRegistersList ++ registersList.slice(0, context.scopeVarSize())
-    }
-    /*
-    str = str ++ translatePush("", List(fp, lr)) //Maybe not meant to be in BeginEnd
-    str = str ++ translatePush("", defaultRegistersList) //dependent on context
-    str = str ++ delegateASTNode(stat, context)
-    str = str ++ translatePop("", defaultRegistersList) // dependent on context
-    str = str ++ translatePop("", List(fp, pc)) //Maybe meant to be in prog
-    */
-    return str
-  }
-
-  def translateSkip(): List[String] = {
-    var str = List("")
-    return str
-  }
-
-  def translateCommand(cmd: AbstractSyntaxTree.CmdT.Cmd, expr: AbstractSyntaxTree.Expr): List[String] = {
-    List("")
-  }
-
-  def translateFunction(returnType: AbstractSyntaxTree.DeclarationType,
-                        ident: AbstractSyntaxTree.IdentLiteral,
-                        types: List[(AbstractSyntaxTree.DeclarationType,
-                          AbstractSyntaxTree.IdentLiteral)],
-                        code: Stat): List[String] = {
-    List("")
-  }
-
-  def translateARM(command: String, operand: String, operand2: String = ""): String = {
-    //Maybe add check to make sure command is valid
-    if (operand2 == "") {
-      command + " " + operand
-    }
-    command + " " + operand + ", " + operand2
-  }
-
   sealed trait Operand2
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends Operand2 {
     @Override
@@ -550,6 +386,19 @@ object Assembler {
       case Label(name) => {
         List(name + ":")
       }
+      case DataSegmentTAC() => {
+        List(".data")
+      }
+      case TextSegmentTAC() => {
+        List(".text", ".global main")
+      }
+      case StringLengthDefinitionTAC(len, lbl) => {
+        List(".word " + len.toString())
+      }
+      case StringDefinitionTAC(str, lbl) => {
+        translateTAC(lbl) ++
+        List(".asciz \"" + str + "\"")
+      }
       case BeginFuncTAC() => {
         translatePush("", List(fp, lr)) ::
         translatePush("", List(r8, r10, r12)) ::
@@ -565,7 +414,7 @@ object Assembler {
       }
       case CommandTAC(cmd, operand) => {
         if (cmd == CmdT.Exit) {
-          mov(r0, r0) :: // TODO: change from default r0
+          translateMove("", r0, translateOperand(operand)) ::
           translateBranchLink("", "exit") :: List() // TODO: should not default to t0
         } else {
           List("Command not implemented")
@@ -577,7 +426,7 @@ object Assembler {
   def translateProgram(tacList: List[TAC]) : List[String] = {
     var output = List[String]()
     // temp dummy header to start
-    output = List(".data", ".text", ".global main")
+    output = List()
     tacList.foreach(tac => {
       output = output ++ translateTAC(tac)
     })
