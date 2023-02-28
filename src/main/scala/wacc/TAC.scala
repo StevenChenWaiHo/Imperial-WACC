@@ -67,7 +67,7 @@ object TAC {
   //delegates each element in an array
   case class CreateArrayElem(elemType: DeclarationType, elemReg: TRegister) extends TAC
   //delegates an array with all of its elements
-  case class CreateArray(elemsReg: List[TRegister], dstReg: TRegister) extends TAC
+  case class CreateArray(elemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
 
   case class Comments(string: String) extends TAC {
     override def toString(): String = "@ " + string
