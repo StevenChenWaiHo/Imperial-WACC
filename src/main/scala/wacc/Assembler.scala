@@ -306,6 +306,8 @@ object Assembler {
       case IntLiteralTAC(value) => Right(value)
       case CharLiteralTAC(chr) => Right(chr.toInt)
       case BoolLiteralTAC(b) => Right(b.compare(true))
+      case Label(name) => Right(999) // TODO: change to allow for labels
+      //case Label(name) => "=lbl"
       case _ => null // TODO: this should not match
     }
     new ImmediateValueOrRegister(regOrIm)
@@ -416,6 +418,11 @@ object Assembler {
         if (cmd == CmdT.Exit) {
           translateMove("", r0, translateOperand(operand)) ::
           translateBranchLink("", "exit") :: List() 
+        } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
+          // TODO: add check for operand type to print (string/char)
+          // TODO: Add the _prints function in at the end
+          translateMove("", r0, translateOperand(operand)) ::
+          translateBranchLink("", "_prints") :: List() 
         } else {
           List("Command not implemented")
         }
