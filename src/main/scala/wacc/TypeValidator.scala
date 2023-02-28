@@ -5,11 +5,16 @@ import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree._
 import wacc.SemanticAnalyser.{lValType, rValType}
+import wacc.TAC.TRegister
 
 import javax.management.InvalidAttributeValueException
 
+/* Information stored about every variable. Can be extended as needed. */
+case class VarInfo(declarationType: DeclarationType) {
+  var tReg: TRegister = null
+}
 
-case class Scope(val vars: Map[String, DeclarationType],
+case class Scope(val vars: Map[String, VarInfo],
                  val funcs: Map[String, Expectation],
                  val nextReturn: DeclarationType)
 
@@ -22,7 +27,7 @@ class ScopeContext(scopeStack: List[Scope]) {
 
     def findVar1(stack: List[Scope]): Either[List[String], DeclarationType] = stack match {
       case Scope(vars, _, _) :: scopes => {
-        vars.get(name).map(Right(_))
+        vars.get(name).map(v => Right(v.declarationType))
           .getOrElse(findVar1(scopes))
       }
       case Nil => Left(List("Variable not found: %s".format(name)))
@@ -50,7 +55,7 @@ class ScopeContext(scopeStack: List[Scope]) {
     scopeStack match {
       case Scope(vars, funcs, returnType) :: scopes => {
         if (vars.contains(name)) Left(List("Variable %s has already been defined in this scope".format(name)))
-        else Right(new ScopeContext(Scope(vars.updated(name, decType), funcs, returnType) :: scopes))
+        else Right(new ScopeContext(Scope(vars.updated(name, VarInfo(decType)), funcs, returnType) :: scopes))
       }
       case _ => throw new InvalidAttributeValueException("Empty context: this should never happen.")
     }
