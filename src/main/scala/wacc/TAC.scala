@@ -61,10 +61,10 @@ object TAC {
     case class IntLiteralTAC(value: Int) extends LiteralTAC {
       override def toString(): String = value.toString()
     }
-    class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
+    case class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
       override def toString(): String = b.toString()
     }
-    class CharLiteralTAC(c: Char) extends LiteralTAC {
+    case class CharLiteralTAC(c: Char) extends LiteralTAC {
       override def toString(): String = "\'" + c + "\'"
     }
   class ArrayOp(elems: List[Operand]) extends Operand {

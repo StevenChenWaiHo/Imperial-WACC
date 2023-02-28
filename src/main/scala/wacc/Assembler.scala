@@ -304,6 +304,7 @@ object Assembler {
     val regOrIm = op match {
       case reg: TRegister => Left(translateRegister(reg))
       case IntLiteralTAC(value) => Right(value)
+      case CharLiteralTAC(chr) => Right(chr.toInt)
       case _ => null // TODO: this should not match
     }
     new ImmediateValueOrRegister(regOrIm)
@@ -313,7 +314,6 @@ object Assembler {
     //Need to figure out how registers work
     //Push and pop might not be in right place
     //Algorithm for determining if ldr is needed
-    var strList = List("")
     tripleAddressCode match {
       // case BinaryOpTAC(op, t1, t2, res) => {
       //   op match {
