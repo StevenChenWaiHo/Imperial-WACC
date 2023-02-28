@@ -298,16 +298,14 @@ object Assembler {
   }
 
   def translate_prints(): List[String] = {
-    var str = List("")
-    str = str ++ List(translatePush("", List(lr)))
-    str = str ++ List(translateMove("", r2, ImmediateValueOrRegister(Left(r0))))
-    str = str ++ List(translateLdr("", r1, r0, Left(ImmediateValueOrRegister(Right(-4)))))
-    str = str ++ List(translateLdr("", r0, r0, Right("=.L.prints_str_0")))
-    str = str ++ List(translateBranchLink("", "printf"))
-    str = str ++ List(translateMove("", r0, ImmediateValueOrRegister(Right(0))))
-    str = str ++ List(translateBranchLink("", "fflush"))
-    str = str ++ List(translatePop("", List(pc)))
-    str
+    translatePush("", List(lr)) ::
+    translateMove("", r2, ImmediateValueOrRegister(Left(r0))) ::
+    translateLdr("", r1, r0, Left(ImmediateValueOrRegister(Right(-4)))) ::
+    translateLdr("", r0, r0, Right("=.L.prints_str_0")) ::
+    translateBranchLink("", "printf") ::
+    translateMove("", r0, ImmediateValueOrRegister(Right(0))) ::
+    translateBranchLink("", "fflush") ::
+    translatePop("", List(pc)) :: List()
   }
 
   def determineLdr(x: Int): Boolean = {
@@ -316,10 +314,10 @@ object Assembler {
     } else {
       for (i <- 1 to 16) {
         if ((x >> i) << i == x) {
-          return false //false
+          return false
         }
       }
-      return true //true
+      return true
     }
   }
 
@@ -434,21 +432,23 @@ object Assembler {
       // }
       // case AssignmentTAC(t1, res) => {
       //   t1 match {
-      //     case TRegister(num) => {
-      //       strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(num))))
+      //     case TRegisterNum(Num) => {
+      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(Num))))
       //     }
       //     case IdentLiteralTAC(name) => {
-      //       strList ++ List(translateMove("", r8, nameToAddress(name)))
-      //       strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
+      //       strList = strList ++ List(translateMove("", r8, nameToAddress(name)))
+      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
       //     }
       //     case IntLiteralTAC(value) => {
-      //       strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
+      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
       //     }
-      //     case StringLiteralTAC(str) => {
-      //       strList ++ List(translateLdr("", translateOperand(res), nameToLabel(str)))
+      //     case StringLiteralTAC(string) => {
+      //       strList = strList ++ List(translateLdr("", translateOperand(res), nameToLabel(string)))
       //     }
-
       //   }
+      // }
+      // case TAC.Label(name) => {
+      //   str = labelToCodeTable()
       // }
       case Label(name) => {
         List(name + ":")
@@ -495,26 +495,6 @@ object Assembler {
       case Comments(str) => {
         List("@ " + str)
       }
-      // case AssignmentTAC(t1, res) => {
-      //   t1 match {
-      //     case TRegisterNum(Num) => {
-      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(Num))))
-      //     }
-      //     case IdentLiteralTAC(name) => {
-      //       strList = strList ++ List(translateMove("", r8, nameToAddress(name)))
-      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
-      //     }
-      //     case IntLiteralTAC(value) => {
-      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
-      //     }
-      //     case StringLiteralTAC(string) => {
-      //       strList = strList ++ List(translateLdr("", translateOperand(res), nameToLabel(string)))
-      //     }
-      //   }
-      // }
-      // case TAC.Label(name) => {
-      //   str = labelToCodeTable()
-      // }
     }
   }
 
