@@ -227,12 +227,12 @@ object Assembler {
   }
 
   //TODO: implement other commands
-  val OperandToLiteral: Map[TAC.Operand, Either[String, Either[Register, Int]]]
+  val OperandToLiteral = Map[TAC.Operand, Either[String, Either[Register, Int]]]()
   def getRegister(TACRegister: TRegister): Register = {
-    return (TACRegister)
+    return r0
   }
-  def translate
-  def translateOperand(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
+  
+  def translateOperand2(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
     if (!(!OperandToLiteral.contains(operand))) {
       return OperandToLiteral(operand)
     } else {
@@ -241,18 +241,14 @@ object Assembler {
           OperandToLiteral.updated(operand, Right(Left(r0)))
           return Right(Left(r0))
         }
-        case LiteralTAC() => {
+        case lit: LiteralTAC => lit match {
           case CharLiteralTAC(c) => {
             OperandToLiteral.updated(operand, Left(c.toString))
             return Left(c.toString)
           }
-          case StringLiteralTAC(s) => {
-            OperandToLiteral.updated(operand, Left(s))
-            return Left(s)
-          }
-          case IntLiteralTAC(int) => {
-            OperandToLiteral.updated(operand,Right(Right(Int)))
-          }
+          //case IntLiteralTAC(int) => {
+            //OperandToLiteral.updated(operand, Right(Right(int)))
+          //}
           case IdentLiteralTAC(ident) => {
             OperandToLiteral.updated(operand, Left(ident))
             return Left(ident)
@@ -261,10 +257,6 @@ object Assembler {
             OperandToLiteral.updated(operand, Left("Not complete"))
             return Left("Not complete")
           }
-        }
-        case ArrayOp(elems) => {
-          OperandToLiteral.updated(operand, Left("Not complete"))
-          Left("Not complete")
         }
         case ArrayElemTAC(ar, in) => {
           OperandToLiteral.updated(operand, Left("Not complete"))
@@ -275,40 +267,34 @@ object Assembler {
   }
 
   def translate_errOverflow(): List[String] = {
-    var str = List("")
-    str = str ++ translateLdr("", r0, r0, Right("=.L._errOverflow_str0"))
-    str = str ++ translateBranchLink("", "_prints")
-    str = str ++ translateMove("", r0, ImmediateValueOrRegister(Right(255)))
-    str = str ++ translateBranchLink("", "exit")
-    str
+    translateLdr("", r0, r0, Right("=.L._errOverflow_str0")) :: 
+    translateBranchLink("", "_prints") ::
+    translateMove("", r0, ImmediateValueOrRegister(Right(255))) ::
+    translateBranchLink("", "exit") :: List()
   }
 
   def translate_arrStoreB(): List[String] = {
-    var str = List("")
-    str = str ++ translatePush("", List(lr))
-    str = str ++ translateCompare("", r10, ImmediateValueOrRegister(Right(0)))
-    str = str ++ translateMove("", r1 , ImmediateValueOrRegister(Left(r10)))
-    str = str ++ translateBranchLink("lt", "_boundsCheck")
-    str = str ++ translateLdr("", lr, r3, Left(ImmediateValueOrRegister(Right(-4))))
-    str = str ++ translateCompare("eq", r10, ImmediateValueOrRegister(Left(lr)))
-    str = str ++ translateMove("ge", r1, ImmediateValueOrRegister(Left(r10)))
-    str = str ++ translateBranchLink("ge", "_boundsCheck")
-    str = str ++ translateStrb()
-    str = str ++ translatePop("", List(pc))
-    str
+    translatePush("", List(lr)) :: 
+    translateCompare("", r10, ImmediateValueOrRegister(Right(0))) ::
+    translateMove("", r1 , ImmediateValueOrRegister(Left(r10))) ::
+    translateBranchLink("lt", "_boundsCheck") :: 
+    translateLdr("", lr, r3, Left(ImmediateValueOrRegister(Right(-4)))) :: 
+    translateCompare("eq", r10, ImmediateValueOrRegister(Left(lr))) ::
+    translateMove("ge", r1, ImmediateValueOrRegister(Left(r10))) :: 
+    translateBranchLink("ge", "_boundsCheck") :: 
+    //translateStrb() :: 
+    translatePop("", List(pc)) :: List()
   }
 
 
 
   def translate_boundsCheck(): List[String] = {
-    var str = List("")
-    str = str ++ translateLdr("", r0, r0, Right(".L._boundsCheck_str_0"))
-    str = str ++ translateBranchLink("", "printf")
-    str = str ++ translateMove("", r0, ImmediateValueOrRegister(Right(0)))
-    str = str ++ translateBranchLink("", "fflush")
-    str = str ++ translateMove("", r0, ImmediateValueOrRegister(Right(255)))
-    str = str ++ translateBranchLink("", "exit")
-    str
+    translateLdr("", r0, r0, Right(".L._boundsCheck_str_0")) :: 
+    translateBranchLink("", "printf") :: 
+    translateMove("", r0, ImmediateValueOrRegister(Right(0))) :: 
+    translateBranchLink("", "fflush") :: 
+    translateMove("", r0, ImmediateValueOrRegister(Right(255))) :: 
+    translateBranchLink("", "exit") :: List()
   }
 
   def translate_prints(): List[String] = {
@@ -508,26 +494,27 @@ object Assembler {
       }
       case Comments(str) => {
         List("@ " + str)
-      case AssignmentTAC(t1, res) => {
-        t1 match {
-          case TRegisterNum(Num) => {
-            strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(Num))))
-          }
-          case IdentLiteralTAC(name) => {
-            strList = strList ++ List(translateMove("", r8, nameToAddress(name)))
-            strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
-          }
-          case IntLiteralTAC(value) => {
-            strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
-          }
-          case StringLiteralTAC(string) => {
-            strList = strList ++ List(translateLdr("", translateOperand(res), nameToLabel(string)))
-          }
-        }
       }
-      case TAC.Label(name) => {
-        str = labelToCodeTable()
-      }
+      // case AssignmentTAC(t1, res) => {
+      //   t1 match {
+      //     case TRegisterNum(Num) => {
+      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(Num))))
+      //     }
+      //     case IdentLiteralTAC(name) => {
+      //       strList = strList ++ List(translateMove("", r8, nameToAddress(name)))
+      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
+      //     }
+      //     case IntLiteralTAC(value) => {
+      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
+      //     }
+      //     case StringLiteralTAC(string) => {
+      //       strList = strList ++ List(translateLdr("", translateOperand(res), nameToLabel(string)))
+      //     }
+      //   }
+      // }
+      // case TAC.Label(name) => {
+      //   str = labelToCodeTable()
+      // }
     }
   }
 
