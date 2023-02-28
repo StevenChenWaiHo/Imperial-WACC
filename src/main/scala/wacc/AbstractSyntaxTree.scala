@@ -6,11 +6,16 @@ import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 
 // This should probably be a class which takes in a lookup table
 object AbstractSyntaxTree {
-  sealed trait ASTNode
+  sealed trait ASTNode {
+    var context: ScopeContext = null
+    def attachContext(scope: ScopeContext): Unit = {
+      context = scope
+    }
+  }
 
   sealed trait PairLit extends Expr with RVal
 
-  case class PairLiteral() extends PairLit  
+  case class PairLiteral() extends PairLit
 
   sealed trait ArrayE extends Expr with LVal
 

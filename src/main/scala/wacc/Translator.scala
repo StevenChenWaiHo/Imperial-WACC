@@ -1,5 +1,6 @@
 package wacc
 
+import scala.collection.mutable._
 import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
@@ -8,13 +9,15 @@ import wacc.AbstractSyntaxTree.BaseT
 
 object Translator {
 
-  private val scopes = collection.mutable.ListBuffer[collection.mutable.Map[ASTNode, TRegister]]()
-  private val regCountStack = collection.mutable.Stack[Int]()
-  private val regList = collection.mutable.ListBuffer[TRegister]()
+  private val scopes = ListBuffer[Map[ASTNode, TRegister]]()
+  private val regCountStack = Stack[Int]()
+  private val regList = ListBuffer[TRegister]()
+  private val strings = Map[String, Label]()
+  private val dataList = ListBuffer[TAC]()
 
-  def newMap(): collection.mutable.Map[ASTNode, TRegister] = { 
+  def newMap(): Map[ASTNode, TRegister] = { 
     // Push scope on to stack when entering new context
-    val map = collection.mutable.Map[ASTNode, TRegister]()
+    val map = Map[ASTNode, TRegister]()
     scopes.addOne(map)
     // Push the current highest register for use later
     regCountStack.push(regList.length)
@@ -94,7 +97,16 @@ object Translator {
       case BoolLiteral(x) => new BoolLiteralTAC(x)
       case CharLiteral(x) => new CharLiteralTAC(x)
       case IntLiteral(x) => new IntLiteralTAC(x)
-      case StringLiteral(x) => new StringLiteralTAC(x)
+      case StringLiteral(str) => {
+        strings.getOrElse(str, {
+          val lbl = new Label("L.str" + strings.size.toString)
+          strings.addOne((str, lbl))
+          dataList.addOne(Comments("length of " + lbl.toString()))
+          dataList.addOne(StringLengthDefinitionTAC(str.length(), lbl))
+          dataList.addOne(StringDefinitionTAC(str, lbl))
+          lbl
+        })
+      }
       case IdentLiteral(x) => return (List(), next)
       //case PairLiteral(x) => new PairLiteralTAC(x)
       //case ArrayLiteral(x) => translateArrayLiteral(x)
@@ -122,8 +134,8 @@ object Translator {
     delegateASTNode(IdentLiteral(name)) match {
       // Hopefully find the identifier in the map already
       case (_, aReg) => {
-        val is = collection.mutable.ListBuffer[TAC]()
-        val rs = collection.mutable.ListBuffer[TRegister]()
+        val is = ListBuffer[TAC]()
+        val rs = ListBuffer[TRegister]()
         indices.foreach(i => delegateASTNode(i) match {
           case (iList, iReg) => {
             is.addAll(iList)
@@ -211,7 +223,24 @@ object Translator {
   }
 
   def translateArrayDeclaration(dataType: DeclarationType, length: Integer, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
-    (List(), null)
+    rvalue match {
+      case ArrayLiteral(elements) => {
+        val tacs = ListBuffer[TAC]()
+        val tRegs = ListBuffer[TRegister]() //required?
+        elements.foreach(e => {
+          val (elemTacs, reg) = delegateASTNode(e)
+          addNode(e, reg)
+          tacs ++= elemTacs
+          tacs += CreateArrayElem(dataType, reg)
+          tRegs += reg
+        })
+        val arrReg = nextRegister()
+        addNode(ident, arrReg)
+        (List(Comments("Array Declaration Start")) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, arrReg),
+         Comments("Array Declaration End")), arrReg)
+      }
+      case _ => (List(new Label("Array Type not Matched")), null)
+    }
   }
 
   def translatePairValue(fstType: DeclarationType, sndType: DeclarationType, pairValue: RVal): (List[TAC], TRegister) = {
@@ -282,7 +311,7 @@ object Translator {
       case (lList, lReg) => {
         delegateASTNode(rvalue) match {
           case (rList, rReg) => {
-            (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), lReg) // TODO: Check this
+            (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), lReg)
           }
         }
       }
@@ -290,25 +319,27 @@ object Translator {
   }
 
   def translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
-    val funcTAClist = collection.mutable.ListBuffer[TAC]()
+    // Initialise the .data segment
+    dataList.addOne(DataSegmentTAC())
+    // Start the code segment with the functions first
+    val funcTAClist = ListBuffer[TAC](TextSegmentTAC())
     funcs.foreach(f => {
       funcTAClist.addAll(translateFunction(f))
     })
     newMap()
     delegateASTNode(s) match {
       case (tacList, reg) => {
-        funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
+        dataList.toList ++ funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
       }
     }
   }
 
   def translateStatList(stats: List[Stat]): (List[TAC], TRegister) = {
-    // TODO: Change to not use mutable list?
-    val TAClist = collection.mutable.ListBuffer[TAC]()
+    var TAClist = List[TAC]()
     stats.foreach(s => {
-      TAClist.addAll(delegateASTNode(s)._1)
+      TAClist = TAClist ++ delegateASTNode(s)._1
     })
-    (TAClist.toList, null)
+    (TAClist, null)
   }
 
   def translateBeginEnd(stat : Stat): (List[TAC], TRegister) = {
@@ -322,8 +353,8 @@ object Translator {
   }
 
   def translateArrayLiteral(elems: List[Expr]): (List[TAC], TRegister) = {
-    val instrs = collection.mutable.ListBuffer[TAC]()
-    val regs = collection.mutable.ListBuffer[TRegister]()
+    val instrs = ListBuffer[TAC]()
+    val regs = ListBuffer[TRegister]()
     elems.foreach(e => {
       val node = delegateASTNode(e)
       node match {

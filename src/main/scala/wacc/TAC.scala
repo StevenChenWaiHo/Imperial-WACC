@@ -25,10 +25,22 @@ object TAC {
   case class CallTAC(lbl: Label, args: List[TRegister]) extends TAC 
   case class BeginFuncTAC() extends TAC
   case class EndFuncTAC() extends TAC
+  case class DataSegmentTAC() extends TAC {
+    override def toString(): String = ".data"
+  }
+  case class TextSegmentTAC() extends TAC {
+    override def toString(): String = ".text"
+  }
+  case class StringDefinitionTAC(str: String, lbl: Label) extends TAC {
+     override def toString(): String = lbl.toString() + "\n\t.asciz \"" + str + "\""
+  }
+  case class StringLengthDefinitionTAC(len: Int, lbl: Label) extends TAC {
+     override def toString(): String = "\t.word " + len.toString
+  }
   case class GOTO(label: Label) extends TAC {
     override def toString(): String = "goto: " + label.name
   }
-  case class Label(name: String = "label") extends TAC {
+  case class Label(name: String = "label") extends TAC with Operand {
     override def toString(): String = name + ":"
   }
 
@@ -68,23 +80,44 @@ object TAC {
   // ldr dstReg [pairReg, pos], where (pairPos == fst) ? #0 : #4
   case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister) extends TAC
 
+  
+  /* array declaration in assembly
+    @ 4 element array, 4 per element and 4 for array pointer
+		mov r0, #20
+		bl malloc
+		mov r12, r0
+		@ array pointers are shifted forwards by 4 bytes (to account for size)
+		add r12, r12, #4
+		mov r8, #4
+		str r8, [r12, #-4]
+		mov r8, #43
+		str r8, [r12, #0]
+		mov r8, #2
+		str r8, [r12, #4]
+		mov r8, #18
+		str r8, [r12, #8]
+		mov r8, #1
+		str r8, [r12, #12]
+  */
+  //delegates each element in an array
+  case class CreateArrayElem(elemType: DeclarationType, elemReg: TRegister) extends TAC
+  //delegates an array with all of its elements
+  case class CreateArray(elemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
+
   case class Comments(string: String) extends TAC {
     override def toString(): String = "@ " + string
   }
 
   sealed trait Operand
-  class TRegister(num: Int) extends Operand {
+  case class TRegister(num: Int) extends Operand {
     override def toString(): String = "_T" + num
   }
   class LiteralTAC() extends Operand
-    class IdentLiteralTAC(name: String) extends LiteralTAC {
+    case class IdentLiteralTAC(name: String) extends LiteralTAC {
       override def toString(): String = name
     }
-    class IntLiteralTAC(value: Int) extends LiteralTAC {
+    case class IntLiteralTAC(value: Int) extends LiteralTAC {
       override def toString(): String = value.toString()
-    }
-    class StringLiteralTAC(str: String) extends LiteralTAC {
-      override def toString(): String = "\"" + str + "\""
     }
     class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
       override def toString(): String = b.toString()
@@ -95,7 +128,7 @@ object TAC {
   class ArrayOp(elems: List[Operand]) extends Operand {
     override def toString(): String = elems.toString()
   }
-  class ArrayElemTAC(arr: Operand, indices: List[Operand]) extends Operand {
+  case class ArrayElemTAC(arr: Operand, indices: List[Operand]) extends Operand {
     override def toString(): String = arr + "[" + indices + "]"
   }
   

@@ -4,6 +4,8 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
+import wacc.Assembler.translateProgram
+import wacc.Parser.ProgramParser
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -45,13 +47,16 @@ object Main {
       })
       sys.exit(SemanticErrorCode)
     }
-    println("Compilation Successful!")
+    
+    // Translate the ast in to IR
+    val tac = delegateASTNode(ast.get)._1
+    tac.foreach(l => println(l))
 
-    delegateASTNode(ast.get)._1.foreach(l => println(l))
-
-    //val result = Assembler.translateProgram(...)
-    val result = List(".data", ".text", ".global main", "main:",
-    "push {fp, lr}", "push {r8, r10, r12}", "mov fp, sp", "mov r0, #0", "pop {r8, r10, r12}", "pop {fp, pc}")
+    // Convert the IR to ARM
+    val result = translateProgram(tac)
+    result.foreach(l => println(l))
+    //val result = List(".data", ".text", ".global main", "main:",
+    //"push {fp, lr}", "push {r8, r10, r12}", "mov fp, sp", "mov r0, #0", "pop {r8, r10, r12}", "pop {fp, pc}")
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
@@ -62,6 +67,7 @@ object Main {
       for(line <- result) fileWriter.write(line + "\n")
       fileWriter.close()
     }
+    println("Compilation Successful!")
     sys.exit(SuccessCode)
   }
 }
