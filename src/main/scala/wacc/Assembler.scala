@@ -1,7 +1,7 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.{ASTNode, BeginEndStat, BinaryOpType, Command, Func, Program, SkipStat, Stat}
-import wacc.TAC.{ArrayElemTAC, ArrayOp, BinaryOpTAC, BoolLiteralTAC, CharLiteralTAC, IdentLiteralTAC, IntLiteralTAC, LiteralTAC, StringLiteralTAC, TAC, TRegister}
+import wacc.AbstractSyntaxTree._
+import wacc.TAC._
 
 object Assembler {
   val stack = Array[Register]()
