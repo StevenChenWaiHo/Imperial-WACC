@@ -31,17 +31,19 @@ object SemanticAnalyser {
     }
   }
 
-  def rValType(rVal: RVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = rVal match {
-    case rVal: Expr => returnType(rVal)
-    case ArrayLiteral(exprs) => isHomogenousList(exprs).map(ArrayType(_, exprs.length))
-    case PairValue(exp1, exp2) => simpleExpectation { (inputs) => Right(PairType(inputs.head, inputs(1))) }
-      .matchedWith(List(returnType(exp1), returnType(exp2)))
-    case Call(ident, args) => {
-      val funcExpectation = scopeContext.findFunc(ident.name)
-      funcExpectation.map(_ matchedWith args.map(returnType))
-        .getOrElse(Left(List(s"Function '${ident.name}' not defined in scope.")))
+  def rValType(rVal: RVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = {
+    rVal match {
+      case rVal: Expr => returnType(rVal)
+      case ArrayLiteral(exprs) => isHomogenousList(exprs).map(ArrayType(_, exprs.length))
+      case PairValue(exp1, exp2) => simpleExpectation { (inputs) => Right(PairType(inputs.head, inputs(1))) }
+        .matchedWith(List(returnType(exp1), returnType(exp2)))
+      case Call(ident, args) => {
+        val funcExpectation = scopeContext.findFunc(ident.name)
+        funcExpectation.map(_ matchedWith args.map(returnType))
+          .getOrElse(Left(List(s"Function '${ident.name}' not defined in scope.")))
+      }
+      case PairElement(element, pair) => pairElementType(element) matchedWith List(lValType(pair))
     }
-    case PairElement(element, pair) => pairElementType(element) matchedWith List(lValType(pair))
   }
 
   def lValType(lVal: LVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = lVal match {
@@ -60,6 +62,7 @@ object SemanticAnalyser {
   }
 
   def verifyStatement(statement: Stat)(implicit scopeContext: ScopeContext): Either[List[String], ScopeContext] = {
+    statement.attachContext(scopeContext)
     statement match {
       // Make a new context from 'stat', and feed it to verifyStatement to verify 'stats'
       case StatList(stat :: stats) => verifyStatement(stat).map(verifyStatement(StatList(stats))(_)).joinRight
@@ -68,10 +71,12 @@ object SemanticAnalyser {
       case Declaration(dataType, ident, rValue) => {
         // Make sure rValue and dataType are a pair of (any) matching data types
         val matcher = TypeMatcher.identicalTypes(BaseType(Any_T)) withContext s"In variable declaration for '$ident'"
+        val maybeContext: Either[List[String], ScopeContext] = scopeContext.addVar(ident.name, dataType)
+        if(maybeContext.isRight) statement.attachContext(maybeContext.toOption.get)
 
         (matcher matchedWith List(Right(dataType), rValType(rValue)))
           // Drop the return type and replace it with the new context
-          .map(_ => scopeContext.addVar(ident.name, dataType)).joinRight
+          .map(_ => maybeContext).joinRight
       }
       // Accept any two identical types. Drop the return type and replace it with the (unchanged) context.
       case Assignment(lVal, rVal) => {
@@ -80,7 +85,7 @@ object SemanticAnalyser {
         if(lValT.isRight && rValT.isRight && lValT.toOption.get.isAny && rValT.toOption.get.isAny)
           return Left(List(s"Assignment between two ambiguous types: ${lValT.toOption.get}, ${rValT.toOption.get}"))
 
-        val matcher = TypeMatcher.identicalTypes withContext s"In variable assignment on line: ${0}" //TODO
+        val matcher = TypeMatcher.identicalTypes withContext s"In variable assignment for '$lVal'"
         (matcher matchedWith List(lValType(lVal), rValType(rVal)))
           .map(_ => scopeContext)
       }
@@ -91,7 +96,6 @@ object SemanticAnalyser {
           case _ => Right(BaseType(None_T))
         }) matchedWith List(lValType(lVal)))
           .map(_ => scopeContext)
-
 
       case Command(cmd, input) => {
         val expectation = cmd match {
