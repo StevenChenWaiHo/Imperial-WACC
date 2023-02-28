@@ -3,115 +3,28 @@ package wacc
 import wacc.AbstractSyntaxTree._
 import wacc.TAC._
 import wacc.AbstractSyntaxTree.CmdT
+import wacc.RegisterAllocator._
 
 object Assembler {
-  val stack = Array[Register]()
-  val memory = Array[Int]()
-
-  sealed trait Register
-
-  object r0 extends Register {
-    override def toString(): String = "r0"
+  def push(register: ImmediateValueOrRegister): String = {
+    "push {" + register.toString() + "}"
   }
 
-  object r1 extends Register {
-    override def toString(): String = "r1"
+  def pop(register: ImmediateValueOrRegister): String = {
+    "pop {" + register.toString() + "}"
   }
 
-  object r2 extends Register {
-    override def toString(): String = "r2"
+  def mov(dst: Register, src: ImmediateValueOrRegister): String = {
+    "mov " + dst.toString() + " " + src.toString()
   }
 
-  object r3 extends Register {
-    override def toString(): String = "r3"
-  }
-
-  object r4 extends Register {
-    override def toString(): String = "r4"
-  }
-
-  object r5 extends Register {
-    override def toString(): String = "r5"
-  }
-
-  object r6 extends Register {
-    override def toString(): String = "r6"
-  }
-
-  object r7 extends Register {
-    override def toString(): String = "r7"
-  }
-
-  object r8 extends Register {
-    override def toString(): String = "r8"
-  }
-
-  object r9 extends Register {
-    override def toString(): String = "r9"
-  }
-
-  object r10 extends Register {
-    override def toString(): String = "r10"
-  }
-
-  object r11 extends Register {
-    override def toString(): String = "r11"
-  }
-
-  object r12 extends Register {
-    override def toString(): String = "r12"
-  }
-
-  object r13 extends Register {
-    override def toString(): String = "r13"
-  }
-
-  object r14 extends Register {
-    override def toString(): String = "r14"
-  }
-
-  object fp extends Register {
-    override def toString(): String = "fp"
-  }
-
-  object lr extends Register {
-    override def toString(): String = "lr"
-  }
-
-  object pc extends Register {
-    override def toString(): String = "pc"
-  }
-  
-  object sp extends Register {
-    override def toString(): String = "sp"
-  }
-
-  val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 0, r2 -> 0, r3 -> 0, r4 -> 0, r5 -> 0, r6 -> 0,
-    r7 -> 0, r8 -> 0, r9 -> 0, r10 -> 0, r11 -> 0, r12 -> 0, r13 -> 0, r14 -> 0)
-
-  def value(): Unit = {
-    //TODO: implement register value func
-  }
-
-  def push(register: Register): String = {
-    "push " + register.toString()
-  }
-
-  def pop(register: Register): String = {
-    "pop " + register.toString()
-  }
-
-  def mov(registerDest: Register, registerSrc: Register): String = {
-    "mov " + registerDest.toString() + " " + registerSrc.toString()
-  }
-
-  def movImm(registerDest: Register, operand: Int): Unit = {
-    listOfRegisters.updated(registerDest, operand)
+  def movImm(dst: Register, src: Int): String = {
+    "mov " + dst.toString() + " " + src.toString()
   }
 
   def store(registerDest: Register, registerSrc: Register, operand: Int = 0): Unit = {
     val memoryLocation: Int = listOfRegisters(registerSrc) + operand
-    listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
+    //listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
   }
 
   def compare(registerDest: Register, registerSrc: Register): Boolean = {
@@ -142,31 +55,6 @@ object Assembler {
     str = str ++ translatePop("", List(fp, pc)) //Maybe meant to be in prog
     */
     return str
-  }
-
-  def translateSkip(): List[String] = {
-    var str = List("")
-    return str
-  }
-
-  def translateCommand(cmd: AbstractSyntaxTree.CmdT.Cmd, expr: AbstractSyntaxTree.Expr): List[String] = {
-    List("")
-  }
-
-  def translateFunction(returnType: AbstractSyntaxTree.DeclarationType,
-                        ident: AbstractSyntaxTree.IdentLiteral,
-                        types: List[(AbstractSyntaxTree.DeclarationType,
-                          AbstractSyntaxTree.IdentLiteral)],
-                        code: Stat): List[String] = {
-    List("")
-  }
-
-  def translateARM(command: String, operand: String, operand2: String = ""): String = {
-    //Maybe add check to make sure command is valid
-    if (operand2 == "") {
-      command + " " + operand
-    }
-    command + " " + operand + ", " + operand2
   }
 
   sealed trait Operand2
@@ -379,9 +267,8 @@ object Assembler {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
-  def translateMove(condition: String, destinationRegister: Register, operand: Operand2): String = {
-    var str = "cmp" + condition + " " + destinationRegister + ", " + operand
-    return str
+  def translateMove(condition: String, dst: Register, operand: Operand2): String = {
+    "mov " + dst.toString + ", " + operand.toString()
   }
 
   def translateBranch(condition: String, operand: String): String = {
@@ -462,8 +349,18 @@ object Assembler {
     }
   }
 
-  def translateOperand(op: Operand): Either[Register, Int] = {
-    Left(r0)
+  // TODO: move this in to register alloc
+  def translateRegister(treg: TRegister): Register = {
+    r0
+  }
+
+  def translateOperand(op: Operand): ImmediateValueOrRegister = {
+    val regOrIm = op match {
+      case reg: TRegister => Left(translateRegister(reg))
+      case IntLiteralTAC(value) => Right(value)
+      case _ => null // TODO: this should not match
+    }
+    new ImmediateValueOrRegister(regOrIm)
   }
 
   def translateTAC(tripleAddressCode: TAC): List[String] = {
@@ -472,40 +369,40 @@ object Assembler {
     //Algorithm for determining if ldr is needed
     var strList = List("")
     tripleAddressCode match {
-      case BinaryOpTAC(op, t1, t2, res) => {
-        op match {
-          case BinaryOpType.Add => {
-            val destinationRegister: Register= translateOperand(res).left.getOrElse(r0)
-            var t1t: Either[Register, Int] = translateOperand(t1)
-            var t2t: Either[Register, Int] = translateOperand(t2)
-            strList = strList ++ List(translatePush("", List(r8)))
-            strList = strList ++ List(translatePop("", List(r8)))
-            strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-            strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-            t1t match {
-              case Left(x) => {
-                t2t match {
-                  case Right(x) => {
-                    if (determineLdr(x)) {
-                      strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
-                      t2t = Left(r9)
-                    }
-                  }
-                }
-                strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
-              }
-              case Right(x) => {
-                if (determineLdr(x)) {
-                  strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
-                } else {
-                  strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
-                }
-                strList = strList ++ List(translateAdd("", Status(), destinationRegister, r8, ImmediateValueOrRegister(t2t)))
-              }
-            }
-            strList = strList ++ List(translateBranchLink("vs", "_errOverflow"))
-            return strList
-          }
+      // case BinaryOpTAC(op, t1, t2, res) => {
+      //   op match {
+          // case BinaryOpType.Add => {
+          //   val destinationRegister: Register= translateOperand(res).left.getOrElse(r0)
+          //   var t1t: Either[Register, Int] = translateOperand(t1)
+          //   var t2t: Either[Register, Int] = translateOperand(t2)
+          //   strList = strList ++ List(translatePush("", List(r8)))
+          //   strList = strList ++ List(translatePop("", List(r8)))
+          //   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
+          //   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
+          //   t1t match {
+          //     case Left(x) => {
+          //       t2t match {
+          //         case Right(x) => {
+          //           if (determineLdr(x)) {
+          //             strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
+          //             t2t = Left(r9)
+          //           }
+          //         }
+          //       }
+          //       strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
+          //     }
+          //     case Right(x) => {
+          //       if (determineLdr(x)) {
+          //         strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
+          //       } else {
+          //         strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
+          //       }
+          //       strList = strList ++ List(translateAdd("", Status(), destinationRegister, r8, ImmediateValueOrRegister(t2t)))
+          //     }
+          //   }
+          //   strList = strList ++ List(translateBranchLink("vs", "_errOverflow"))
+          //   return strList
+          // }
           /*
           case BinaryOpType.Sub => {
             strList = strList ++ List(translateSub(translateOperand(res), translateOperand(t1), translateOperand(t2)))
@@ -519,8 +416,8 @@ object Assembler {
             strList ++ List()
           }
           */
-        }
-      }
+      //   }
+      // }
       // case AssignmentTAC(t1, res) => {
       //   t1 match {
       //     case TRegister(num) => {
@@ -543,21 +440,21 @@ object Assembler {
         List(name + ":")
       }
       case BeginFuncTAC() => {
-        push(fp) :: push(lr) ::
-        push(r8) :: push(r10) :: push(r12) ::
-        mov(fp, sp) :: List()
+        translatePush("", List(fp, lr)) ::
+        translatePush("", List(r8, r10, r12)) ::
+        translateMove("", fp, sp.toEither()) :: List()
       }
       case EndFuncTAC() => {
-        mov(r0, r0) ::
-        pop(r8) :: pop(r10) :: pop(r12) ::
-        pop(fp) :: pop(pc) :: List()
+        translateMove("", r0, r0.toEither()) ::
+        translatePop("", List(r8, r10, r12)) ::
+        translatePop("", List(fp, pc)) :: List()
       }
       case AssignmentTAC(operand, reg) => {
-        mov(translateOperand(reg).left.getOrElse(r0), translateOperand(operand).left.getOrElse(r0)) :: List()
+        translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
       }
       case CommandTAC(cmd, operand) => {
         if (cmd == CmdT.Exit) {
-          translateBranchLink("", translateOperand(operand).left.getOrElse(r0).toString()) :: List() // TODO: should not default to t0
+          translateBranchLink("", translateOperand(operand).toString()) :: List() // TODO: should not default to t0
         } else {
           List("Command not implemented")
         }
