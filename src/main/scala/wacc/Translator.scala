@@ -209,12 +209,14 @@ object Translator {
      pairValue match {
       case PairValue(exp1, exp2) => {
         val (exp1List, fstReg) = delegateASTNode(exp1)
+        addNode(exp1, fstReg)
         val (exp2List, sndReg) = delegateASTNode(exp2)
+        addNode(exp2, sndReg)
         val pairReg = nextRegister()
-        map.addOne(ident, pairReg)
-        (exp1List ++ List(CreatePairFstElem(fstType, fstReg)) ++ 
+        addNode(ident, pairReg)
+        (List(Comments("Pair Declaration Start")) ++ exp1List ++ List(CreatePairFstElem(fstType, fstReg)) ++ 
         exp2List ++ List(CreatePairSndElem(sndType, sndReg), 
-        CreatePair(fstReg, sndReg, pairReg)), pairReg)
+        CreatePair(fstReg, sndReg, pairReg),Comments("Pair Declaration Ends")), pairReg)
       }
       case _ => (List(new Label("Pair Type not Matched")), null) 
     }

@@ -34,6 +34,10 @@ object TAC {
   case class CreatePairSndElem(sndType: DeclarationType, sndReg: TRegister) extends TAC
   case class CreatePair(fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
 
+  case class Comments(string: String) extends TAC {
+    override def toString(): String = "@ " + string
+  }
+
   sealed trait Operand
   class TRegister(num: Int) extends Operand {
     override def toString(): String = "_T" + num
