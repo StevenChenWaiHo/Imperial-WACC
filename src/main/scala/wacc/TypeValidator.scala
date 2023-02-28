@@ -4,7 +4,7 @@ import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree._
-import wacc.SemanticAnalyser.{lValType, rValType}
+import wacc.SemanticAnalyser.{declareFunction, lValType, rValType}
 import wacc.TAC.TRegister
 
 import javax.management.InvalidAttributeValueException
@@ -24,18 +24,26 @@ class ScopeContext(scopeStack: List[Scope]) {
   def this() = this(List(new Scope(Map(), Map(), null)))
 
   def findVar(name: String): Either[List[String], DeclarationType] = {
+    getVarInfo(name).map(_.declarationType)
+  }
 
-    def findVar1(stack: List[Scope]): Either[List[String], DeclarationType] = stack match {
+  def getVarInfo(name: String): Either[List[String], VarInfo] = {
+
+    def getVarInfo1(stack: List[Scope]): Either[List[String], VarInfo] = stack match {
       case Scope(vars, _, _) :: scopes => {
-        vars.get(name).map(v => Right(v.declarationType))
-          .getOrElse(findVar1(scopes))
+        vars.get(name).map(v => Right(v))
+          .getOrElse(getVarInfo1(scopes))
       }
       case Nil => Left(List("Variable not found: %s".format(name)))
     }
 
-    findVar1(this.scopeStack)
+    getVarInfo1(this.scopeStack)
   }
 
+  def setReg(name: String, tReg: TRegister): Unit = {
+    getVarInfo(name).getOrElse(throw new NoSuchElementException("Undefined variable not detected by semantic analysis")
+    ).tReg = tReg
+  }
 
   def findFunc(name: String): Either[List[String], Expectation] = {
     def findFunc1(stack: List[Scope]): Either[List[String], Expectation] = stack match {
