@@ -305,6 +305,7 @@ object Assembler {
       case reg: TRegister => Left(translateRegister(reg))
       case IntLiteralTAC(value) => Right(value)
       case CharLiteralTAC(chr) => Right(chr.toInt)
+      case BoolLiteralTAC(b) => Right(b.compare(true))
       case _ => null // TODO: this should not match
     }
     new ImmediateValueOrRegister(regOrIm)
