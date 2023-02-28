@@ -71,7 +71,6 @@ object Translator {
           case StatList(stats) => translateStatList(stats)
           case Command(command, input) => translateCommand(command, input)
           case lit: Literal => translateLiteral(lit)
-          // TODO: check this if can be included in translate literal
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
           case ArrayElem(name, indices) => translateArrayElem(name, indices)
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
@@ -263,7 +262,7 @@ object Translator {
       case (lList, lReg) => {
         delegateASTNode(rvalue) match {
           case (rList, rReg) => {
-            (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), lReg) // TODO: Check this
+            (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), lReg)
           }
         }
       }
@@ -287,12 +286,11 @@ object Translator {
   }
 
   def translateStatList(stats: List[Stat]): (List[TAC], TRegister) = {
-    // TODO: Change to not use mutable list?
-    val TAClist = collection.mutable.ListBuffer[TAC]()
+    var TAClist = List[TAC]()
     stats.foreach(s => {
-      TAClist.addAll(delegateASTNode(s)._1)
+      TAClist = TAClist ++ delegateASTNode(s)._1
     })
-    (TAClist.toList, null)
+    (TAClist, null)
   }
 
   def translateBeginEnd(stat : Stat): (List[TAC], TRegister) = {
