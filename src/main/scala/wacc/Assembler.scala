@@ -6,59 +6,8 @@ import wacc.AbstractSyntaxTree.CmdT
 import wacc.RegisterAllocator._
 
 object Assembler {
-  def push(register: ImmediateValueOrRegister): String = {
-    "push {" + register.toString() + "}"
-  }
-
-  def pop(register: ImmediateValueOrRegister): String = {
-    "pop {" + register.toString() + "}"
-  }
-
-  def mov(dst: Register, src: ImmediateValueOrRegister): String = {
-    "mov " + dst.toString() + " " + src.toString()
-  }
-
-  def movImm(dst: Register, src: Int): String = {
-    "mov " + dst.toString() + " " + src.toString()
-  }
-
-  def store(registerDest: Register, registerSrc: Register, operand: Int = 0): Unit = {
-    val memoryLocation: Int = listOfRegisters(registerSrc) + operand
-    //listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
-  }
-
-  def compare(registerDest: Register, registerSrc: Register): Boolean = {
-    listOfRegisters(registerDest) == listOfRegisters(registerSrc)
-  }
-
-  def translateBeginEnd(stat: Stat, context: ScopeContext): List[String] = {
-    //Seems like it takes as many variables as it can find in every scope and pushes the corresponding
-    //number of registers, instead of just this scope.
-    var str: List[String] = List("")
-    var defaultRegistersList: List[Register] = List()
-    if (context.scopeLevel() == 0) {
-      defaultRegistersList = List(r8, r10, r12)
-    } else {
-      defaultRegistersList = List(r0)
-    }
-    val registersList: List[Register] = List(r6, r4, r7, r5, r1, r2)
-    if (context.scopeVarSize() >= 4) {
-      defaultRegistersList = defaultRegistersList ++ registersList
-    } else {
-      defaultRegistersList = defaultRegistersList ++ registersList.slice(0, context.scopeVarSize())
-    }
-    /*
-    str = str ++ translatePush("", List(fp, lr)) //Maybe not meant to be in BeginEnd
-    str = str ++ translatePush("", defaultRegistersList) //dependent on context
-    str = str ++ delegateASTNode(stat, context)
-    str = str ++ translatePop("", defaultRegistersList) // dependent on context
-    str = str ++ translatePop("", List(fp, pc)) //Maybe meant to be in prog
-    */
-    return str
-  }
 
   sealed trait Operand2
-
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends Operand2 {
     @Override
     override def toString: String = {
@@ -132,7 +81,6 @@ object Assembler {
   }
 
   sealed trait Suffi
-
   case class Control() extends Suffi {
     override def toString: String = {
       "c"
