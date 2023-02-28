@@ -1,6 +1,5 @@
 package wacc
 
-import wacc.AbstractSyntaxTree._
 import wacc.TAC._
 import wacc.AbstractSyntaxTree.CmdT
 import wacc.RegisterAllocator._
@@ -415,7 +414,7 @@ object Assembler {
       case CommandTAC(cmd, operand) => {
         if (cmd == CmdT.Exit) {
           translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", "exit") :: List() // TODO: should not default to t0
+          translateBranchLink("", "exit") :: List() 
         } else {
           List("Command not implemented")
         }
@@ -428,9 +427,7 @@ object Assembler {
 
   def translateProgram(tacList: List[TAC]) : List[String] = {
     var output = List[String]()
-    // temp dummy header to start
-    output = List()
-    tacList.foreach(tac => {
+     tacList.foreach(tac => {
       output = output ++ translateTAC(tac)
     })
     output
