@@ -298,7 +298,7 @@ object Assembler {
 
   // TODO: move this in to register alloc
   def translateRegister(treg: TRegister): Register = {
-    r0
+    r8
   }
 
   def translateOperand(op: Operand): ImmediateValueOrRegister = {
@@ -405,7 +405,7 @@ object Assembler {
         translateMove("", fp, sp.toEither()) :: List()
       }
       case EndFuncTAC() => {
-        translateMove("", r0, r0.toEither()) ::
+        translateMove("", r0, ImmediateValueOrRegister(Right(0))) ::
         translatePop("", List(r8, r10, r12)) ::
         translatePop("", List(fp, pc)) :: List()
       }
