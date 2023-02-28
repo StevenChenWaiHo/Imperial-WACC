@@ -4,6 +4,7 @@ import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.CmdT.Cmd
 import wacc.AbstractSyntaxTree.DeclarationType
+import wacc.AbstractSyntaxTree.PairElemT
 
 object TAC {
     sealed trait TAC
@@ -30,9 +31,42 @@ object TAC {
   case class Label(name: String = "label") extends TAC {
     override def toString(): String = name + ":"
   }
+
+  // Pairs Operations to ARM
+  //   --- CreatePairFstElem() --- 
+  // Save r8 and r12
+  // malloc fst elem with reference to its type
+  // mov r8 fstReg
+  // mov r12 r0
+  // str r8, [r12, #0]
+  // push r12
+  //   --- CreatePairSndElem() --- 
+  // Save r8 and r12
+  // r8 = sndReg = register with sndElem
+  // malloc snd elem with reference to its type
+  // mov r8 sndReg
+  // mov r12 r0
+  // str r8, [r12, #0]
+  // push r12
+  //   --- CreatePair() --- 
+  // malloc 2 * 4 bytes for 2 pointers
+  // mov r12 r0
+  // pop r8
+  // str r8 [r12, #4]
+  // pop r8  
+  // str r8 [r12, #0]
+  // mov dstReg r12
   case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
   case class CreatePairSndElem(sndType: DeclarationType, sndReg: TRegister) extends TAC
-  case class CreatePair(fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
+  case class CreatePair(fstType: DeclarationType, sndType: DeclarationType, 
+                        fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
+
+  // StorePairElem
+  // str srcReg [pairReg, pos], where (pairPos == fst) ? #0 : #4
+  case class StorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister) extends TAC
+  // GetPairElem
+  // ldr dstReg [pairReg, pos], where (pairPos == fst) ? #0 : #4
+  case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister) extends TAC
 
   case class Comments(string: String) extends TAC {
     override def toString(): String = "@ " + string

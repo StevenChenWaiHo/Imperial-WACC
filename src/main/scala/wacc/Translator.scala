@@ -70,6 +70,7 @@ object Translator {
           case Command(command, input) => translateCommand(command, input)
           case lit: Literal => translateLiteral(lit)
           // TODO: check this if can be included in translate literal
+          case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
           case ArrayElem(name, indices) => translateArrayElem(name, indices)
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
@@ -107,6 +108,14 @@ object Translator {
         (tacList ++ List(AssignmentTAC(new TRegister(998), outReg)), outReg)
       }
     }
+  }
+
+  def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
+    // TODO: Get datatype
+    val (pairRegList, pairReg) = delegateASTNode(lvalue)
+     // Should not add this register to Map as it might update
+    val dstReg = nextRegister()
+    (pairRegList ++ List(GetPairElem(null, pairReg, elem, dstReg)), dstReg)
   }
 
   def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
@@ -205,21 +214,34 @@ object Translator {
     (List(), null)
   }
 
-  def translatePairDeclaration(fstType: DeclarationType, sndType: DeclarationType, ident: IdentLiteral, pairValue: RVal): (List[TAC], TRegister) = {
-     pairValue match {
+  def translatePairValue(fstType: DeclarationType, sndType: DeclarationType, pairValue: RVal): (List[TAC], TRegister) = {
+    pairValue match {
       case PairValue(exp1, exp2) => {
-        val (exp1List, fstReg) = delegateASTNode(exp1)
-        addNode(exp1, fstReg)
-        val (exp2List, sndReg) = delegateASTNode(exp2)
-        addNode(exp2, sndReg)
-        val pairReg = nextRegister()
-        addNode(ident, pairReg)
-        (List(Comments("Pair Declaration Start")) ++ exp1List ++ List(CreatePairFstElem(fstType, fstReg)) ++ 
-        exp2List ++ List(CreatePairSndElem(sndType, sndReg), 
-        CreatePair(fstReg, sndReg, pairReg),Comments("Pair Declaration Ends")), pairReg)
-      }
-      case _ => (List(new Label("Pair Type not Matched")), null) 
+        findNode(pairValue) match {
+          case Some(value) => (List(), value)
+          case None => {
+            val (exp1List, fstReg) = delegateASTNode(exp1)
+            addNode(exp1, fstReg)
+            val (exp2List, sndReg) = delegateASTNode(exp2)
+            addNode(exp2, sndReg)
+            val pairReg = nextRegister()
+            addNode(pairValue, pairReg)
+            (List(Comments("Creating newpair")) ++ 
+            exp1List ++ List(CreatePairFstElem(fstType, fstReg)) ++ 
+            exp2List ++ List(CreatePairSndElem(sndType, sndReg), 
+            CreatePair(fstType, sndType, fstReg, sndReg, pairReg), Comments("Created newpair")), pairReg)
+          }
+        }
+          
+        }
+      case _ => (List(Label("Not translating Pair Value")), null)
     }
+  }
+
+  def translatePairDeclaration(fstType: DeclarationType, sndType: DeclarationType, ident: IdentLiteral, pairValue: RVal): (List[TAC], TRegister) = {   
+    val (pairList, pairReg) = translatePairValue(fstType, sndType, pairValue)
+    addNode(ident, pairReg)
+    (pairList, pairReg)
   }
 
   def translateBaseDeclaration(baseType: BaseT.BaseTypeType, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
@@ -240,7 +262,15 @@ object Translator {
   }
 
   def translatePairElemAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
-    (List(), null)
+    val (rvalueList, rvalueReg) = delegateASTNode(rvalue)
+    lvalue match {
+      // TODO: Get datatype
+      case PairElement(elem, lvalue) => { 
+        val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
+        (rvalueList ++ lvalueList ++ List(StorePairElem(null, lvalueReg, elem, rvalueReg)), lvalueReg)
+      }
+      case _ => (List(Label("Not translating PairElem")), null)
+    }
   }
 
   def translateArrayElemAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
