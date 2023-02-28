@@ -51,14 +51,14 @@ object TAC {
   }
 
   sealed trait Operand
-  class TRegister(num: Int) extends Operand {
+  case class TRegister(num: Int) extends Operand {
     override def toString(): String = "_T" + num
   }
   class LiteralTAC() extends Operand
-    class IdentLiteralTAC(name: String) extends LiteralTAC {
+    case class IdentLiteralTAC(name: String) extends LiteralTAC {
       override def toString(): String = name
     }
-    class IntLiteralTAC(value: Int) extends LiteralTAC {
+    case class IntLiteralTAC(value: Int) extends LiteralTAC {
       override def toString(): String = value.toString()
     }
     class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
@@ -70,7 +70,7 @@ object TAC {
   class ArrayOp(elems: List[Operand]) extends Operand {
     override def toString(): String = elems.toString()
   }
-  class ArrayElemTAC(arr: Operand, indices: List[Operand]) extends Operand {
+  case class ArrayElemTAC(arr: Operand, indices: List[Operand]) extends Operand {
     override def toString(): String = arr + "[" + indices + "]"
   }
   
