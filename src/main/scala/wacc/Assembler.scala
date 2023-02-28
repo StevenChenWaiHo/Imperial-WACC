@@ -420,6 +420,9 @@ object Assembler {
           List("Command not implemented")
         }
       }
+      case Comments(str) => {
+        List("@ " + str)
+      }
     }
   }
 
