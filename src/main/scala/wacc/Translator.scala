@@ -11,6 +11,8 @@ object Translator {
   private val scopes = collection.mutable.ListBuffer[collection.mutable.Map[ASTNode, TRegister]]()
   private val regCountStack = collection.mutable.Stack[Int]()
   private val regList = collection.mutable.ListBuffer[TRegister]()
+  private val strings = collection.mutable.Map[String, Label]()
+  private val dataList = collection.mutable.ListBuffer[TAC]()
 
   def newMap(): collection.mutable.Map[ASTNode, TRegister] = { 
     // Push scope on to stack when entering new context
@@ -93,7 +95,16 @@ object Translator {
       case BoolLiteral(x) => new BoolLiteralTAC(x)
       case CharLiteral(x) => new CharLiteralTAC(x)
       case IntLiteral(x) => new IntLiteralTAC(x)
-      case StringLiteral(x) => new StringLiteralTAC(x)
+      case StringLiteral(str) => {
+        strings.getOrElse(str, {
+          val lbl = new Label("L.str" + strings.size.toString)
+          strings.addOne((str, lbl))
+          dataList.addOne(Comments("length of " + lbl.toString()))
+          dataList.addOne(StringLengthDefinitionTAC(str.length(), lbl))
+          dataList.addOne(StringDefinitionTAC(str, lbl))
+          lbl
+        })
+      }
       case IdentLiteral(x) => return (List(), next)
       //case PairLiteral(x) => new PairLiteralTAC(x)
       //case ArrayLiteral(x) => translateArrayLiteral(x)
@@ -244,14 +255,17 @@ object Translator {
   }
 
   def translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
-    val funcTAClist = collection.mutable.ListBuffer[TAC]()
+    // Initialise the .data segment
+    dataList.addOne(DataSegmentTAC())
+    // Start the code segment with the functions first
+    val funcTAClist = collection.mutable.ListBuffer[TAC](TextSegmentTAC())
     funcs.foreach(f => {
       funcTAClist.addAll(translateFunction(f))
     })
     newMap()
     delegateASTNode(s) match {
       case (tacList, reg) => {
-        funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
+        dataList.toList ++ funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
       }
     }
   }

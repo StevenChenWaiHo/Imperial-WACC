@@ -24,10 +24,22 @@ object TAC {
   case class CallTAC(lbl: Label, args: List[TRegister]) extends TAC 
   case class BeginFuncTAC() extends TAC
   case class EndFuncTAC() extends TAC
+  case class DataSegmentTAC() extends TAC {
+    override def toString(): String = ".data"
+  }
+  case class TextSegmentTAC() extends TAC {
+    override def toString(): String = ".text"
+  }
+  case class StringDefinitionTAC(str: String, lbl: Label) extends TAC {
+     override def toString(): String = lbl.toString() + "\n\t.asciz \"" + str + "\""
+  }
+  case class StringLengthDefinitionTAC(len: Int, lbl: Label) extends TAC {
+     override def toString(): String = "\t.word " + len.toString
+  }
   case class GOTO(label: Label) extends TAC {
     override def toString(): String = "goto: " + label.name
   }
-  case class Label(name: String = "label") extends TAC {
+  case class Label(name: String = "label") extends TAC with Operand {
     override def toString(): String = name + ":"
   }
   case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
@@ -48,9 +60,6 @@ object TAC {
     }
     class IntLiteralTAC(value: Int) extends LiteralTAC {
       override def toString(): String = value.toString()
-    }
-    class StringLiteralTAC(str: String) extends LiteralTAC {
-      override def toString(): String = "\"" + str + "\""
     }
     class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
       override def toString(): String = b.toString()
