@@ -212,7 +212,24 @@ object Translator {
   }
 
   def translateArrayDeclaration(dataType: DeclarationType, length: Integer, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
-    (List(), null)
+    rvalue match {
+      case ArrayLiteral(elements) => {
+        val tacs = ListBuffer[TAC]()
+        val tRegs = ListBuffer[TRegister]() //required?
+        elements.foreach(e => {
+          val (elemTacs, reg) = delegateASTNode(e)
+          addNode(e, reg)
+          tacs ++= elemTacs
+          tacs += CreateArrayElem(dataType, reg)
+          tRegs += reg
+        })
+        val arrReg = nextRegister()
+        addNode(ident, arrReg)
+        (List(Comments("Array Declaration Start")) ++ tacs.toList ++ CreateArray(tRegs.toList, arrReg)
+        ++ List(Comments("Array Declaration End")), arrReg)
+      }
+      case _ => (List(new Label("Array Type not Matched")), null)
+    }
   }
 
   def translatePairDeclaration(fstType: DeclarationType, sndType: DeclarationType, ident: IdentLiteral, pairValue: RVal): (List[TAC], TRegister) = {

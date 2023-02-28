@@ -45,6 +45,8 @@ object TAC {
   case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
   case class CreatePairSndElem(sndType: DeclarationType, sndReg: TRegister) extends TAC
   case class CreatePair(fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
+  case class CreateArrayElem(elemType: DeclarationType, elemReg: TRegister) extends TAC
+  case class CreateArray(elemsReg: List[TRegister], dstReg: TRegister) extends TAC
 
   case class Comments(string: String) extends TAC {
     override def toString(): String = "@ " + string
