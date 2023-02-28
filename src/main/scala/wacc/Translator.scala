@@ -8,8 +8,43 @@ import wacc.AbstractSyntaxTree.BaseT
 
 object Translator {
 
-  private val map = collection.mutable.Map[ASTNode, TRegister]()
+  private val scopes = collection.mutable.ListBuffer[collection.mutable.Map[ASTNode, TRegister]]()
+  private val regCountStack = collection.mutable.Stack[Int]()
   private val regList = collection.mutable.ListBuffer[TRegister]()
+
+  def newMap(): collection.mutable.Map[ASTNode, TRegister] = { 
+    // Push scope on to stack when entering new context
+    val map = collection.mutable.Map[ASTNode, TRegister]()
+    scopes.addOne(map)
+    // Push the current highest register for use later
+    regCountStack.push(regList.length)
+    map
+  }
+
+  def popMap(): Int = {
+    // Pop scope off the stack when exiting a context
+    scopes.remove(scopes.length - 1)
+    // Remove the registers only used within that context
+    val oldLength = regCountStack.pop()
+    regList.remove(oldLength, regList.length - oldLength)
+    // Return scope depth
+    scopes.length
+  }
+
+  def findNode(node: ASTNode): Option[TRegister] = {
+    // Returns register the value of node is stored in
+    scopes.reverse.foreach(m => {
+      m.get(node) match {
+        case Some(x) => return Some(x)
+        case _ =>
+      }
+    })
+    None
+  }
+
+  def addNode(node: ASTNode, reg: TRegister) = {
+    scopes.last.addOne(node, reg)
+  }
 
   def nextRegister(): TRegister = {
     val next = new TRegister(regList.length)
@@ -19,7 +54,7 @@ object Translator {
   
   def delegateASTNode(node: ASTNode) : (List[TAC], TRegister) = {
     // Check if ASTNode has already been calculated
-    map.get(node) match {
+    findNode(node) match {
       case Some(reg) => (List(), reg)
       case None => {
         val tac = node match {
@@ -42,7 +77,11 @@ object Translator {
           case Read(lval) => translateRead(lval)
           case na => (List(new Label("Not Implemented " + na)), null)
         }
-        map.addOne(node, tac._2)
+        // Only add literal assignments/declarations to the scope
+        node match {
+          case x: Literal => addNode(node, tac._2)
+          case _ =>
+        }
         tac
       }
     }
@@ -91,8 +130,10 @@ object Translator {
   def translateWhileLoop(expr: Expr, stat: Stat): (List[TAC], TRegister) = {
     delegateASTNode(expr) match {
       case (expList, expReg) => {
+        newMap()
         delegateASTNode(stat) match {
           case (statList, statReg) => {
+            popMap()
             val startLabel = new Label("start")
             val bodyLabel = new Label("body")
             val endLabel = new Label("end")
@@ -132,10 +173,14 @@ object Translator {
   def translateIfStat(cond: Expr, stat1: Stat, stat2: Stat): (List[TAC], TRegister) = {
     delegateASTNode(cond) match {
       case (condList, reg1) => {
-          delegateASTNode(stat1) match {
-            case (trueList, reg2) => {
-              delegateASTNode(stat2) match {
-                case (falseList, reg3) => {
+          newMap()
+          delegateASTNode(stat2) match {
+            case (falseList, reg3) => {
+              popMap()
+              newMap()
+              delegateASTNode(stat1) match {
+                case (trueList, reg2) => {
+                  popMap()
                   val l1 = new Label("true")
                   val l2 = new Label("false")
                   (condList ++ List(IfTAC(reg1, l1)) ++ falseList ++ List(GOTO(l2), l1) ++ trueList ++ List(l2),
@@ -178,7 +223,7 @@ object Translator {
   def translateBaseDeclaration(baseType: BaseT.BaseTypeType, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
     delegateASTNode(rvalue) match {
       case (rList, rReg) => {
-        map.addOne(ident, rReg)
+        addNode(ident, rReg)
         (rList, rReg)
       }
     }
@@ -201,6 +246,7 @@ object Translator {
     funcs.foreach(f => {
       funcTAClist.addAll(translateFunction(f))
     })
+    newMap()
     delegateASTNode(s) match {
       case (tacList, reg) => {
         funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
@@ -218,9 +264,11 @@ object Translator {
   }
 
   def translateBeginEnd(stat : Stat): (List[TAC], TRegister) = {
+    newMap()
     delegateASTNode(stat) match {
       case (sList, sReg) => {
-        (List(new Label()) ++ sList, null)
+        popMap()
+        (List(new Label("newScope")) ++ sList, sReg)
       }
     } 
   }
@@ -270,10 +318,15 @@ object Translator {
 
 
   def translateFunction(func: Func) : List[TAC] = {
+    newMap()
     func match {
         case Func(returnType, ident, types, code) => {
           delegateASTNode(code) match {
             case (tacList, outReg) => {
+              // Remove the map from scope
+              popMap()
+              // Clear the register list 
+              regList.clear()
               List(new Label(ident.name), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
             }
           }
