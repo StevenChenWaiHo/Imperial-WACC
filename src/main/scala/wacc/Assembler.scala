@@ -3,6 +3,7 @@ package wacc
 import wacc.TAC._
 import wacc.AbstractSyntaxTree._
 import wacc.RegisterAllocator._
+import javax.swing.JSpinner.ListEditor
 
 object Assembler {
   def push(register: Register): String = {
@@ -596,10 +597,26 @@ object Assembler {
           translateMove("", r0, translateOperand(operand)) ::
           translateBranchLink("", new BranchString("exit")) :: List() 
         } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
-          // TODO: add check for operand type to print (string/char)
+          // TODO: change print behaviour of arrays and pairs
+          val bl = opType match {
+            case ArrayType(dataType, length) => "_printi"
+            case BaseType(baseType) => baseType match {
+              case BaseT.String_T => "_prints"
+              case BaseT.Char_T => "_printc"
+              case BaseT.Bool_T => "_printb" // ???
+              case BaseT.Int_T => "_printi"
+              case _ => "_printi"
+            }
+            case NestedPair() => "_printi"
+            case PairType(fstType, sndType) => "_printi"
+          }
+          var listEnd = List[String]()
+          if (cmd == CmdT.PrintLn) {
+            listEnd = translateBranchLink("", new BranchString("_println")) :: List() 
+          }
           // TODO: Add the _prints function in at the end
           translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", new BranchString("_prints")) :: List() 
+          translateBranchLink("", new BranchString(bl)) :: listEnd
         } else {
           List("Command not implemented")
         }
