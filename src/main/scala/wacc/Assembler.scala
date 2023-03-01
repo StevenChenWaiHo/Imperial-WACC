@@ -391,7 +391,7 @@ object Assembler {
   def translate_printb(): List[String] = {
     val fLbl = new Label(".L._printb_str0")
     val tLbl = new Label(".L._printb_str1")
-    val sLbl = new Label(".L._printb_str1")
+    val sLbl = new Label(".L._printb_str2")
     
     translateTAC(DataSegmentTAC()) ++
     translateTAC(Comments("length of " + fLbl.name)) ++
