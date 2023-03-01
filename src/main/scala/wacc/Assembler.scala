@@ -526,7 +526,7 @@ object Assembler {
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): List[String] = {
     op match {
       case UnaryOpType.Neg => {
-        translateMul("", None(), translateRegister(res), translateOperand(t1), new ImmediateInt(-1)) :: List()
+        translateRsb("", Status(), translateRegister(res), translateOperand(t1), new ImmediateInt(0)) :: List()
       }
     }
   }
