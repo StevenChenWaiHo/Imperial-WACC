@@ -603,10 +603,13 @@ object Assembler {
   def translateBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
     operation match {
       case BinaryOpType.Add => {
-        translateAdd("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateAdd("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Sub => {
-        translateSub("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateSub("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+      }
+      case BinaryOpType.Mul => {
+        translateMul("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2)) :: List()
       }
       case BinaryOpType.Eq => {
         translateMove("", translateRegister(res), new ImmediateInt(0)) ::
