@@ -4,6 +4,7 @@ import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.CmdT.Cmd
 import wacc.AbstractSyntaxTree.DeclarationType
+import wacc.AbstractSyntaxTree.Expr
 import wacc.AbstractSyntaxTree.PairElemT
 
 object TAC {
