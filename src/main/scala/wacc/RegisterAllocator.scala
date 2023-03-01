@@ -99,7 +99,7 @@ object RegisterAllocator {
         case BinaryOpTAC(op, t1, t2, res) => regs += getRegister(res)
         case UnaryOpTAC(op, t1, res) => regs += getRegister(res)
         case AssignmentTAC(t1, res) => regs += getRegister(res)
-        case PopParamTAC(t1) => regs += getRegister(t1)
+        case PopParamTAC(t,t1) => regs += getRegister(t1)
         case _ =>
       }
     })
