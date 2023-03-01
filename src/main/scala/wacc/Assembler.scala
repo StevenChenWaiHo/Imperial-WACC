@@ -165,9 +165,9 @@ object Assembler {
     return str
   }
 
-  def translateLdr(condition: String, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
-    return "ldr" + condition + " " + destinationRegister.toString + ", " + operand
+    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand))
   }
 
   def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
@@ -487,6 +487,8 @@ object Assembler {
       case CreatePairElem(pairElemType, pairPos, srcReg) => assemblePairElem(pairElemType, pairPos, srcReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, dstReg) => assemblePair(fstType, sndType, dstReg)
       case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
+      case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
+      case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
     }
   }
 
@@ -541,6 +543,12 @@ object Assembler {
         translateLdr("", translateRegister(res), r0, translateOperand(t1)) :: List()
       }
     }
+  def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[String] = {
+    translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) :: List()
+  }
+
+  def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): List[String] = {
+    translateStr("", translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) :: List()
   }
 
   def translateProgram(tacList: List[TAC]): List[String] = {
