@@ -409,10 +409,10 @@ object Assembler {
     translateCompare("", r0, new ImmediateInt(0)) ::
     translateBranch("ne", ".L_printb0") ::
     translateLdr("", r2, r0, new LabelString(fLbl.name)) ::
-    translateBranch("", sLbl.name) ::
-    translateTAC(Label("_printb0"))) ++
+    translateBranch("", ".L_printb1") ::
+    translateTAC(Label(".L_printb0"))) ++
     (translateLdr("", r2, r0, new LabelString(tLbl.name)) ::
-    translateTAC(Label("_printb1"))) ++ 
+    translateTAC(Label(".L_printb1"))) ++ 
     ("ldr r1, [r2, #-4]" ::
     translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
     translateBranchLink("", new BranchString("printf")) ::
