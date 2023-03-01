@@ -108,7 +108,7 @@ object RegisterAllocator {
 
   def translateRegister(treg: TRegister): LHSop = {
     // TODO: add handling of treg mapped to stack
-    registerMap.getOrElse(treg, null)
+    registerMap.getOrElse(treg, r0)
   }
 
   def getRegister(tReg: TRegister): Register = {

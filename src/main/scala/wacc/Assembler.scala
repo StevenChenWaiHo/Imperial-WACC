@@ -417,7 +417,7 @@ object Assembler {
       case CharLiteralTAC(chr) => new ImmediateInt(chr.toInt)
       case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true))
       case Label(name) => new LabelString(name)
-      case _ => null // TODO: this should not match
+      case a => println("translateOperand fail: " + a); null // TODO: this should not match
     }
   }
 
@@ -532,51 +532,16 @@ object Assembler {
       // case TAC.Label(name) => {
       //   str = labelToCodeTable()
       // }
-      case Label(name) => {
-        List(name + ":")
-      }
-      case DataSegmentTAC() => {
-        List(".data")
-      }
-      case TextSegmentTAC() => {
-        List(".text", ".global main")
-      }
-      case StringLengthDefinitionTAC(len, lbl) => {
-        List(".word " + len.toString())
-      }
-      case StringDefinitionTAC(str, lbl) => {
-        translateTAC(lbl) ++
-        List(".asciz \"" + str + "\"")
-      }
-      case BeginFuncTAC() => {
-        translatePush("", List(fp, lr)) ::
-        translatePush("", List(r8, r10, r12)) ::
-        translateMove("", fp, sp) :: List()
-      }
-      case EndFuncTAC() => {
-        translateMove("", r0, new ImmediateInt(0)) ::
-        translatePop("", List(r8, r10, r12)) ::
-        translatePop("", List(fp, pc)) :: List()
-      }
-      case AssignmentTAC(operand, reg) => {
-        translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
-      }
-      case CommandTAC(cmd, operand, opType) => {
-        if (cmd == CmdT.Exit) {
-          translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", new BranchString("exit")) :: List() 
-        } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
-          // TODO: add check for operand type to print (string/char)
-          // TODO: Add the _prints function in at the end
-          translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", new BranchString("_prints")) :: List() 
-        } else {
-          List("Command not implemented")
-        }
-      }
-      case Comments(str) => {
-        List("@ " + str)
-      }
+      case Label(name) => List(name + ":")
+      case Comments(str) => List("@ " + str)
+      case DataSegmentTAC() => List(".data")
+      case TextSegmentTAC() => List(".text")
+      case StringLengthDefinitionTAC(len, lbl) => translateStringLengthDef(len, lbl)
+      case StringDefinitionTAC(str, lbl) => translateStringDef(str, lbl)
+      case BeginFuncTAC() => translateBeginFunc()
+      case EndFuncTAC() => translateEndFunc()
+      case AssignmentTAC(operand, reg) => translateAssignment(operand, reg)
+      case CommandTAC(cmd, operand, opType) => translateCommand(cmd, operand, opType)
     }
   }
 
@@ -588,7 +553,42 @@ object Assembler {
     output
   }
 
-  def translateComment(str: String) : List[String] = {
-    List("@ " + str)
+  def translateStringLengthDef(len: Int, lbl: Label) = {
+    List(".word " + len.toString())
+  }
+
+  def translateStringDef(str: String, lbl: Label) = {
+    translateTAC(lbl) ++
+    List(".asciz \"" + str + "\"")
+  }
+  
+  def translateBeginFunc() = {
+    translatePush("", List(fp, lr)) ::
+    translatePush("", List(r8, r10, r12)) ::
+    translateMove("", fp, sp) :: List()
+  }
+
+  def translateEndFunc() = {
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translatePop("", List(r8, r10, r12)) ::
+    translatePop("", List(fp, pc)) :: List()
+  }
+
+  def translateAssignment(operand: Operand, reg: TRegister) = {
+    translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
+  }
+
+  def translateCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType) = {
+    if (cmd == CmdT.Exit) {
+          translateMove("", r0, translateOperand(operand)) ::
+          translateBranchLink("", new BranchString("exit")) :: List() 
+        } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
+          // TODO: add check for operand type to print (string/char)
+          // TODO: Add the _prints function in at the end
+          translateMove("", r0, translateOperand(operand)) ::
+          translateBranchLink("", new BranchString("_prints")) :: List() 
+        } else {
+          List("Command not implemented")
+        }
   }
 }
