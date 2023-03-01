@@ -159,7 +159,7 @@ object Assembler {
     return str
   }
 
-  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+  def translateLdr(condition: String, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     //Incomplete
     return "ldr" + condition + " " + destinationRegister.toString + ", " + operand
   }
@@ -582,7 +582,11 @@ object Assembler {
   }
 
   def translateAssignment(operand: Operand, reg: TRegister) = {
-    translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
+    operand match {
+      case Label(name) => translateLdr("", translateRegister(reg), r0, translateOperand(operand)) :: List()
+      case _=> translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
+    }
+    
   }
 
   def translateCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType) = {
