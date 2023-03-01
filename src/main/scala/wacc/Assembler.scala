@@ -633,11 +633,11 @@ object Assembler {
     } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
       // TODO: change print behaviour of arrays and pairs
       val bl = opType match {
-        case ArrayType(dataType, length) => "_printi"
+        case ArrayType(dataType, length) => "_prints"
         case BaseType(baseType) => baseType match {
           case BaseT.String_T => "_prints"
           case BaseT.Char_T => "_printc"
-          case BaseT.Bool_T => "_printb" // ???
+          case BaseT.Bool_T => "_printb"
           case BaseT.Int_T => "_printi"
           case _ => "_printi"
         }
@@ -650,7 +650,6 @@ object Assembler {
         addEndFunc("_println", translate_print("_println"))
         listEnd = translateBranchLink("", new BranchString("_println")) :: List() 
       }
-      // TODO: Add the _prints function in at the end
       translateMove("", r0, translateOperand(operand)) ::
       translateBranchLink("", new BranchString(bl)) :: listEnd
     } else {
