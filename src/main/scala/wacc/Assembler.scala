@@ -231,25 +231,26 @@ object Assembler {
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand))
   }
 
-  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
   }
 
   //Incomplete, no condition
-  def translateAdd(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
-    return "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): List[String] = {
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ::
+    translateBranchLink("vs", new BranchString("_errOverflow")) :: List()
   }
 
-  def translateSub(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
-    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): List[String] = {
+    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) :: List()
   }
 
-  def translateRsb(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
+  def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     return "rsb" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateMul(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
-    return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, ImmediateValueOrRegister(Left(sourceRegisterTwo)))
+  def translateMul(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, sourceRegisterTwo: LHSop): String = {
+    return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, sourceRegisterTwo)
   }
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: Register, destinationHigh: Register,
@@ -542,6 +543,7 @@ object Assembler {
       case EndFuncTAC() => translateEndFunc()
       case AssignmentTAC(operand, reg) => translateAssignment(operand, reg)
       case CommandTAC(cmd, operand, opType) => translateCommand(cmd, operand, opType)
+      case BinaryOpTAC(operation, op1, op2, res) => translateBinOp(operation, op1, op2, res)
     }
   }
 
@@ -551,6 +553,17 @@ object Assembler {
       output = output ++ translateTAC(tac)
     })
     output
+  }
+
+  def translateBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
+    operation match {
+      case BinaryOpType.Add => {
+        translateAdd("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+      }
+      case BinaryOpType.Sub => {
+        translateSub("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+      }
+    }
   }
 
   def translateStringLengthDef(len: Int, lbl: Label) = {
