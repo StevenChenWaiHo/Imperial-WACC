@@ -320,11 +320,16 @@ object Assembler {
   }
 
   def translate_prints(): List[String] = {
-    translateTAC(Label("_printi")) ++
+    val sLbl = new Label(".L._prints_str0")
+    translateTAC(DataSegmentTAC()) ++ 
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(4, sLbl)) ++
+    translateTAC(StringDefinitionTAC("%.*s", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++ 
+    translateTAC(Label("_prints")) ++
     (translatePush("", List(lr)) ::
     translateMove("", r2, r0) ::
-    translateLdr("", r1, r0, new ImmediateInt(-4)) ::
-    translateLdr("", r0, r0, new LabelString(".L.prints_str_0")) ::
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
     translateBranchLink("", new BranchString("printf")) ::
     translateMove("", r0, new ImmediateInt(0)) ::
     translateBranchLink("", new BranchString("fflush")) ::
@@ -334,14 +339,14 @@ object Assembler {
   def translate_printi(): List[String] = {
     val sLbl = new Label(".L._printi_str0")
     translateTAC(DataSegmentTAC()) ++ 
-    translateTAC(Comments("length of .L._printi_str0")) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
     translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
     translateTAC(StringDefinitionTAC("%d", sLbl)) ++
     translateTAC(TextSegmentTAC()) ++ 
     translateTAC(Label("_printi")) ++
     (translatePush("", List(lr)) ::
     translateMove("", r1, r0) ::
-    translateLdr("", r0, r0, new LabelString(".L.printi_str_0")) ::
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
     translateBranchLink("", new BranchString("printf")) ::
     translateMove("", r0, new ImmediateInt(0)) ::
     translateBranchLink("", new BranchString("fflush")) ::
@@ -357,7 +362,7 @@ object Assembler {
     translateTAC(TextSegmentTAC()) ++ 
     translateTAC(Label("_println")) ++
     (translatePush("", List(lr)) ::
-    translateLdr("", r0, r0, new LabelString(".L.println_str_0")) ::
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
     translateBranchLink("", new BranchString("puts")) ::
     translateMove("", r0, new ImmediateInt(0)) ::
     translateBranchLink("", new BranchString("fflush")) ::
