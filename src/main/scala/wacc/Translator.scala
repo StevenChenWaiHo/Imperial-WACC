@@ -13,7 +13,7 @@ object Translator {
   private val regList = collection.mutable.ListBuffer[TRegister]()
   private val strings = collection.mutable.Map[String, Label]()
   private val dataList = collection.mutable.ListBuffer[TAC]()
-
+  
   def newMap(): collection.mutable.Map[ASTNode, TRegister] = {
     // Push scope on to stack when entering new context
     val map = collection.mutable.Map[ASTNode, TRegister]()
@@ -97,7 +97,7 @@ object Translator {
       case IntLiteral(x) => new IntLiteralTAC(x)
       case StringLiteral(str) => {
         strings.getOrElse(str, {
-          val lbl = new Label("L.str" + strings.size.toString)
+          val lbl = new Label(".L.str" + strings.size.toString)
           strings.addOne((str, lbl))
           dataList.addOne(Comments("length of " + lbl.toString()))
           dataList.addOne(StringLengthDefinitionTAC(str.length(), lbl))
@@ -270,13 +270,9 @@ object Translator {
     val instrs = collection.mutable.ListBuffer[TAC]()
     val regs = collection.mutable.ListBuffer[TRegister]()
     elems.foreach(e => {
-      val node = delegateASTNode(e)
-      node match {
-        case (instr, reg) => {
-          instrs.addAll(instr)
-          regs += reg
-        }
-      }
+      val (instr, reg) = delegateASTNode(e)
+      instrs.addAll(instr)
+      regs += reg
     })
     val next = nextRegister()
     (instrs.toList ++ List(AssignmentTAC(new ArrayOp(regs.toList), next)),
