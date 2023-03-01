@@ -13,7 +13,7 @@ object Translator {
   private val regList = collection.mutable.ListBuffer[TRegister]()
   private val strings = collection.mutable.Map[String, Label]()
   private val dataList = collection.mutable.ListBuffer[TAC]()
-  
+
   def newMap(): collection.mutable.Map[ASTNode, TRegister] = {
     // Push scope on to stack when entering new context
     val map = collection.mutable.Map[ASTNode, TRegister]()

@@ -2,14 +2,16 @@ package wacc
 
 import wacc.AbstractSyntaxTree._
 import wacc.TAC._
-import wacc.AbstractSyntaxTree.CmdT
-import wacc.RegisterAllocator._
+
+import scala.collection.mutable.ListBuffer
 
 object Assembler {
   val stack = Array[Register]()
   val memory = Array[Int]()
 
-  sealed trait Register
+  sealed trait Register {
+    def toEither(): ImmediateValueOrRegister = new ImmediateValueOrRegister(Left(this))
+  }
 
   object r0 extends Register {
     override def toString(): String = "r0"
@@ -82,7 +84,7 @@ object Assembler {
   object pc extends Register {
     override def toString(): String = "pc"
   }
-  
+
   object sp extends Register {
     override def toString(): String = "sp"
   }
@@ -171,6 +173,7 @@ object Assembler {
   }
 
   sealed trait Operand2
+
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends Operand2 {
     @Override
     override def toString: String = {
@@ -244,6 +247,7 @@ object Assembler {
   }
 
   sealed trait Suffi
+
   case class Control() extends Suffi {
     override def toString: String = {
       "c"
@@ -302,7 +306,7 @@ object Assembler {
         str = str + "[" + sourceRegister.toString + ", " + x + "]"
       }
       case Right(x) => {
-        str + "=" + x
+        str = str + "=" + x
       }
     }
     return str
@@ -389,6 +393,7 @@ object Assembler {
   def translateBranchLink(condition: String, operand: String): String = {
     return "bl" + condition + " " + operand
   }
+
   /*
   //TODO: implement other commands
   val OperandToLiteral: Map[TAC.Operand, Either[String, Either[Register, Int]]]
@@ -474,6 +479,96 @@ object Assembler {
     new ImmediateValueOrRegister(regOrIm)
   }
 
+
+  /* code: the resultant assembly code so far.
+     available: available general-purpose registers.
+     used: registers currently occupied.
+     inMemory: the location of in-scope stored TRegisters (the TRegister number is used internally to identify the value).
+     */
+  class AssemblerState(var code: ListBuffer[String], var available: ListBuffer[(TRegister, Register)],
+                       var used: ListBuffer[(TRegister, Register)], var inMemory: List[TRegister]) {
+
+    import AbstractSyntaxTree.BinaryOpType._
+
+    /* Push the least-recently-used register to the stack, freeing it */
+    //TODO: I think only r0-r7 can be pushed ("low registers" only)(?)
+
+    private def saveRegister = {
+      code = code.addOne(translatePush("", List(used.head._2)))
+      available = available ++ used.head
+      inMemory += used.head._1
+      used = used.tail
+      this
+    }
+
+    private def addInstruction(instr: String): AssemblerState = {
+      code = code.addOne(instr)
+      this
+    }
+
+    /* Get a guaranteed register. If 'target' already exists in memory or in the registers, returns a register
+     containing its value; otherwise returns a random unallocated register. */
+    private def getRegister(target: TRegister): (AssemblerState, Register) = {
+      /* Check currently-loaded registers */
+      val inReg = used.find(x => x._1 == target)
+      if (inReg.isDefined) return (this, inReg.get)
+
+      /* Free a register */
+      if (available.isEmpty) saveRegister
+
+      /* Check the stack */
+      val stackLocation: Int = inMemory.indexOf(target)
+      if (stackLocation != (-1)) {
+        if (stackLocation == inMemory.length - 1) {
+          /* Target is on the top of the stack: pop from the stack */
+          addInstruction(translatePop("", List(available.head)))
+          inMemory = inMemory.init
+          /*/* Correct the stack pointer */
+          val length = inMemory.length
+          inMemory = inMemory.reverse.dropWhile(_ == null).reverse */
+        }
+        /* Target is not on the top: load from the stack. TODO: 4 a is magic number (I don't remember if it's right) */
+        else addInstruction(translateLdr("", available.head, sp, ImmediateValueOrRegister(Right(4 * stackLocation))))
+        inMemory = inMemory.updated(stackLocation, null)
+      }
+      this
+    }
+
+    /* Converts Operands to Operand2s by assigning them registers.
+    * Could be delegated to a different class later if we want to use a fancier method. */
+    private def toOperand2(op: Operand) = op match {
+      case op: TRegister => ImmediateValueOrRegister(Left(getRegister(op)))
+      //TODO: It would be nice if ImmediateValueOrRegister could take non-integer constants (since everything in assembly is a number)
+      case anything => ImmediateValueOrRegister(Right(anything))
+      case _ => throw new NotImplementedError("this shouldn't happen (i think)")
+    }
+
+    private def translateBinOp(binOp: BinaryOpTAC): AssemblerState = {
+      val BinaryOpTAC(op, a1, b1, res1) = binOp
+      val (res2, a2, b2) =
+        (getRegister(res1.asInstanceOf(Register)), getRegister(a1.asInstanceOf(Register)), toOperand2(b1))
+
+      op match {
+        case Add => translateAdd(res2, a2, b2)
+        case _ => null
+      }
+
+      instructionTemplate(args)
+
+    }
+
+    private def translateOneTAC(tac: TAC): AssemblerState =
+      if (available.isEmpty)
+        pushOneToStack
+
+    translateOneTAC(tac)
+    addInstruction(translatePop("", List()))
+    else tac match {
+      case BinaryOpTAC(op, t1, t2, res) =
+    }
+
+  }
+
   def translateTAC(tripleAddressCode: TAC): List[String] = {
     //Need to figure out how registers work
     //Push and pop might not be in right place
@@ -482,51 +577,51 @@ object Assembler {
     tripleAddressCode match {
       // case BinaryOpTAC(op, t1, t2, res) => {
       //   op match {
-          // case BinaryOpType.Add => {
-          //   val destinationRegister: Register= translateOperand(res).left.getOrElse(r0)
-          //   var t1t: Either[Register, Int] = translateOperand(t1)
-          //   var t2t: Either[Register, Int] = translateOperand(t2)
-          //   strList = strList ++ List(translatePush("", List(r8)))
-          //   strList = strList ++ List(translatePop("", List(r8)))
-          //   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-          //   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-          //   t1t match {
-          //     case Left(x) => {
-          //       t2t match {
-          //         case Right(x) => {
-          //           if (determineLdr(x)) {
-          //             strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
-          //             t2t = Left(r9)
-          //           }
-          //         }
-          //       }
-          //       strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
-          //     }
-          //     case Right(x) => {
-          //       if (determineLdr(x)) {
-          //         strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
-          //       } else {
-          //         strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
-          //       }
-          //       strList = strList ++ List(translateAdd("", Status(), destinationRegister, r8, ImmediateValueOrRegister(t2t)))
-          //     }
-          //   }
-          //   strList = strList ++ List(translateBranchLink("vs", "_errOverflow"))
-          //   return strList
-          // }
-          /*
-          case BinaryOpType.Sub => {
-            strList = strList ++ List(translateSub(translateOperand(res), translateOperand(t1), translateOperand(t2)))
-          }
-          case BinaryOpType.Mul => {
-            strList ++ List(translateSmull(r8, translateOperand(res), translateOperand(t1), translateOperand(t2)))
-            strList ++ List(translateCompare("", r9, ArithmeticShiftRight(r8, Right(31))))
-            strList ++ List(translateBranchLink("ne", "_errOverflow"))
-          }
-          case BinaryOpType.Div => {
-            strList ++ List()
-          }
-          */
+      // case BinaryOpType.Add => {
+      //   val destinationRegister: Register= translateOperand(res).left.getOrElse(r0)
+      //   var t1t: Either[Register, Int] = translateOperand(t1)
+      //   var t2t: Either[Register, Int] = translateOperand(t2)
+      //   strList = strList ++ List(translatePush("", List(r8)))
+      //   strList = strList ++ List(translatePop("", List(r8)))
+      //   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
+      //   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
+      //   t1t match {
+      //     case Left(x) => {
+      //       t2t match {
+      //         case Right(x) => {
+      //           if (determineLdr(x)) {
+      //             strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
+      //             t2t = Left(r9)
+      //           }
+      //         }
+      //       }
+      //       strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
+      //     }
+      //     case Right(x) => {
+      //       if (determineLdr(x)) {
+      //         strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
+      //       } else {
+      //         strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
+      //       }
+      //       strList = strList ++ List(translateAdd("", Status(), destinationRegister, r8, ImmediateValueOrRegister(t2t)))
+      //     }
+      //   }
+      //   strList = strList ++ List(translateBranchLink("vs", "_errOverflow"))
+      //   return strList
+      // }
+      /*
+      case BinaryOpType.Sub => {
+        strList = strList ++ List(translateSub(translateOperand(res), translateOperand(t1), translateOperand(t2)))
+      }
+      case BinaryOpType.Mul => {
+        strList ++ List(translateSmull(r8, translateOperand(res), translateOperand(t1), translateOperand(t2)))
+        strList ++ List(translateCompare("", r9, ArithmeticShiftRight(r8, Right(31))))
+        strList ++ List(translateBranchLink("ne", "_errOverflow"))
+      }
+      case BinaryOpType.Div => {
+        strList ++ List()
+      }
+      */
       //   }
       // }
       // case AssignmentTAC(t1, res) => {
@@ -552,13 +647,13 @@ object Assembler {
       }
       case BeginFuncTAC() => {
         translatePush("", List(fp, lr)) ::
-        translatePush("", List(r8, r10, r12)) ::
-        translateMove("", fp, sp.toEither()) :: List()
+          translatePush("", List(r8, r10, r12)) ::
+          translateMove("", fp, sp.toEither()) :: List()
       }
       case EndFuncTAC() => {
         translateMove("", r0, r0.toEither()) ::
-        translatePop("", List(r8, r10, r12)) ::
-        translatePop("", List(fp, pc)) :: List()
+          translatePop("", List(r8, r10, r12)) ::
+          translatePop("", List(fp, pc)) :: List()
       }
       case AssignmentTAC(operand, reg) => {
         translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
@@ -566,7 +661,7 @@ object Assembler {
       case CommandTAC(cmd, operand) => {
         if (cmd == CmdT.Exit) {
           mov(r0, r0) :: // TODO: change from default r0
-          translateBranchLink("", "exit") :: List() // TODO: should not default to t0
+            translateBranchLink("", "exit") :: List() // TODO: should not default to t0
         } else {
           List("Command not implemented")
         }
@@ -574,7 +669,7 @@ object Assembler {
     }
   }
 
-  def translateProgram(tacList: List[TAC]) : List[String] = {
+  def translateProgram(tacList: List[TAC]): List[String] = {
     var output = List[String]()
     // temp dummy header to start
     output = List(".data", ".text", ".global main")
