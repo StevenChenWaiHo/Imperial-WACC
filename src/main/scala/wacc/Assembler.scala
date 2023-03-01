@@ -218,11 +218,11 @@ object Assembler {
     return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def CompareAssist(condition: String, register1: Register, operand: LHSop): String = {
+  def CompareAssist(condition: String, register1: LHSop, operand: LHSop): String = {
     return condition + " " + register1.toString + ", " + operand.toString
   }
 
-  def translateCompare(condition: String, register1: Register, operand: LHSop): String = {
+  def translateCompare(condition: String, register1: LHSop, operand: LHSop): String = {
     return "cmp" + CompareAssist(condition, register1, operand)
   }
 
@@ -582,6 +582,8 @@ object Assembler {
       case AssignmentTAC(operand, reg) => translateAssignment(operand, reg)
       case CommandTAC(cmd, operand, opType) => translateCommand(cmd, operand, opType)
       case BinaryOpTAC(operation, op1, op2, res) => translateBinOp(operation, op1, op2, res)
+      case IfTAC(t1, goto) => translateIf(t1, goto)
+      case GOTO(label) => translateGOTO(label)
     }
   }
 
@@ -601,6 +603,14 @@ object Assembler {
     }
   }
 
+  def translateGOTO(label: Label): List[String] = {
+    translateBranch("", label.name) :: List()
+  }
+
+  def translateIf(t1: Operand, goto: Label): List[String] = {
+    translateBranch("eq", goto.name) :: List()
+  }
+
   def translateBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
     operation match {
       case BinaryOpType.Add => {
@@ -608,6 +618,44 @@ object Assembler {
       }
       case BinaryOpType.Sub => {
         translateSub("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+      }
+      case BinaryOpType.Eq => {
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+        translateCompare("", translateOperand(op1), translateOperand(op2)) :: 
+        translateMove("eq", translateRegister(res), new ImmediateInt(1)) :: List()
+      }
+      case BinaryOpType.Neq => {
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+        translateCompare("", translateOperand(op1), translateOperand(op2)) :: 
+        translateMove("ne", translateRegister(res), new ImmediateInt(1)) :: List()
+      }
+      case BinaryOpType.Lt => {
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+        translateCompare("", translateOperand(op1), translateOperand(op2)) :: 
+        translateMove("lt", translateRegister(res), new ImmediateInt(1)) :: List()
+      }
+      case BinaryOpType.Gt => {
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+        translateCompare("", translateOperand(op1), translateOperand(op2)) :: 
+        translateMove("gt", translateRegister(res), new ImmediateInt(1)) :: List()
+      }
+      case BinaryOpType.Lte => {
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+        translateCompare("", translateOperand(op1), translateOperand(op2)) :: 
+        translateMove("le", translateRegister(res), new ImmediateInt(1)) :: List()
+      }
+      case BinaryOpType.Gte => {
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+        translateCompare("", translateOperand(op1), translateOperand(op2)) :: 
+        translateMove("ge", translateRegister(res), new ImmediateInt(1)) :: List()
+      }
+      case BinaryOpType.And => {
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+        translateCompare("", translateOperand(op1), new ImmediateInt(1)) :: 
+        translateCompare("eq", translateOperand(op2), new ImmediateInt(1)) :: 
+        translateBranch("ne", "here") :: 
+        translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
+        translateTAC(new Label("here"))
       }
     }
   }
