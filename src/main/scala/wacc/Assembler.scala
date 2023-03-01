@@ -7,6 +7,12 @@ import wacc.RegisterAllocator._
 object Assembler {
 
   val endFuncs = collection.mutable.Map[String, List[String]]()
+  var labelCount = 0
+
+  def generateLabel(): Label = {
+    labelCount += 1
+    new Label(".La" + labelCount.toString())
+  }
 
   def addEndFunc(name: String, code: List[String]) = {
     if (!endFuncs.contains(name)) {
@@ -650,12 +656,13 @@ object Assembler {
         translateMove("ge", translateRegister(res), new ImmediateInt(1)) :: List()
       }
       case BinaryOpType.And => {
+        val lbl = generateLabel()
         translateMove("", translateRegister(res), new ImmediateInt(0)) ::
         translateCompare("", translateOperand(op1), new ImmediateInt(1)) :: 
         translateCompare("eq", translateOperand(op2), new ImmediateInt(1)) :: 
-        translateBranch("ne", "here") :: 
+        translateBranch("ne", lbl.name) :: 
         translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
-        translateTAC(new Label("here"))
+        translateTAC(lbl)
       }
     }
   }
