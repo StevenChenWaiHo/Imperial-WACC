@@ -303,7 +303,14 @@ object Translator {
   }
 
   def translateArrayElemAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
-    (List(), null)
+    val (rvalueList, rvalueReg) = delegateASTNode(rvalue)
+    lvalue match {
+      case ArrayElem(name, indices) => {
+        val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
+        (rvalueList ++ lvalueList ++ List(StoreArrayElem(null, lvalueReg, elem, rvalueReg)), lvalueReg)
+      }
+      case _ => (List(Label("Not translating ArrayElem")), null)
+    }
   }
 
   def translateIdentAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
