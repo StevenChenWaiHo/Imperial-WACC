@@ -490,6 +490,7 @@ object Assembler {
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
       case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
+      case PopParamTAC(datatype, t1, index) => assemblePopParam(datatype, t1, index)
     }
   }
 
@@ -560,6 +561,10 @@ object Assembler {
     output = output ++ List(translateBranchLink("", new BranchString(lbl.name)))
     // get previous registers from stack
     output ++ List(translatePop("", List(r0, r1, r2, r3)))
+  }
+
+  def assemblePopParam(datatype: DeclarationType, t1: Operand, index: Int): List[String] = {
+    List()
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[String] = {
