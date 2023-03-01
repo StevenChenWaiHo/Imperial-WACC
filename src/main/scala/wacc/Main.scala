@@ -50,10 +50,12 @@ object Main {
     
     // Translate the ast in to IR
     val tac = delegateASTNode(ast.get)._1
+    println("--- TAC ---")
     tac.foreach(l => println(l))
 
     // Convert the IR to ARM
     val result = translateProgram(tac)
+    println("--- ARM ---")
     result.foreach(l => println(l))
     //val result = List(".data", ".text", ".global main", "main:",
     //"push {fp, lr}", "push {r8, r10, r12}", "mov fp, sp", "mov r0, #0", "pop {r8, r10, r12}", "pop {fp, pc}")

@@ -8,7 +8,17 @@ import wacc.AbstractSyntaxTree.Expr
 import wacc.AbstractSyntaxTree.PairElemT
 
 object TAC {
-    sealed trait TAC
+
+  /* Quick and easy way to label data segments. Used in Label. */
+  private val assignmentList = collection.mutable.Map[String, Int]()
+
+  def getId(category: String): Int = {
+    val id = assignmentList.getOrElseUpdate(category, 0)
+    assignmentList.update(category, id + 1)
+    id
+  }
+
+  sealed trait TAC
 
   case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC {
     override def toString(): String = res + " = " + t1 + " " + op + " " + t2
@@ -41,7 +51,9 @@ object TAC {
   case class GOTO(label: Label) extends TAC {
     override def toString(): String = "goto: " + label.name
   }
-  case class Label(name: String = "label") extends TAC with Operand {
+
+  case class Label(var name: String = "label") extends TAC with Operand {
+    this.name = name + getId(name)
     override def toString(): String = name + ":"
   }
 
@@ -127,10 +139,10 @@ object TAC {
     case class IntLiteralTAC(value: Int) extends LiteralTAC {
       override def toString(): String = value.toString()
     }
-    class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
+    case class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
       override def toString(): String = b.toString()
     }
-    class CharLiteralTAC(c: Char) extends LiteralTAC {
+    case class CharLiteralTAC(c: Char) extends LiteralTAC {
       override def toString(): String = "\'" + c + "\'"
     }
   class ArrayOp(elems: List[Operand]) extends Operand {

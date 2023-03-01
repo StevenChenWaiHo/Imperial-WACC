@@ -4,14 +4,17 @@ import wacc.AbstractSyntaxTree.BaseT._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType._
 import wacc.AbstractSyntaxTree._
-import wacc.SemanticAnalyser.{declareFunction, lValType, rValType}
-import wacc.TAC.TRegister
+import wacc.SemanticAnalyser.lValType
 
-import javax.management.InvalidAttributeValueException
 
 /* Information stored about every variable. Can be extended as needed. */
 case class VarInfo(declarationType: DeclarationType) {
-  var tReg: TRegister = null
+  var id = -1
+
+  def withId(n: Int): VarInfo = {
+    this.id = n
+    this
+  }
 }
 
 case class Scope(val vars: Map[String, VarInfo],
@@ -19,12 +22,22 @@ case class Scope(val vars: Map[String, VarInfo],
                  val nextReturn: DeclarationType)
 
 class ScopeContext(scopeStack: List[Scope]) {
-  if (scopeStack.isEmpty) throw new InvalidAttributeValueException("Context cannot be empty")
+  if (scopeStack.isEmpty) throw new NoSuchElementException("Context cannot be empty")
+
+  /* Number of unique vars */
+  //TODO: Delete this
+  var varId = -1
+  def nextId: Int = {
+    varId += 1
+    varId
+  }
 
   def this() = this(List(new Scope(Map(), Map(), null)))
 
-  def findVar(name: String): Either[List[String], DeclarationType] = {
-    getVarInfo(name).map(_.declarationType)
+  def findVar(ident: IdentLiteral): Either[List[String], VarInfo] = {
+    val info = getVarInfo(ident.name)
+    if(info.isRight) ident.attachContext(info.toOption.get)
+    info
   }
 
   def getVarInfo(name: String): Either[List[String], VarInfo] = {
@@ -40,11 +53,6 @@ class ScopeContext(scopeStack: List[Scope]) {
     getVarInfo1(this.scopeStack)
   }
 
-  def setReg(name: String, tReg: TRegister): Unit = {
-    getVarInfo(name).getOrElse(throw new NoSuchElementException("Undefined variable not detected by semantic analysis")
-    ).tReg = tReg
-  }
-
   def findFunc(name: String): Either[List[String], Expectation] = {
     def findFunc1(stack: List[Scope]): Either[List[String], Expectation] = stack match {
       case Scope(_, funcs, _) :: scopes => {
@@ -57,28 +65,28 @@ class ScopeContext(scopeStack: List[Scope]) {
     findFunc1(this.scopeStack)
   }
 
-  def addVar(name: String,
-             decType: DeclarationType,
-            ): Either[List[String], ScopeContext] = {
+  def addVar(identifier: IdentLiteral, decType: DeclarationType): Either[List[String], ScopeContext] = {
+    val name = identifier.name
     scopeStack match {
       case Scope(vars, funcs, returnType) :: scopes => {
         if (vars.contains(name)) Left(List("Variable %s has already been defined in this scope".format(name)))
-        else Right(new ScopeContext(Scope(vars.updated(name, VarInfo(decType)), funcs, returnType) :: scopes))
+        else Right(new ScopeContext(Scope(vars.updated(name, VarInfo(decType) withId(nextId)), funcs, returnType) :: scopes))
       }
-      case _ => throw new InvalidAttributeValueException("Empty context: this should never happen.")
+      case _ => throw new NoSuchElementException("Empty context: this should never happen.")
     }
   }
 
   def addFunc(name: String, expects: Expectation): Either[List[String], ScopeContext] = scopeStack match {
     case Scope(vars, funcs, returnType) :: scopes => {
-
-    }
       if (findFunc(name).isRight) Left(List("Function re-definition: %s\b"))
       else {
         val currentScope = scopeStack.head
         Right(new ScopeContext(List(Scope(currentScope.vars, currentScope.funcs.updated(name, expects), returnType))))
       }
+    }
+    case _ => throw new NoSuchElementException("Empty context: this should never happen.")
   }
+
   def expectedReturn(): Expectation = TypeMatcher.oneOf(List(nextReturn()))
 
   def nextReturn(): DeclarationType = scopeStack.head.nextReturn
@@ -117,7 +125,7 @@ object TypeValidator {
     case StringLiteral(_) => BaseType(String_T)
     case PairLiteral() => PairType(Any_T, Any_T)
     case expr: ArrayElem => lValType(expr)
-    case IdentLiteral(name) => context.findVar(name)
+    case expr: IdentLiteral => context.findVar(expr).map(_.declarationType)
     case UnaryOp(op, x) => UnaryOpExpectations(op) matchedWith returnType(x)
     case BinaryOp(op, x1, x2) => BinaryOpExpectations(op) matchedWith List(returnType(x1), returnType(x2))
   }
