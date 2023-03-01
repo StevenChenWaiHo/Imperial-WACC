@@ -18,8 +18,8 @@ object ParseExamples {
 
   var lValExamples = Set(
     "fst_var" -> IdentLiteral("fst_var"),
-    "fst_var[12][13]" -> ArrayElem("fst_var", List(IntLiteral(12), IntLiteral(13))),
-    "fst fst_var[12][13]" -> PairElement(PairElemT.Fst, ArrayElem("fst_var", List(IntLiteral(12), IntLiteral(13))))
+    "fst_var[12][13]" -> new ArrayElem("fst_var", List(IntLiteral(12), IntLiteral(13))),
+    "fst fst_var[12][13]" -> PairElement(PairElemT.Fst, new ArrayElem("fst_var", List(IntLiteral(12), IntLiteral(13))))
   )
 
   var exprExamples = Set(

@@ -7,9 +7,9 @@ import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 // This should probably be a class which takes in a lookup table
 object AbstractSyntaxTree {
   sealed trait ASTNode {
-    var context: ScopeContext = null
-    def attachContext(scope: ScopeContext): Unit = {
-      context = scope
+    var context: VarInfo = null
+    def attachContext(context: VarInfo): Unit = {
+      this.context = context
     }
   }
 
@@ -19,7 +19,9 @@ object AbstractSyntaxTree {
 
   sealed trait ArrayE extends Expr with LVal
 
-  case class ArrayElem(name: String, indices: List[Expr]) extends ArrayE
+  case class ArrayElem(name: IdentLiteral, indices: List[Expr]) extends ArrayE {
+    def this(n: String, is: List[Expr]) = this(IdentLiteral(n), is)
+  }
 
   sealed trait IdentLit extends Expr with LVal
 
@@ -43,7 +45,7 @@ object AbstractSyntaxTree {
 
   /* Constructors and Factories */
   object ArrayElem {
-    def apply(types: List[Expr]): String => ArrayElem = (name: String) => ArrayElem(name, types)
+    def apply(types: List[Expr]): String => ArrayElem = (name: String) => new ArrayElem(name, types)
   }
 
   object UnaryOp {
