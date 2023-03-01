@@ -4,9 +4,10 @@ import wacc.Assembler._
 import wacc.TAC._
 
 import scala.collection.mutable.ListBuffer
+import wacc.Assembler.Register
+import wacc.Assembler.LHSop
 
 object RegisterAllocator {
-  //also in assembler
 
   //  class Register {
   //    def toEither(): ImmediateValueOrRegister = {
@@ -94,7 +95,7 @@ object RegisterAllocator {
   //    r7 -> 0, r8 -> 0, r9 -> 0, r10 -> 0, r11 -> 0, r12 -> 0, r13 -> 0, r14 -> 0)
 
   var stackOfRegisters = collection.mutable.Stack(r4, r5, r6, r7, r8, r9, r10, r11, r12)
-  var registerMap = collection.mutable.Map[Register, TRegister]()
+  var registerMap = collection.mutable.Map[TRegister, Register]() // TReg -> Reg || TReg -> Stack[index]
 
 
   def allocateRegisters(tacs: List[TAC]): List[Register] = {
@@ -105,9 +106,15 @@ object RegisterAllocator {
         case UnaryOpTAC(op, t1, res) => regs += getRegister(res)
         case AssignmentTAC(t1, res) => regs += getRegister(res)
         case PopParamTAC(t1) => regs += getRegister(t1)
+        case _ =>
       }
     })
     regs.toList
+  }
+
+  def translateRegister(treg: TRegister): LHSop = {
+    // TODO: add handling of treg mapped to stack
+    registerMap.getOrElse(treg, null)
   }
 
   def getRegister(tReg: TRegister): Register = {
@@ -116,12 +123,12 @@ object RegisterAllocator {
       //return
     }
     val r = stackOfRegisters.pop()
-    registerMap.addOne(r, tReg)
+    registerMap.addOne(tReg, r)
     r
   }
 
   def releaseRegister(reg: Register) = {
-    registerMap -= reg
+    // TODO: remove register mapping
     stackOfRegisters.push(reg)
   }
 
@@ -197,7 +204,8 @@ object RegisterAllocator {
     * Could be delegated to a different class later if we want to use a fancier method. */
     private def toOperand2(op: Operand) = op match {
       case op: TRegister => ImmediateValueOrRegister(Left(getRegister(op)))
-      //TODO: It would be nice if ImmediateValueOrRegister could take non-integer constants (since everything in assembly is a number)
+      //TODO
+      //  It would be nice if ImmediateValueOrRegister could take non-integer constants (since everything in assembly is a number)
       case anything => ImmediateValueOrRegister(Right(anything))
       case _ => throw new NotImplementedError("this shouldn't happen (i think)")
     }
