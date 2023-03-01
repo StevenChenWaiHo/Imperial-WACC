@@ -733,7 +733,7 @@ object Assembler {
       case AssignmentTAC(operand, reg) => {
         translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
       }
-      case CommandTAC(cmd, operand) => {
+      case CommandTAC(cmd, operand, opType) => {
         if (cmd == CmdT.Exit) {
           mov(r0, r0) :: // TODO: change from default r0
             translateBranchLink("", "exit") :: List() // TODO: should not default to t0

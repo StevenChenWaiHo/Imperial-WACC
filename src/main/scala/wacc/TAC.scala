@@ -4,6 +4,8 @@ import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.CmdT.Cmd
 import wacc.AbstractSyntaxTree.DeclarationType
+import wacc.AbstractSyntaxTree.Expr
+import wacc.AbstractSyntaxTree.PairElemT
 
 object TAC {
 
@@ -28,7 +30,7 @@ object TAC {
   case class IfTAC(t1: Operand, goto: Label) extends TAC {
     override def toString(): String = "if " + t1 + " then goto " + goto.name
   }
-  case class CommandTAC(cmd: Cmd, t1: Operand) extends TAC
+  case class CommandTAC(cmd: Cmd, t1: Operand, opType: DeclarationType) extends TAC
   case class PushParamTAC(t1: Operand) extends TAC
   case class PopParamTAC(t1: TRegister) extends TAC
   case class CallTAC(lbl: Label, args: List[TRegister]) extends TAC 
@@ -54,9 +56,73 @@ object TAC {
     this.name = name + getId(name)
     override def toString(): String = name + ":"
   }
+
+  // Pairs Operations to ARM
+  //   --- CreatePairFstElem() --- 
+  // Save r8 and r12
+  // malloc fst elem with reference to its type
+  // mov r8 fstReg
+  // mov r12 r0
+  // str r8, [r12, #0]
+  // push r12
+  //   --- CreatePairSndElem() --- 
+  // Save r8 and r12
+  // r8 = sndReg = register with sndElem
+  // malloc snd elem with reference to its type
+  // mov r8 sndReg
+  // mov r12 r0
+  // str r8, [r12, #4]
+  // push r12
+  //   --- CreatePair() --- 
+  // malloc 2 * 4 bytes for 2 pointers
+  // mov r12 r0
+  // pop r8
+  // str r8 [r12, #4]
+  // pop r8  
+  // str r8 [r12, #0]
+  // mov dstReg r12
   case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
   case class CreatePairSndElem(sndType: DeclarationType, sndReg: TRegister) extends TAC
-  case class CreatePair(fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
+  case class CreatePair(fstType: DeclarationType, sndType: DeclarationType, 
+                        fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
+
+  // StorePairElem
+  // str srcReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
+  case class StorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister) extends TAC
+  // GetPairElem
+  // ldr dstReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
+  case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister) extends TAC
+
+  
+  /* array declaration in assembly
+    @ 4 element array, 4 per element and 4 for array pointer
+		mov r0, #20
+		bl malloc
+		mov r12, r0
+		@ array pointers are shifted forwards by 4 bytes (to account for size)
+		add r12, r12, #4
+		mov r8, #4
+		str r8, [r12, #-4]
+		mov r8, #43
+		str r8, [r12, #0]
+		mov r8, #2
+		str r8, [r12, #4]
+		mov r8, #18
+		str r8, [r12, #8]
+		mov r8, #1
+		str r8, [r12, #12]
+  */
+  //delegates each element in an array
+  case class CreateArrayElem(elemType: DeclarationType, elemReg: TRegister) extends TAC
+  //delegates an array with all of its elements
+  case class CreateArray(elemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
+  
+  // StoreArrayElem
+  // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
+  case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[Expr], srcReg: TRegister) extends TAC
+  // GetArrayElem
+  // ldr dstReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
+  case class GetArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister) extends TAC
 
   case class Comments(string: String) extends TAC {
     override def toString(): String = "@ " + string
