@@ -304,15 +304,12 @@ object Translator {
             exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, fstReg)) ++ 
             exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, sndReg), 
             CreatePair(fstType, sndType, fstReg, sndReg, pairReg), Comments("Created newpair")), pairReg)
+            }
           }
         }
-          
-        }
-      case PairLiteral() => {
-        val reg = nextRegister()
-        (List(AssignmentTAC(PairLiteralTAC(), reg)), reg)
-      }
       case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
+      // PairLiteral or IdentLiteral
+      case lit: Literal => delegateASTNode(lit)
       case t => print(t); (List(Label("Not translating Pair Value")), null)
     }
   }
