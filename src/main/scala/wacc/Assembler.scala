@@ -5,84 +5,22 @@ import wacc.AbstractSyntaxTree._
 import wacc.RegisterAllocator._
 
 object Assembler {
-  def push(register: Register): String = {
-    "push {" + register.toString() + "}"
-  }
 
-  def pop(register: Register): String = {
-    "pop {" + register.toString() + "}"
-  }
+  val endFuncs = collection.mutable.Map[String, List[String]]()
 
-  def mov(registerDest: Register, registerSrc: Register): String = {
-    "mov " + registerDest.toString() + ", " + registerSrc.toString()
-  }
-
-  def movImm(registerDest: Register, operand: Int): Unit = {
-    //listOfRegisters.updated(registerDest, operand)
-  }
-
-  def store(registerDest: Register, registerSrc: Register, operand: Int = 0): Unit = {
-    //sval memoryLocation: Int = listOfRegisters(registerSrc) + operand
-    //listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
-  }
-
-  def compare(registerDest: Register, registerSrc: Register): Unit = {
-    //listOfRegisters(registerDest) == listOfRegisters(registerSrc)
-  }
-
-  def translateBeginEnd(stat: Stat, context: ScopeContext): List[String] = {
-    //Seems like it takes as many variables as it can find in every scope and pushes the corresponding
-    //number of registers, instead of just this scope.
-    var str: List[String] = List("")
-    var defaultRegistersList: List[Register] = List()
-    if (context.scopeLevel() == 0) {
-      defaultRegistersList = List(r8, r10, r12)
-    } else {
-      defaultRegistersList = List(r0)
+  def addEndFunc(name: String, code: List[String]) = {
+    if (!endFuncs.contains(name)) {
+      endFuncs.addOne(name, "" :: code)
     }
-    val registersList: List[Register] = List(r6, r4, r7, r5, r1, r2)
-    if (context.scopeVarSize() >= 4) {
-      defaultRegistersList = defaultRegistersList ++ registersList
-    } else {
-      defaultRegistersList = defaultRegistersList ++ registersList.slice(0, context.scopeVarSize())
-    }
-    /*
-    str = str ++ translatePush("", List(fp, lr)) //Maybe not meant to be in BeginEnd
-    str = str ++ translatePush("", defaultRegistersList) //dependent on context
-    str = str ++ delegateASTNode(stat, context)
-    str = str ++ translatePop("", defaultRegistersList) // dependent on context
-    str = str ++ translatePop("", List(fp, pc)) //Maybe meant to be in prog
-    */
-    return str
   }
 
-  def translateSkip(): List[String] = {
-    var str = List("")
-    return str
-  }
-
-  def translateCommand(cmd: AbstractSyntaxTree.CmdT.Cmd, expr: AbstractSyntaxTree.Expr): List[String] = {
-    List("")
-  }
-
-  def translateFunction(returnType: AbstractSyntaxTree.DeclarationType,
-                        ident: AbstractSyntaxTree.IdentLiteral,
-                        types: List[(AbstractSyntaxTree.DeclarationType,
-                          AbstractSyntaxTree.IdentLiteral)],
-                        code: Stat): List[String] = {
-    List("")
-  }
-
-  def translateARM(command: String, operand: String, operand2: String = ""): String = {
-    //Maybe add check to make sure command is valid
-    if (operand2 == "") {
-      command + " " + operand
-    }
-    command + " " + operand + ", " + operand2
+  def endFuncsToList(): List[String] = {
+    endFuncs.toList.map(entry => entry match {
+      case (name, code) => code
+    }).flatten
   }
 
   sealed trait Operand2
-
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends Operand2 {
     @Override
     override def toString: String = {
@@ -221,9 +159,9 @@ object Assembler {
     return str
   }
 
-  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+  def translateLdr(condition: String, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     //Incomplete
-    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand)) // TODO: change
+    return "ldr" + condition + " " + destinationRegister.toString + ", " + operand
   }
 
   def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
@@ -231,25 +169,26 @@ object Assembler {
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand))
   }
 
-  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
   }
 
   //Incomplete, no condition
-  def translateAdd(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
-    return "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): List[String] = {
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ::
+    translateBranchLink("vs", new BranchString("_errOverflow")) :: List()
   }
 
-  def translateSub(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
-    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): List[String] = {
+    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) :: List()
   }
 
-  def translateRsb(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
+  def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     return "rsb" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateMul(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, sourceRegisterTwo: Register): String = {
-    return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, ImmediateValueOrRegister(Left(sourceRegisterTwo)))
+  def translateMul(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, sourceRegisterTwo: LHSop): String = {
+    return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, sourceRegisterTwo)
   }
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: Register, destinationHigh: Register,
@@ -371,15 +310,81 @@ object Assembler {
     translateBranchLink("", new BranchString("exit")) :: List()
   }
 
+  def translate_print(pType: String): List[String] = {
+    pType match {
+      case "_prints" => translate_prints()
+      case "_printi" => translate_printi()
+      case "_printc" => translate_printc()
+      case "_println" => translate_println()
+      case _ => translate_prints()
+    }
+  }
+
   def translate_prints(): List[String] = {
-    translatePush("", List(lr)) ::
+    val sLbl = new Label(".L._prints_str0")
+    translateTAC(DataSegmentTAC()) ++ 
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(4, sLbl)) ++
+    translateTAC(StringDefinitionTAC("%.*s", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++ 
+    translateTAC(Label("_prints")) ++
+    (translatePush("", List(lr)) ::
     translateMove("", r2, r0) ::
-    translateLdr("", r1, r0, new ImmediateInt(-4)) ::
-    translateLdr("", r0, r0, new LabelString(".L.prints_str_0")) ::
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
     translateBranchLink("", new BranchString("printf")) ::
     translateMove("", r0, new ImmediateInt(0)) ::
     translateBranchLink("", new BranchString("fflush")) ::
-    translatePop("", List(pc)) :: List()
+    translatePop("", List(pc)) :: List())
+  }
+  
+  def translate_printc(): List[String] = {
+    val sLbl = new Label(".L._printc_str0")
+    translateTAC(DataSegmentTAC()) ++ 
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
+    translateTAC(StringDefinitionTAC("%c", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++ 
+    translateTAC(Label("_printc")) ++
+    (translatePush("", List(lr)) ::
+    translateMove("", r1, r0) ::
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
+    translateBranchLink("", new BranchString("printf")) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translateBranchLink("", new BranchString("fflush")) ::
+    translatePop("", List(pc)) :: List())
+  }
+
+  def translate_printi(): List[String] = {
+    val sLbl = new Label(".L._printi_str0")
+    translateTAC(DataSegmentTAC()) ++ 
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
+    translateTAC(StringDefinitionTAC("%d", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++ 
+    translateTAC(Label("_printi")) ++
+    (translatePush("", List(lr)) ::
+    translateMove("", r1, r0) ::
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
+    translateBranchLink("", new BranchString("printf")) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translateBranchLink("", new BranchString("fflush")) ::
+    translatePop("", List(pc)) :: List())
+  }
+
+  def translate_println(): List[String] = {
+    val sLbl = new Label(".L._println_str0")
+    translateTAC(DataSegmentTAC()) ++ 
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(0, sLbl)) ++
+    translateTAC(StringDefinitionTAC("", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++ 
+    translateTAC(Label("_println")) ++
+    (translatePush("", List(lr)) ::
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
+    translateBranchLink("", new BranchString("puts")) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translateBranchLink("", new BranchString("fflush")) ::
+    translatePop("", List(pc)) :: List())
   }
 
   def determineLdr(x: Int): Boolean = {
@@ -417,7 +422,7 @@ object Assembler {
       case CharLiteralTAC(chr) => new ImmediateInt(chr.toInt)
       case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true))
       case Label(name) => new LabelString(name)
-      case _ => null // TODO: this should not match
+      case a => println("translateOperand fail: " + a); null // TODO: this should not match
     }
   }
 
@@ -532,51 +537,17 @@ object Assembler {
       // case TAC.Label(name) => {
       //   str = labelToCodeTable()
       // }
-      case Label(name) => {
-        List(name + ":")
-      }
-      case DataSegmentTAC() => {
-        List(".data")
-      }
-      case TextSegmentTAC() => {
-        List(".text", ".global main")
-      }
-      case StringLengthDefinitionTAC(len, lbl) => {
-        List(".word " + len.toString())
-      }
-      case StringDefinitionTAC(str, lbl) => {
-        translateTAC(lbl) ++
-        List(".asciz \"" + str + "\"")
-      }
-      case BeginFuncTAC() => {
-        translatePush("", List(fp, lr)) ::
-        translatePush("", List(r8, r10, r12)) ::
-        translateMove("", fp, sp) :: List()
-      }
-      case EndFuncTAC() => {
-        translateMove("", r0, new ImmediateInt(0)) ::
-        translatePop("", List(r8, r10, r12)) ::
-        translatePop("", List(fp, pc)) :: List()
-      }
-      case AssignmentTAC(operand, reg) => {
-        translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
-      }
-      case CommandTAC(cmd, operand, opType) => {
-        if (cmd == CmdT.Exit) {
-          translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", new BranchString("exit")) :: List() 
-        } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
-          // TODO: add check for operand type to print (string/char)
-          // TODO: Add the _prints function in at the end
-          translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", new BranchString("_prints")) :: List() 
-        } else {
-          List("Command not implemented")
-        }
-      }
-      case Comments(str) => {
-        List("@ " + str)
-      }
+      case Label(name) => translateLabel(name)
+      case Comments(str) => List("@ " + str)
+      case DataSegmentTAC() => List(".data")
+      case TextSegmentTAC() => List(".text")
+      case StringLengthDefinitionTAC(len, lbl) => translateStringLengthDef(len, lbl)
+      case StringDefinitionTAC(str, lbl) => translateStringDef(str, lbl)
+      case BeginFuncTAC() => translateBeginFunc()
+      case EndFuncTAC() => translateEndFunc()
+      case AssignmentTAC(operand, reg) => translateAssignment(operand, reg)
+      case CommandTAC(cmd, operand, opType) => translateCommand(cmd, operand, opType)
+      case BinaryOpTAC(operation, op1, op2, res) => translateBinOp(operation, op1, op2, res)
     }
   }
 
@@ -585,10 +556,86 @@ object Assembler {
      tacList.foreach(tac => {
       output = output ++ translateTAC(tac)
     })
-    output
+    output ++ endFuncsToList()
   }
 
-  def translateComment(str: String) : List[String] = {
-    List("@ " + str)
+  def translateLabel(name: String): List[String] = {
+    if (name == "main") {
+      List(".global main", name + ":")
+    } else {
+      List(name + ":")
+    }
+  }
+
+  def translateBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
+    operation match {
+      case BinaryOpType.Add => {
+        translateAdd("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+      }
+      case BinaryOpType.Sub => {
+        translateSub("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+      }
+    }
+  }
+
+  def translateStringLengthDef(len: Int, lbl: Label) = {
+    List(".word " + len.toString())
+  }
+
+  def translateStringDef(str: String, lbl: Label) = {
+    translateTAC(lbl) ++
+    List(".asciz \"" + str + "\"")
+  }
+  
+  def translateBeginFunc() = {
+    translatePush("", List(fp, lr)) ::
+    translatePush("", List(r8, r10, r12)) ::
+    translateMove("", fp, sp) :: List()
+  }
+
+  def translateEndFunc() = {
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translatePop("", List(r8, r10, r12)) ::
+    translatePop("", List(fp, pc)) :: List()
+  }
+
+  def translateAssignment(operand: Operand, reg: TRegister) = {
+    operand match {
+      case Label(name) => translateLdr("", translateRegister(reg), r0, translateOperand(operand)) :: List()
+      case _=> translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
+    }
+    
+  }
+
+  def translateCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType) = {
+    if (cmd == CmdT.Exit) {
+      translateMove("", r0, translateOperand(operand)) ::
+      translateBranchLink("", new BranchString("exit")) :: List() 
+    } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
+      // TODO: change print behaviour of arrays and pairs
+      val bl = opType match {
+        case ArrayType(dataType, length) => "_printi"
+        case BaseType(baseType) => baseType match {
+          case BaseT.String_T => "_prints"
+          case BaseT.Char_T => "_printc"
+          case BaseT.Bool_T => "_printb" // ???
+          case BaseT.Int_T => "_printi"
+          case _ => "_printi"
+        }
+        case NestedPair() => "_printi"
+        case PairType(fstType, sndType) => "_printi"
+      }
+      addEndFunc(bl, translate_print(bl))
+      var listEnd = List[String]()
+      if (cmd == CmdT.PrintLn) {
+        addEndFunc("_println", translate_print("_println"))
+        listEnd = translateBranchLink("", new BranchString("_println")) :: List() 
+      }
+      // TODO: Add the _prints function in at the end
+      translateMove("", r0, translateOperand(operand)) ::
+      translateBranchLink("", new BranchString(bl)) :: listEnd
+    } else {
+      List("Command not implemented")
+    }
   }
 }
