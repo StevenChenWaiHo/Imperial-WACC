@@ -582,7 +582,42 @@ object Assembler {
       case AssignmentTAC(operand, reg) => translateAssignment(operand, reg)
       case CommandTAC(cmd, operand, opType) => translateCommand(cmd, operand, opType)
       case BinaryOpTAC(operation, op1, op2, res) => translateBinOp(operation, op1, op2, res)
+      case CreatePairElem(pairElemType, pairPos, srcReg) => assemblePairElem(pairElemType, pairPos, srcReg)
+      case CreatePair(fstType, sndType, fstReg, sndReg, dstReg) => assemblePair(fstType, sndType, dstReg)
     }
+  }
+
+  def getTypeSize(decType: DeclarationType): Integer = {
+    decType match {
+      case BaseType(BaseT.Int_T) => 4
+      case BaseType(BaseT.Char_T) => 1
+      case _ => 4 
+    }
+  }
+
+  val POINTER_BYTE_SIZE = 4
+
+  def assemblePair(fstType: DeclarationType, sndType: DeclarationType, dstReg: TRegister): List[String] = {
+    // Assume r8 and r12 not used
+    // r12: pointer to pair r8: pointer to pairElem
+    translateMove("", r0, new ImmediateInt(2 * POINTER_BYTE_SIZE)) ::
+    translateBranchLink("", new BranchString("malloc")) ::
+    translateMove("", r12, r0) ::
+    translatePop("", List(r8)) ::
+    translateStr("", r8, r12, new ImmediateInt(POINTER_BYTE_SIZE)) ::
+    translatePop("", List(r8)) ::
+    translateStr("", r8, r12, new ImmediateInt(0)) ::
+    translateMove("", translateRegister(dstReg), r12) :: List()
+  }
+
+  def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, srcReg: TRegister): List[String] = {
+    translatePush("", List(r8, r12)) ::
+    translateMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
+    translateBranchLink("", new BranchString("malloc")) ::
+    translateMove("", r8, translateRegister(srcReg)) ::
+    translateMove("", r12, r0) ::
+    translateStr("", r8, r12, new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
+    translatePush("", List(r12)) :: List()
   }
 
   def translateProgram(tacList: List[TAC]): List[String] = {

@@ -301,8 +301,8 @@ object Translator {
             val pairReg = nextRegister()
             addNode(pairValue, pairReg)
             (List(Comments("Creating newpair")) ++ 
-            exp1List ++ List(CreatePairFstElem(fstType, fstReg)) ++ 
-            exp2List ++ List(CreatePairSndElem(sndType, sndReg), 
+            exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, fstReg)) ++ 
+            exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, sndReg), 
             CreatePair(fstType, sndType, fstReg, sndReg, pairReg), Comments("Created newpair")), pairReg)
           }
         }
