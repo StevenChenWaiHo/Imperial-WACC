@@ -140,7 +140,7 @@ object Translator {
 
           case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
-          case ArrayElem(name, indices) => translateArrayElem(name, indices)
+          case ArrayElem(ident, indices) => translateArrayElem(ident.name, indices)
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
           case Call(ident, args) => translateCall(ident, args)
           case Read(lval) => translateRead(lval)
