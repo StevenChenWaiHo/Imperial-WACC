@@ -438,22 +438,34 @@ object Translator {
         }
       }
     })
-    (argTacList ++ List(CallTAC(new Label(ident.name), argOutList)), new TRegister(999))
+    val returnReg = nextRegister()
+    addNode(Call(ident,args), returnReg)
+    (argTacList ++ List(CallTAC(new Label(ident.name), argOutList, returnReg)), returnReg)
   }
 
 
   def translateFunction(func: Func): List[TAC] = {
     newMap()
+    var paramList = List[TAC]()
     func match {
       case Func(returnType, ident, types, code) => {
+        // PopParam
+        types.foreach{
+            case (t, paramName) => {
+              val paramReg = nextRegister()
+              addNode(paramName, paramReg)
+              addType(paramName, t)
+              paramList = paramList ++ List(PopParamTAC(t, paramReg))
+              }
+            }
         delegateASTNode(code) match {
           case (tacList, outReg) => {
             // Remove the map from scope
             popMap()
             // Clear the register list
             regList.clear()
-            List(new Label(ident.name), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
           }
+          List(new Label(ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList ++ List(EndFuncTAC())
         }
       }
     }
