@@ -181,4 +181,27 @@ object HardcodeFunctions {
       translatePop("", List{pc})
     )
   }
+
+  def translate_readc(): List[String] = {
+    val lbl = new Label(".L._readc_str0")
+    List(
+      DataSegmentTAC(),
+      Comments("length of " + lbl.name),
+      StringLengthDefinitionTAC(3, lbl),
+      StringDefinitionTAC(" %c", lbl),
+      TextSegmentTAC(),
+      Label("_readc")).map(tac => translateTAC(tac)).flatten ++
+    List(
+      translatePush("", List(lr)),
+      translateStr("b", r0, r0, new BranchString("[sp, #-1]!")),
+			translateMove("", r1, sp),
+      translateLdr("", r0, null, new LabelString(lbl.name)),
+      translateBranchLink("", new BranchString("scanf")),
+		  translateLdr("sb", r0, null, new BranchString("[sp, #0]"))
+    ) ++
+    translateAdd("", Status(), sp, sp, new ImmediateInt(1)) ++
+    List(
+      translatePop("", List{pc})
+    )
+  }
 }
