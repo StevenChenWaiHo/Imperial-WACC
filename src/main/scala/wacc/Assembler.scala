@@ -486,6 +486,7 @@ object Assembler {
       case GOTO(label) => translateGOTO(label)
       case CreatePairElem(pairElemType, pairPos, srcReg) => assemblePairElem(pairElemType, pairPos, srcReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, dstReg) => assemblePair(fstType, sndType, dstReg)
+      case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
     }
@@ -524,6 +525,24 @@ object Assembler {
     translatePush("", List(r12)) :: List()
   }
 
+  def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): List[String] = {
+    op match {
+      case UnaryOpType.Neg => {
+        translateRsb("", Status(), translateRegister(res), translateOperand(t1), new ImmediateInt(0)) :: List()
+      }
+      case UnaryOpType.Not => {
+        translateCompare("", translateOperand(t1), new ImmediateInt(1)) ::
+        translateMove("ne", translateRegister(res), new ImmediateInt(1)) ::
+        translateMove("eq", translateRegister(res), new ImmediateInt(0)) :: List()
+      }
+      case UnaryOpType.Chr | UnaryOpType.Ord => {
+        translateMove("", translateRegister(res), translateOperand(t1)) :: List()
+      }
+      case UnaryOpType.Len => {
+        // ldr r8, [r4, #-4]
+        translateLdr("", translateRegister(res), r0, translateOperand(t1)) :: List()
+      }
+    }
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[String] = {
     translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) :: List()
   }
