@@ -307,7 +307,7 @@ object Translator {
     lvalue match {
       case ArrayElem(name, indices) => {
         val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
-        (rvalueList ++ lvalueList ++ List(StoreArrayElem(null, lvalueReg, elem, rvalueReg)), lvalueReg)
+        (rvalueList ++ lvalueList ++ List(StoreArrayElem(null, lvalueReg, indices, rvalueReg)), lvalueReg)
       }
       case _ => (List(Label("Not translating ArrayElem")), null)
     }
