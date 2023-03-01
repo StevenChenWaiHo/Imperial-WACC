@@ -152,13 +152,13 @@ object Assembler {
     return "pop" + pushPopAssist(condition, registers)
   }
 
-  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[LHSop, String]): String = {
+  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
-      case Left(x) => {
+      case ImmediateInt(x) => {
         str = str + "[" + sourceRegister.toString + ", " + x + "]"
       }
-      case Right(x) => {
+      case LabelString(x) => {
         str = str + "=" + x
       }
     }
@@ -167,12 +167,12 @@ object Assembler {
 
   def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
-    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand))
+    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
   def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
-    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand))
+    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
@@ -442,16 +442,16 @@ object Assembler {
 
   sealed trait LHSop
   class Register extends LHSop
-  class StackOffset(offset: Int) extends LHSop{
+  case class StackOffset(offset: Int) extends LHSop{
     override def toString(): String = "STACK" + offset.toString()
   }
-  class ImmediateInt(i: Int) extends LHSop {
+  case class ImmediateInt(i: Int) extends LHSop {
     override def toString(): String = "#" + i.toString()
   }
-  class LabelString(name: String) extends LHSop {
+  case class LabelString(name: String) extends LHSop {
     override def toString(): String = "=" + name
   }
-  class BranchString(name: String) extends LHSop {
+  case class BranchString(name: String) extends LHSop {
     override def toString(): String = name
   }
   
