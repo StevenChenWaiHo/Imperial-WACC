@@ -2,15 +2,10 @@ package wacc
 
 import wacc.TAC._
 
-import wacc.Assembler.ImmediateValueOrRegister
+import wacc.Assembler.Register
+import wacc.Assembler.LHSop
 
 object RegisterAllocator {
-
-  class Register {
-    def toEither(): ImmediateValueOrRegister = {
-      new ImmediateValueOrRegister(Left(this))
-    }
-  }
 
   object r0 extends Register {
     override def toString(): String = "r0"
@@ -92,7 +87,7 @@ object RegisterAllocator {
     r7 -> 0, r8 -> 0, r9 -> 0, r10 -> 0, r11 -> 0, r12 -> 0, r13 -> 0, r14 -> 0)
 
   var stackOfRegisters = collection.mutable.Stack(r4, r5, r6, r7, r8, r9, r10, r11, r12)
-  var registerMap = collection.mutable.Map[Register, TRegister]()
+  var registerMap = collection.mutable.Map[TRegister, Register]() // TReg -> Reg || TReg -> Stack[index]
 
   def allocateRegisters(tacs: List[TAC]): List[Register] = {
     val regs = collection.mutable.ListBuffer[Register]()
@@ -102,9 +97,15 @@ object RegisterAllocator {
         case UnaryOpTAC(op, t1, res) => regs += getRegister(res)
         case AssignmentTAC(t1, res) => regs += getRegister(res)
         case PopParamTAC(t1) => regs += getRegister(t1)
+        case _ =>
       }
     })
     regs.toList
+  }
+
+  def translateRegister(treg: TRegister): LHSop = {
+    // TODO: add handling of treg mapped to stack
+    registerMap.getOrElse(treg, null)
   }
 
   def getRegister(tReg: TRegister): Register = {
@@ -113,12 +114,12 @@ object RegisterAllocator {
       //return
     }
     val r = stackOfRegisters.pop()
-    registerMap.addOne(r, tReg)
+    registerMap.addOne(tReg, r)
     r
   }
 
   def releaseRegister(reg: Register) = {
-    registerMap -= reg
+    // TODO: remove register mapping
     stackOfRegisters.push(reg)
   }
 

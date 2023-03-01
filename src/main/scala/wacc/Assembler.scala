@@ -131,7 +131,7 @@ object Assembler {
     return "pop" + pushPopAssist(condition, registers)
   }
 
-  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]): String = {
+  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[LHSop, String]): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
       case Left(x) => {
@@ -144,14 +144,14 @@ object Assembler {
     return str
   }
 
-  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]): String = {
+  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
-    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand)) // TODO: change
   }
 
-  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]): String = {
+  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
-    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand))
   }
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
@@ -202,19 +202,19 @@ object Assembler {
     return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def CompareAssist(condition: String, register1: Register, operand: Operand2): String = {
+  def CompareAssist(condition: String, register1: Register, operand: LHSop): String = {
     return condition + " " + register1.toString + ", " + operand.toString
   }
 
-  def translateCompare(condition: String, register1: Register, operand: Operand2): String = {
+  def translateCompare(condition: String, register1: Register, operand: LHSop): String = {
     return "cmp" + CompareAssist(condition, register1, operand)
   }
 
-  def translateCompareNeg(condition: String, register1: Register, operand: Operand2): String = {
+  def translateCompareNeg(condition: String, register1: Register, operand: LHSop): String = {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
-  def translateMove(condition: String, dst: Register, operand: Operand2): String = {
+  def translateMove(condition: String, dst: Register, operand: LHSop): String = {
     "mov " + dst.toString + ", " + operand.toString()
   }
 
@@ -222,7 +222,7 @@ object Assembler {
     return "b" + condition + " " + operand
   }
 
-  def translateBranchLink(condition: String, operand: String): String = {
+  def translateBranchLink(condition: String, operand: LHSop): String = {
     return "bl" + condition + " " + operand
   }
 
@@ -264,21 +264,21 @@ object Assembler {
   }
 
   def translate_errOverflow(): List[String] = {
-    translateLdr("", r0, r0, Right("=.L._errOverflow_str0")) :: 
-    translateBranchLink("", "_prints") ::
-    translateMove("", r0, ImmediateValueOrRegister(Right(255))) ::
-    translateBranchLink("", "exit") :: List()
+    translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
+    translateBranchLink("", new BranchString("_prints")) ::
+    translateMove("", r0, new ImmediateInt(255)) ::
+    translateBranchLink("", new BranchString("exit")) :: List()
   }
 
   def translate_arrStoreB(): List[String] = {
     translatePush("", List(lr)) :: 
-    translateCompare("", r10, ImmediateValueOrRegister(Right(0))) ::
-    translateMove("", r1 , ImmediateValueOrRegister(Left(r10))) ::
-    translateBranchLink("lt", "_boundsCheck") :: 
-    translateLdr("", lr, r3, Left(ImmediateValueOrRegister(Right(-4)))) :: 
-    translateCompare("eq", r10, ImmediateValueOrRegister(Left(lr))) ::
-    translateMove("ge", r1, ImmediateValueOrRegister(Left(r10))) :: 
-    translateBranchLink("ge", "_boundsCheck") :: 
+    translateCompare("", r10, new ImmediateInt(0)) ::
+    translateMove("", r1 , r10) ::
+    translateBranchLink("lt", new BranchString("_boundsCheck")) :: 
+    translateLdr("", lr, r3, new ImmediateInt(-4)) :: 
+    translateCompare("eq", r10, lr) ::
+    translateMove("ge", r1, r10) :: 
+    translateBranchLink("ge", new BranchString("_boundsCheck")) :: 
     //translateStrb() :: 
     translatePop("", List(pc)) :: List()
   }
@@ -286,22 +286,22 @@ object Assembler {
 
 
   def translate_boundsCheck(): List[String] = {
-    translateLdr("", r0, r0, Right(".L._boundsCheck_str_0")) :: 
-    translateBranchLink("", "printf") :: 
-    translateMove("", r0, ImmediateValueOrRegister(Right(0))) :: 
-    translateBranchLink("", "fflush") :: 
-    translateMove("", r0, ImmediateValueOrRegister(Right(255))) :: 
-    translateBranchLink("", "exit") :: List()
+    translateLdr("", r0, r0, new LabelString(".L._boundsCheck_str_0")) :: 
+    translateBranchLink("", new BranchString("printf")) :: 
+    translateMove("", r0, new ImmediateInt(255)) :: 
+    translateBranchLink("", new BranchString("fflush")) :: 
+    translateMove("", r0, new ImmediateInt(255)) :: 
+    translateBranchLink("", new BranchString("exit")) :: List()
   }
 
   def translate_prints(): List[String] = {
     translatePush("", List(lr)) ::
-    translateMove("", r2, ImmediateValueOrRegister(Left(r0))) ::
-    translateLdr("", r1, r0, Left(ImmediateValueOrRegister(Right(-4)))) ::
-    translateLdr("", r0, r0, Right("=.L.prints_str_0")) ::
-    translateBranchLink("", "printf") ::
-    translateMove("", r0, ImmediateValueOrRegister(Right(0))) ::
-    translateBranchLink("", "fflush") ::
+    translateMove("", r2, r0) ::
+    translateLdr("", r1, r0, new ImmediateInt(-4)) ::
+    translateLdr("", r0, r0, new LabelString(".L.prints_str_0")) ::
+    translateBranchLink("", new BranchString("printf")) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translateBranchLink("", new BranchString("fflush")) ::
     translatePop("", List(pc)) :: List()
   }
 
@@ -318,22 +318,30 @@ object Assembler {
     }
   }
 
-  // TODO: move this in to register alloc
-  def translateRegister(treg: TRegister): Register = {
-    r8
+  sealed trait LHSop
+  class Register extends LHSop
+  class StackOffset(offset: Int) extends LHSop{
+    override def toString(): String = "STACK" + offset.toString()
   }
-
-  def translateOperand(op: Operand): ImmediateValueOrRegister = {
-    val regOrIm = op match {
-      case reg: TRegister => Left(translateRegister(reg))
-      case IntLiteralTAC(value) => Right(value)
-      case CharLiteralTAC(chr) => Right(chr.toInt)
-      case BoolLiteralTAC(b) => Right(b.compare(true))
-      case Label(name) => Right(999) // TODO: change to allow for labels
-      //case Label(name) => "=lbl"
+  class ImmediateInt(i: Int) extends LHSop {
+    override def toString(): String = "#" + i.toString()
+  }
+  class LabelString(name: String) extends LHSop {
+    override def toString(): String = "=" + name
+  }
+  class BranchString(name: String) extends LHSop {
+    override def toString(): String = name
+  }
+  
+  def translateOperand(op: Operand): LHSop = {
+    op match {
+      case reg: TRegister => translateRegister(reg)
+      case IntLiteralTAC(value) => new ImmediateInt(value)
+      case CharLiteralTAC(chr) => new ImmediateInt(chr.toInt)
+      case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true))
+      case Label(name) => new LabelString(name)
       case _ => null // TODO: this should not match
     }
-    new ImmediateValueOrRegister(regOrIm)
   }
 
   def translateTAC(tripleAddressCode: TAC): List[String] = {
@@ -466,10 +474,10 @@ object Assembler {
       case BeginFuncTAC() => {
         translatePush("", List(fp, lr)) ::
         translatePush("", List(r8, r10, r12)) ::
-        translateMove("", fp, sp.toEither()) :: List()
+        translateMove("", fp, sp) :: List()
       }
       case EndFuncTAC() => {
-        translateMove("", r0, ImmediateValueOrRegister(Right(0))) ::
+        translateMove("", r0, new ImmediateInt(0)) ::
         translatePop("", List(r8, r10, r12)) ::
         translatePop("", List(fp, pc)) :: List()
       }
@@ -479,12 +487,12 @@ object Assembler {
       case CommandTAC(cmd, operand) => {
         if (cmd == CmdT.Exit) {
           translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", "exit") :: List() 
+          translateBranchLink("", new BranchString("exit")) :: List() 
         } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
           // TODO: add check for operand type to print (string/char)
           // TODO: Add the _prints function in at the end
           translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", "_prints") :: List() 
+          translateBranchLink("", new BranchString("_prints")) :: List() 
         } else {
           List("Command not implemented")
         }
