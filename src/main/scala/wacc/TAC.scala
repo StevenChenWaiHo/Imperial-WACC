@@ -137,6 +137,9 @@ object TAC {
     case class IdentLiteralTAC(name: String) extends LiteralTAC {
       override def toString(): String = name
     }
+    case class PairLiteralTAC() extends LiteralTAC {
+      override def toString(): String = "null"
+    }
     case class IntLiteralTAC(value: Int) extends LiteralTAC {
       override def toString(): String = value.toString()
     }

@@ -15,7 +15,7 @@ object AbstractSyntaxTree {
 
   sealed trait PairLit extends Expr with RVal
 
-  case class PairLiteral() extends PairLit
+  case class PairLiteral() extends PairLit with Literal
 
   sealed trait ArrayE extends Expr with LVal
 
