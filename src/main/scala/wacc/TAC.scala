@@ -58,14 +58,14 @@ object TAC {
   }
 
   // Pairs Operations to ARM
-  //   --- CreatePairFstElem() --- 
+  //   --- CreatePairElem(Fst) --- 
   // Save r8 and r12
   // malloc fst elem with reference to its type
   // mov r8 fstReg
   // mov r12 r0
   // str r8, [r12, #0]
   // push r12
-  //   --- CreatePairSndElem() --- 
+  //   --- CreatePairElem(Snd) --- 
   // Save r8 and r12
   // r8 = sndReg = register with sndElem
   // malloc snd elem with reference to its type
@@ -81,8 +81,7 @@ object TAC {
   // pop r8  
   // str r8 [r12, #0]
   // mov dstReg r12
-  case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
-  case class CreatePairSndElem(sndType: DeclarationType, sndReg: TRegister) extends TAC
+  case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, fstReg: TRegister) extends TAC
   case class CreatePair(fstType: DeclarationType, sndType: DeclarationType, 
                         fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
 
