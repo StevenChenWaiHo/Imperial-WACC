@@ -448,19 +448,18 @@ object Translator {
     (argTacList ++ List(CallTAC(new Label(ident.name), argOutList, returnReg)), returnReg)
   }
 
-
   def translateFunction(func: Func): List[TAC] = {
     newMap()
     var paramList = List[TAC]()
     func match {
       case Func(returnType, ident, types, code) => {
         // PopParam
-        types.foreach{
-            case (t, paramName) => {
+        types.zipWithIndex.foreach{
+            case ((t, paramName), index) => {
               val paramReg = nextRegister()
               addNode(paramName, paramReg)
               addType(paramName, t)
-              paramList = paramList ++ List(PopParamTAC(t, paramReg))
+              paramList = paramList ++ List(PopParamTAC(t, paramReg, index))
               }
             }
         delegateASTNode(code) match {

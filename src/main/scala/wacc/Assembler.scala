@@ -3,6 +3,7 @@ package wacc
 import wacc.TAC._
 import wacc.AbstractSyntaxTree._
 import wacc.RegisterAllocator._
+import wacc.HardcodeFunctions._
 
 object Assembler {
 
@@ -285,148 +286,6 @@ object Assembler {
     }
   }
 
-  def translate_errOverflow(): List[String] = {
-    translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
-    translateBranchLink("", new BranchString("_prints")) ::
-    translateMove("", r0, new ImmediateInt(255)) ::
-    translateBranchLink("", new BranchString("exit")) :: List()
-  }
-
-  def translate_arrStoreB(): List[String] = {
-    translatePush("", List(lr)) :: 
-    translateCompare("", r10, new ImmediateInt(0)) ::
-    translateMove("", r1 , r10) ::
-    translateBranchLink("lt", new BranchString("_boundsCheck")) :: 
-    translateLdr("", lr, r3, new ImmediateInt(-4)) :: 
-    translateCompare("eq", r10, lr) ::
-    translateMove("ge", r1, r10) :: 
-    translateBranchLink("ge", new BranchString("_boundsCheck")) :: 
-    //translateStrb() :: 
-    translatePop("", List(pc)) :: List()
-  }
-
-
-
-  def translate_boundsCheck(): List[String] = {
-    translateLdr("", r0, r0, new LabelString(".L._boundsCheck_str_0")) :: 
-    translateBranchLink("", new BranchString("printf")) :: 
-    translateMove("", r0, new ImmediateInt(255)) :: 
-    translateBranchLink("", new BranchString("fflush")) :: 
-    translateMove("", r0, new ImmediateInt(255)) :: 
-    translateBranchLink("", new BranchString("exit")) :: List()
-  }
-
-  def translate_print(pType: String): List[String] = {
-    pType match {
-      case "_prints" => translate_prints()
-      case "_printi" => translate_printi()
-      case "_printc" => translate_printc()
-      case "_printb" => translate_printb()
-      case "_println" => translate_println()
-      case _ => translate_prints()
-    }
-  }
-
-  def translate_prints(): List[String] = {
-    val sLbl = new Label(".L._prints_str0")
-    translateTAC(DataSegmentTAC()) ++ 
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(4, sLbl)) ++
-    translateTAC(StringDefinitionTAC("%.*s", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++ 
-    translateTAC(Label("_prints")) ++
-    (translatePush("", List(lr)) ::
-    translateMove("", r2, r0) ::
-    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-    translateBranchLink("", new BranchString("printf")) ::
-    translateMove("", r0, new ImmediateInt(0)) ::
-    translateBranchLink("", new BranchString("fflush")) ::
-    translatePop("", List(pc)) :: List())
-  }
-
-  def translate_printc(): List[String] = {
-    val sLbl = new Label(".L._printc_str0")
-    translateTAC(DataSegmentTAC()) ++ 
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
-    translateTAC(StringDefinitionTAC("%c", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++ 
-    translateTAC(Label("_printc")) ++
-    (translatePush("", List(lr)) ::
-    translateMove("", r1, r0) ::
-    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-    translateBranchLink("", new BranchString("printf")) ::
-    translateMove("", r0, new ImmediateInt(0)) ::
-    translateBranchLink("", new BranchString("fflush")) ::
-    translatePop("", List(pc)) :: List())
-  }
-
-  def translate_printi(): List[String] = {
-    val sLbl = new Label(".L._printi_str0")
-    translateTAC(DataSegmentTAC()) ++ 
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
-    translateTAC(StringDefinitionTAC("%d", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++ 
-    translateTAC(Label("_printi")) ++
-    (translatePush("", List(lr)) ::
-    translateMove("", r1, r0) ::
-    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-    translateBranchLink("", new BranchString("printf")) ::
-    translateMove("", r0, new ImmediateInt(0)) ::
-    translateBranchLink("", new BranchString("fflush")) ::
-    translatePop("", List(pc)) :: List())
-  }
-
-  def translate_println(): List[String] = {
-    val sLbl = new Label(".L._println_str0")
-    translateTAC(DataSegmentTAC()) ++ 
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(0, sLbl)) ++
-    translateTAC(StringDefinitionTAC("", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++ 
-    translateTAC(Label("_println")) ++
-    (translatePush("", List(lr)) ::
-    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-    translateBranchLink("", new BranchString("puts")) ::
-    translateMove("", r0, new ImmediateInt(0)) ::
-    translateBranchLink("", new BranchString("fflush")) ::
-    translatePop("", List(pc)) :: List())
-  }
-
-  def translate_printb(): List[String] = {
-    val fLbl = new Label(".L._printb_str0")
-    val tLbl = new Label(".L._printb_str1")
-    val sLbl = new Label(".L._printb_str2")
-    
-    translateTAC(DataSegmentTAC()) ++
-    translateTAC(Comments("length of " + fLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(5, fLbl)) ++
-    translateTAC(StringDefinitionTAC("false", fLbl)) ++
-    translateTAC(Comments("length of " + tLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(4, tLbl)) ++
-    translateTAC(StringDefinitionTAC("true", tLbl)) ++ 
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(4, sLbl)) ++
-    translateTAC(StringDefinitionTAC("%.*s", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++ 
-    translateTAC(Label("_printb")) ++
-    (translatePush("", List(lr)) ::
-    translateCompare("", r0, new ImmediateInt(0)) ::
-    translateBranch("ne", ".L_printb0") ::
-    translateLdr("", r2, r0, new LabelString(fLbl.name)) ::
-    translateBranch("", ".L_printb1") ::
-    translateTAC(Label(".L_printb0"))) ++
-    (translateLdr("", r2, r0, new LabelString(tLbl.name)) ::
-    translateTAC(Label(".L_printb1"))) ++ 
-    ("ldr r1, [r2, #-4]" ::
-    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-    translateBranchLink("", new BranchString("printf")) ::
-    translateMove("", r0, new ImmediateInt(0)) ::
-    translateBranchLink("", new BranchString("fflush")) ::
-    translatePop("", List(pc)) :: List())
-  }
-
   def determineLdr(x: Int): Boolean = {
     if (x <= 255) {
       return false
@@ -489,6 +348,8 @@ object Assembler {
       case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
+      case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
+      case PopParamTAC(datatype, t1, index) => assemblePopParam(datatype, t1, index)
     }
   }
 
@@ -544,6 +405,29 @@ object Assembler {
       }
     }
   }
+
+  def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): List[String] = {
+    var output = List[String]()
+    // save arg registers on the stack
+    output = output ++ List(translatePush("", List(r0, r1, r2, r3)))
+    // move all the args in to arg registers
+    val regs = List(r0, r1, r2, r3)
+    args.slice(0, 4).zip(regs).foreach(elem => {
+      elem match {
+        case (arg, reg) => output = output ++ List(translateMove("", reg, translateRegister(arg)))
+      }
+    })
+    output = output ++ List(translateBranchLink("", new BranchString(lbl.name)))
+    // move the result into r12 before r0 is popped back
+    output = output ++ List(translateMove("", r12, r0))
+    // get previous registers from stack
+    output ++ List(translatePop("", List(r0, r1, r2, r3)))
+  }
+
+  def assemblePopParam(datatype: DeclarationType, t1: Operand, index: Int): List[String] = {
+    List()
+  }
+
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[String] = {
     translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) :: List()
   }
@@ -580,10 +464,21 @@ object Assembler {
   def translateBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
     operation match {
       case BinaryOpType.Add => {
-        translateAdd("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateAdd("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Sub => {
-        translateSub("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateSub("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+      }
+      case BinaryOpType.Mul => {
+        translateMul("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2)) :: List()
+      }
+      case BinaryOpType.Div => {
+        addEndFunc("_errDivZero", translate_errDivZero())
+        translateMove("", r4, translateOperand(op1)) ::
+        translateMove("", r1, translateOperand(op2)) ::
+        translateCompare("", r1, new ImmediateInt(0)) ::
+        translateBranchLink("eq", new BranchString("_errDivZero")) ::
+        translateBranchLink("", new BranchString("__aeabi_idivmod")) :: List()
       }
       case BinaryOpType.Eq => {
         translateMove("", translateRegister(res), new ImmediateInt(0)) ::
