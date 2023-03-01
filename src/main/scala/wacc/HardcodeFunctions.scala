@@ -5,6 +5,12 @@ import wacc.RegisterAllocator._
 import wacc.TAC._
 
 object HardcodeFunctions {
+
+  def translate_errDivZero(): List[String] = {
+    translateTAC(Label("_errDivZero"))
+    // TODO: implement hardcode function
+  }
+
   def translate_errOverflow(): List[String] = {
     translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
     translateBranchLink("", new BranchString("_prints")) ::
@@ -25,8 +31,6 @@ object HardcodeFunctions {
     translatePop("", List(pc)) :: List()
   }
 
-
-
   def translate_boundsCheck(): List[String] = {
     translateLdr("", r0, r0, new LabelString(".L._boundsCheck_str_0")) :: 
     translateBranchLink("", new BranchString("printf")) :: 
@@ -34,11 +38,6 @@ object HardcodeFunctions {
     translateBranchLink("", new BranchString("fflush")) :: 
     translateMove("", r0, new ImmediateInt(255)) :: 
     translateBranchLink("", new BranchString("exit")) :: List()
-  }
-
-  def translate_errDivZero(): List[String] = {
-    translateTAC(Label("_errDivZero"))
-    // TODO: implement hardcode function
   }
 
   def translate_print(pType: String): List[String] = {
@@ -150,5 +149,34 @@ object HardcodeFunctions {
     translateMove("", r0, new ImmediateInt(0)) ::
     translateBranchLink("", new BranchString("fflush")) ::
     translatePop("", List(pc)) :: List())
+  }
+
+  def translate_read(rType: String): List[String] = {
+    rType match {
+      case "_readi" => translate_readi()
+      case _ => translate_readi()
+    }
+  }
+
+  def translate_readi(): List[String] = {
+    List(
+    ".data",
+	  "@ length of .L._readi_str0",
+		".word 2",
+	  ".L._readi_str0:",
+		".asciz \"%d\"",
+	  ".text",
+	  "_readi:",
+		"@ R0 contains the \"original\" value of the destination of the read",
+		"push {lr}",
+		"@ allocate space on the stack to store the read and place the original value there",
+		"@ if scanf cannot read because of EOF, the read will appear to do nothing",
+		"str r0, [sp, #-4]! @ push {r0}",
+		"mov r1, sp",
+		"ldr r0, =.L._readi_str0",
+		"bl scanf",
+		"ldr r0, [sp, #0]",
+		"add sp, sp, #4",
+		"pop {pc}")
   }
 }
