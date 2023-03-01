@@ -316,6 +316,11 @@ object Assembler {
     translateBranchLink("", new BranchString("exit")) :: List()
   }
 
+  def translate_errDivZero(): List[String] = {
+    translateTAC(Label("_errDivZero"))
+    // TODO: implement hardcode function
+  }
+
   def translate_print(pType: String): List[String] = {
     pType match {
       case "_prints" => translate_prints()
@@ -612,6 +617,14 @@ object Assembler {
       }
       case BinaryOpType.Mul => {
         translateMul("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2)) :: List()
+      }
+      case BinaryOpType.Div => {
+        addEndFunc("_errDivZero", translate_errDivZero())
+        translateMove("", r4, translateOperand(op1)) ::
+        translateMove("", r1, translateOperand(op2)) ::
+        translateCompare("", r1, new ImmediateInt(0)) ::
+        translateBranchLink("eq", new BranchString("_errDivZero")) ::
+        translateBranchLink("", new BranchString("__aeabi_idivmod")) :: List()
       }
       case BinaryOpType.Eq => {
         translateMove("", translateRegister(res), new ImmediateInt(0)) ::
