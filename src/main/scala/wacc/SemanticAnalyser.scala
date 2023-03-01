@@ -48,21 +48,20 @@ object SemanticAnalyser {
 
   def lValType(lVal: LVal)(implicit scopeContext: ScopeContext): Either[List[String], DeclarationType] = lVal match {
     case PairElement(element, pair) => pairElementType(element) matchedWith List(lValType(pair))
-    case IdentLiteral(name) => scopeContext.findVar(name)
+    case lVal: IdentLiteral => scopeContext.findVar(lVal).map(_.declarationType)
     case ArrayElem(name, indices) => {
       val types = indices.map(returnType(_))
       if (types.exists((x) => x match {
         case Right(x) if x is Int_T => false
         case _ => true
       })) Left(List("Non-integer indices in array access."))
-      else simpleExpectation(
-        (input) => arrayNestedType(input(0), types.length)) matchedWith List(scopeContext.findVar(name)
+      else simpleExpectation((input) => arrayNestedType(input(0), types.length)) matchedWith
+        List(scopeContext.findVar(name).map(_.declarationType)
       )
     }
   }
 
   def verifyStatement(statement: Stat)(implicit scopeContext: ScopeContext): Either[List[String], ScopeContext] = {
-    statement.attachContext(scopeContext)
     statement match {
       // Make a new context from 'stat', and feed it to verifyStatement to verify 'stats'
       case StatList(stat :: stats) => verifyStatement(stat).map(verifyStatement(StatList(stats))(_)).joinRight
@@ -71,8 +70,7 @@ object SemanticAnalyser {
       case Declaration(dataType, ident, rValue) => {
         // Make sure rValue and dataType are a pair of (any) matching data types
         val matcher = TypeMatcher.identicalTypes(BaseType(Any_T)) withContext s"In variable declaration for '$ident'"
-        val maybeContext: Either[List[String], ScopeContext] = scopeContext.addVar(ident.name, dataType)
-        if(maybeContext.isRight) statement.attachContext(maybeContext.toOption.get)
+        val maybeContext: Either[List[String], ScopeContext] = scopeContext.addVar(ident, dataType)
 
         (matcher matchedWith List(Right(dataType), rValType(rValue)))
           // Drop the return type and replace it with the new context
@@ -100,7 +98,7 @@ object SemanticAnalyser {
       case Command(cmd, input) => {
         val expectation = cmd match {
           case Free => TypeMatcher.oneOf(List(PairType(Any_T, Any_T), ArrayType(Any_T)))
-          case Ret => scopeContext.expectedReturn
+          case Ret => scopeContext.expectedReturn()
           case Exit => TypeMatcher.oneOf(List(Int_T))
           case Print => (TypeMatcher.oneOf(List(Any_T)))
           case PrintLn => (TypeMatcher.oneOf(List(Any_T)))
@@ -134,7 +132,7 @@ object SemanticAnalyser {
     val initial: Either[List[String], ScopeContext] = Right(scopeContext.newScope(None_T))
     val functionScope = f.types.foldLeft(initial){ (scope, arg) =>
       scope match {
-        case Right(x) => x.addVar(arg._2.name, arg._1)
+        case Right(x) => x.addVar(arg._2, arg._1)
         case Left(_) => scope
       }
     }

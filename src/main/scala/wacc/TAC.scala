@@ -6,7 +6,17 @@ import wacc.AbstractSyntaxTree.CmdT.Cmd
 import wacc.AbstractSyntaxTree.DeclarationType
 
 object TAC {
-    sealed trait TAC
+
+  /* Quick and easy way to label data segments. Used in Label. */
+  private val assignmentList = collection.mutable.Map[String, Int]()
+
+  def getId(category: String): Int = {
+    val id = assignmentList.getOrElseUpdate(category, 0)
+    assignmentList.update(category, id + 1)
+    id
+  }
+
+  sealed trait TAC
 
   case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC {
     override def toString(): String = res + " = " + t1 + " " + op + " " + t2
@@ -39,7 +49,9 @@ object TAC {
   case class GOTO(label: Label) extends TAC {
     override def toString(): String = "goto: " + label.name
   }
-  case class Label(name: String = "label") extends TAC with Operand {
+
+  case class Label(var name: String = "label") extends TAC with Operand {
+    this.name = name + getId(name)
     override def toString(): String = name + ":"
   }
   case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
