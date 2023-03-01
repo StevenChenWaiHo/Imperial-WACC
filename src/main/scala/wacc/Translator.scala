@@ -189,10 +189,14 @@ object Translator {
 
   def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
     // TODO: Get datatype
-    val (pairRegList, pairReg) = delegateASTNode(lvalue)
-     // Should not add this register to Map as it might update
-    val dstReg = nextRegister()
-    (pairRegList ++ List(GetPairElem(null, pairReg, elem, dstReg)), dstReg)
+    delegateASTNode(lvalue) match {
+      case (pairRegList, pairReg) => {
+        // Should not add this register to Map as it might update
+        val dstReg = nextRegister()
+        (pairRegList ++ List(GetPairElem(findType(lvalue).get, pairReg, elem, dstReg)), dstReg)
+      }
+      case _ => (List(Label("Not translating PairElem")), null)
+    }
   }
 
   def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
