@@ -4,7 +4,7 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
-import wacc.Assembler.translateProgram
+import wacc.Assembler.assembleProgram
 import wacc.Parser.ProgramParser
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
@@ -54,7 +54,7 @@ object Main {
     tac.foreach(l => println(l))
 
     // Convert the IR to ARM
-    val result = translateProgram(tac)
+    val result = assembleProgram(tac)
     println("--- ARM ---")
     result.foreach(l => println(l))
     

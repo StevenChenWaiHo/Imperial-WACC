@@ -437,7 +437,7 @@ object Assembler {
     translateStr("", translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) :: List()
   }
 
-  def translateProgram(tacList: List[TAC]): List[String] = {
+  def assembleProgram(tacList: List[TAC]): List[String] = {
     var output = List[String]()
      tacList.foreach(tac => {
       output = output ++ translateTAC(tac)
