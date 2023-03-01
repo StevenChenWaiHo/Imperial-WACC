@@ -4,6 +4,7 @@ import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.CmdT.Cmd
 import wacc.AbstractSyntaxTree.DeclarationType
+import wacc.AbstractSyntaxTree.Expr
 import wacc.AbstractSyntaxTree.PairElemT
 
 object TAC {
@@ -103,6 +104,13 @@ object TAC {
   case class CreateArrayElem(elemType: DeclarationType, elemReg: TRegister) extends TAC
   //delegates an array with all of its elements
   case class CreateArray(elemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
+  
+  // StoreArrayElem
+  // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
+  case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[Expr], srcReg: TRegister) extends TAC
+  // GetArrayElem
+  // ldr dstReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
+  case class GetArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[Expr], dstReg: TRegister) extends TAC
 
   case class Comments(string: String) extends TAC {
     override def toString(): String = "@ " + string
