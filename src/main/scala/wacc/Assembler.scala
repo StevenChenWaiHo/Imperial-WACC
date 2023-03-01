@@ -1,100 +1,10 @@
 package wacc
 
 import wacc.TAC._
-
-import scala.collection.mutable.ListBuffer
+import wacc.AbstractSyntaxTree._
+import wacc.RegisterAllocator._
 
 object Assembler {
-  val stack = Array[Register]()
-  val memory = Array[Int]()
-
-  sealed trait Register {
-    def toEither(): ImmediateValueOrRegister = new ImmediateValueOrRegister(Left(this))
-  }
-
-  object r0 extends Register {
-    override def toString(): String = "r0"
-  }
-
-  object r1 extends Register {
-    override def toString(): String = "r1"
-  }
-
-  object r2 extends Register {
-    override def toString(): String = "r2"
-  }
-
-  object r3 extends Register {
-    override def toString(): String = "r3"
-  }
-
-  object r4 extends Register {
-    override def toString(): String = "r4"
-  }
-
-  object r5 extends Register {
-    override def toString(): String = "r5"
-  }
-
-  object r6 extends Register {
-    override def toString(): String = "r6"
-  }
-
-  object r7 extends Register {
-    override def toString(): String = "r7"
-  }
-
-  object r8 extends Register {
-    override def toString(): String = "r8"
-  }
-
-  object r9 extends Register {
-    override def toString(): String = "r9"
-  }
-
-  object r10 extends Register {
-    override def toString(): String = "r10"
-  }
-
-  object r11 extends Register {
-    override def toString(): String = "r11"
-  }
-
-  object r12 extends Register {
-    override def toString(): String = "r12"
-  }
-
-  object r13 extends Register {
-    override def toString(): String = "r13"
-  }
-
-  object r14 extends Register {
-    override def toString(): String = "r14"
-  }
-
-  object fp extends Register {
-    override def toString(): String = "fp"
-  }
-
-  object lr extends Register {
-    override def toString(): String = "lr"
-  }
-
-  object pc extends Register {
-    override def toString(): String = "pc"
-  }
-
-  object sp extends Register {
-    override def toString(): String = "sp"
-  }
-
-  val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 0, r2 -> 0, r3 -> 0, r4 -> 0, r5 -> 0, r6 -> 0,
-    r7 -> 0, r8 -> 0, r9 -> 0, r10 -> 0, r11 -> 0, r12 -> 0, r13 -> 0, r14 -> 0)
-
-  def value(): Unit = {
-    //TODO: implement register value func
-  }
-
   def push(register: Register): String = {
     "push {" + register.toString() + "}"
   }
@@ -108,16 +18,16 @@ object Assembler {
   }
 
   def movImm(registerDest: Register, operand: Int): Unit = {
-    listOfRegisters.updated(registerDest, operand)
+    //listOfRegisters.updated(registerDest, operand)
   }
 
   def store(registerDest: Register, registerSrc: Register, operand: Int = 0): Unit = {
-    val memoryLocation: Int = listOfRegisters(registerSrc) + operand
-    listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
+    //sval memoryLocation: Int = listOfRegisters(registerSrc) + operand
+    //listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
   }
 
-  def compare(registerDest: Register, registerSrc: Register): Boolean = {
-    listOfRegisters(registerDest) == listOfRegisters(registerSrc)
+  def compare(registerDest: Register, registerSrc: Register): Unit = {
+    //listOfRegisters(registerDest) == listOfRegisters(registerSrc)
   }
 
   def translateBeginEnd(stat: Stat, context: ScopeContext): List[String] = {
@@ -298,7 +208,7 @@ object Assembler {
     return "pop" + pushPopAssist(condition, registers)
   }
 
-  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]): String = {
+  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[LHSop, String]): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
       case Left(x) => {
@@ -311,14 +221,14 @@ object Assembler {
     return str
   }
 
-  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]): String = {
+  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
-    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand)) // TODO: change
   }
 
-  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: Either[Operand2, String]): String = {
+  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
-    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand))
   }
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand: Operand2): String = {
@@ -369,19 +279,19 @@ object Assembler {
     return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def CompareAssist(condition: String, register1: Register, operand: Operand2): String = {
+  def CompareAssist(condition: String, register1: Register, operand: LHSop): String = {
     return condition + " " + register1.toString + ", " + operand.toString
   }
 
-  def translateCompare(condition: String, register1: Register, operand: Operand2): String = {
+  def translateCompare(condition: String, register1: Register, operand: LHSop): String = {
     return "cmp" + CompareAssist(condition, register1, operand)
   }
 
-  def translateCompareNeg(condition: String, register1: Register, operand: Operand2): String = {
+  def translateCompareNeg(condition: String, register1: Register, operand: LHSop): String = {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
-  def translateMove(condition: String, dst: Register, operand: Operand2): String = {
+  def translateMove(condition: String, dst: LHSop, operand: LHSop): String = {
     "mov " + dst.toString + ", " + operand.toString()
   }
 
@@ -389,7 +299,7 @@ object Assembler {
     return "b" + condition + " " + operand
   }
 
-  def translateBranchLink(condition: String, operand: String): String = {
+  def translateBranchLink(condition: String, operand: LHSop): String = {
     return "bl" + condition + " " + operand
   }
 
@@ -431,21 +341,21 @@ object Assembler {
   }
 
   def translate_errOverflow(): List[String] = {
-    translateLdr("", r0, r0, Right("=.L._errOverflow_str0")) :: 
-    translateBranchLink("", "_prints") ::
-    translateMove("", r0, ImmediateValueOrRegister(Right(255))) ::
-    translateBranchLink("", "exit") :: List()
+    translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
+    translateBranchLink("", new BranchString("_prints")) ::
+    translateMove("", r0, new ImmediateInt(255)) ::
+    translateBranchLink("", new BranchString("exit")) :: List()
   }
 
   def translate_arrStoreB(): List[String] = {
     translatePush("", List(lr)) :: 
-    translateCompare("", r10, ImmediateValueOrRegister(Right(0))) ::
-    translateMove("", r1 , ImmediateValueOrRegister(Left(r10))) ::
-    translateBranchLink("lt", "_boundsCheck") :: 
-    translateLdr("", lr, r3, Left(ImmediateValueOrRegister(Right(-4)))) :: 
-    translateCompare("eq", r10, ImmediateValueOrRegister(Left(lr))) ::
-    translateMove("ge", r1, ImmediateValueOrRegister(Left(r10))) :: 
-    translateBranchLink("ge", "_boundsCheck") :: 
+    translateCompare("", r10, new ImmediateInt(0)) ::
+    translateMove("", r1 , r10) ::
+    translateBranchLink("lt", new BranchString("_boundsCheck")) :: 
+    translateLdr("", lr, r3, new ImmediateInt(-4)) :: 
+    translateCompare("eq", r10, lr) ::
+    translateMove("ge", r1, r10) :: 
+    translateBranchLink("ge", new BranchString("_boundsCheck")) :: 
     //translateStrb() :: 
     translatePop("", List(pc)) :: List()
   }
@@ -453,22 +363,22 @@ object Assembler {
 
 
   def translate_boundsCheck(): List[String] = {
-    translateLdr("", r0, r0, Right(".L._boundsCheck_str_0")) :: 
-    translateBranchLink("", "printf") :: 
-    translateMove("", r0, ImmediateValueOrRegister(Right(0))) :: 
-    translateBranchLink("", "fflush") :: 
-    translateMove("", r0, ImmediateValueOrRegister(Right(255))) :: 
-    translateBranchLink("", "exit") :: List()
+    translateLdr("", r0, r0, new LabelString(".L._boundsCheck_str_0")) :: 
+    translateBranchLink("", new BranchString("printf")) :: 
+    translateMove("", r0, new ImmediateInt(255)) :: 
+    translateBranchLink("", new BranchString("fflush")) :: 
+    translateMove("", r0, new ImmediateInt(255)) :: 
+    translateBranchLink("", new BranchString("exit")) :: List()
   }
 
   def translate_prints(): List[String] = {
     translatePush("", List(lr)) ::
-    translateMove("", r2, ImmediateValueOrRegister(Left(r0))) ::
-    translateLdr("", r1, r0, Left(ImmediateValueOrRegister(Right(-4)))) ::
-    translateLdr("", r0, r0, Right("=.L.prints_str_0")) ::
-    translateBranchLink("", "printf") ::
-    translateMove("", r0, ImmediateValueOrRegister(Right(0))) ::
-    translateBranchLink("", "fflush") ::
+    translateMove("", r2, r0) ::
+    translateLdr("", r1, r0, new ImmediateInt(-4)) ::
+    translateLdr("", r0, r0, new LabelString(".L.prints_str_0")) ::
+    translateBranchLink("", new BranchString("printf")) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translateBranchLink("", new BranchString("fflush")) ::
     translatePop("", List(pc)) :: List()
   }
 
@@ -485,112 +395,30 @@ object Assembler {
     }
   }
 
-  // TODO: move this in to register alloc
-  def translateRegister(treg: TRegister): Register = {
-    r8
+  sealed trait LHSop
+  class Register extends LHSop
+  class StackOffset(offset: Int) extends LHSop{
+    override def toString(): String = "STACK" + offset.toString()
   }
-
-  def translateOperand(op: Operand): ImmediateValueOrRegister = {
-    val regOrIm = op match {
-      case reg: TRegister => Left(translateRegister(reg))
-      case IntLiteralTAC(value) => Right(value)
-      case CharLiteralTAC(chr) => Right(chr.toInt)
-      case BoolLiteralTAC(b) => Right(b.compare(true))
-      case Label(name) => Right(999) // TODO: change to allow for labels
-      //case Label(name) => "=lbl"
+  class ImmediateInt(i: Int) extends LHSop {
+    override def toString(): String = "#" + i.toString()
+  }
+  class LabelString(name: String) extends LHSop {
+    override def toString(): String = "=" + name
+  }
+  class BranchString(name: String) extends LHSop {
+    override def toString(): String = name
+  }
+  
+  def translateOperand(op: Operand): LHSop = {
+    op match {
+      case reg: TRegister => translateRegister(reg)
+      case IntLiteralTAC(value) => new ImmediateInt(value)
+      case CharLiteralTAC(chr) => new ImmediateInt(chr.toInt)
+      case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true))
+      case Label(name) => new LabelString(name)
       case _ => null // TODO: this should not match
     }
-    new ImmediateValueOrRegister(regOrIm)
-  }
-
-
-  /* code: the resultant assembly code so far.
-     available: available general-purpose registers.
-     used: registers currently occupied.
-     inMemory: the location of in-scope stored TRegisters (the TRegister number is used internally to identify the value).
-     */
-  class AssemblerState(var code: ListBuffer[String], var available: ListBuffer[(TRegister, Register)],
-                       var used: ListBuffer[(TRegister, Register)], var inMemory: List[TRegister]) {
-
-    import AbstractSyntaxTree.BinaryOpType._
-
-    /* Push the least-recently-used register to the stack, freeing it */
-    //TODO: I think only r0-r7 can be pushed ("low registers" only)(?)
-
-    private def saveRegister = {
-      code = code.addOne(translatePush("", List(used.head._2)))
-      available = available ++ used.head
-      inMemory += used.head._1
-      used = used.tail
-      this
-    }
-
-    private def addInstruction(instr: String): AssemblerState = {
-      code = code.addOne(instr)
-      this
-    }
-
-    /* Get a guaranteed register. If 'target' already exists in memory or in the registers, returns a register
-     containing its value; otherwise returns a random unallocated register. */
-    private def getRegister(target: TRegister): (AssemblerState, Register) = {
-      /* Check currently-loaded registers */
-      val inReg = used.find(x => x._1 == target)
-      if (inReg.isDefined) return (this, inReg.get)
-
-      /* Free a register */
-      if (available.isEmpty) saveRegister
-
-      /* Check the stack */
-      val stackLocation: Int = inMemory.indexOf(target)
-      if (stackLocation != (-1)) {
-        if (stackLocation == inMemory.length - 1) {
-          /* Target is on the top of the stack: pop from the stack */
-          addInstruction(translatePop("", List(available.head)))
-          inMemory = inMemory.init
-          /*/* Correct the stack pointer */
-          val length = inMemory.length
-          inMemory = inMemory.reverse.dropWhile(_ == null).reverse */
-        }
-        /* Target is not on the top: load from the stack. TODO: 4 a is magic number (I don't remember if it's right) */
-        else addInstruction(translateLdr("", available.head, sp, ImmediateValueOrRegister(Right(4 * stackLocation))))
-        inMemory = inMemory.updated(stackLocation, null)
-      }
-      this
-    }
-
-    /* Converts Operands to Operand2s by assigning them registers.
-    * Could be delegated to a different class later if we want to use a fancier method. */
-    private def toOperand2(op: Operand) = op match {
-      case op: TRegister => ImmediateValueOrRegister(Left(getRegister(op)))
-      //TODO: It would be nice if ImmediateValueOrRegister could take non-integer constants (since everything in assembly is a number)
-      case anything => ImmediateValueOrRegister(Right(anything))
-      case _ => throw new NotImplementedError("this shouldn't happen (i think)")
-    }
-
-    private def translateBinOp(binOp: BinaryOpTAC): AssemblerState = {
-      val BinaryOpTAC(op, a1, b1, res1) = binOp
-      val (res2, a2, b2) =
-        (getRegister(res1.asInstanceOf(Register)), getRegister(a1.asInstanceOf(Register)), toOperand2(b1))
-
-      op match {
-        case Add => translateAdd(res2, a2, b2)
-        case _ => null
-      }
-
-      instructionTemplate(args)
-
-    }
-
-    private def translateOneTAC(tac: TAC): AssemblerState =
-      if (available.isEmpty)
-        pushOneToStack
-
-    translateOneTAC(tac)
-    addInstruction(translatePop("", List()))
-    else tac match {
-      case BinaryOpTAC(op, t1, t2, res) =
-    }
-
   }
 
   def translateTAC(tripleAddressCode: TAC): List[String] = {
@@ -722,21 +550,26 @@ object Assembler {
       }
       case BeginFuncTAC() => {
         translatePush("", List(fp, lr)) ::
-          translatePush("", List(r8, r10, r12)) ::
-          translateMove("", fp, sp.toEither()) :: List()
+        translatePush("", List(r8, r10, r12)) ::
+        translateMove("", fp, sp) :: List()
       }
       case EndFuncTAC() => {
-        translateMove("", r0, r0.toEither()) ::
-          translatePop("", List(r8, r10, r12)) ::
-          translatePop("", List(fp, pc)) :: List()
+        translateMove("", r0, new ImmediateInt(0)) ::
+        translatePop("", List(r8, r10, r12)) ::
+        translatePop("", List(fp, pc)) :: List()
       }
       case AssignmentTAC(operand, reg) => {
         translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
       }
-      case CommandTAC(cmd, operand) => {
+      case CommandTAC(cmd, operand, opType) => {
         if (cmd == CmdT.Exit) {
-          mov(r0, r0) :: // TODO: change from default r0
-            translateBranchLink("", "exit") :: List() // TODO: should not default to t0
+          translateMove("", r0, translateOperand(operand)) ::
+          translateBranchLink("", new BranchString("exit")) :: List() 
+        } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
+          // TODO: add check for operand type to print (string/char)
+          // TODO: Add the _prints function in at the end
+          translateMove("", r0, translateOperand(operand)) ::
+          translateBranchLink("", new BranchString("_prints")) :: List() 
         } else {
           List("Command not implemented")
         }
@@ -753,5 +586,9 @@ object Assembler {
       output = output ++ translateTAC(tac)
     })
     output
+  }
+
+  def translateComment(str: String) : List[String] = {
+    List("@ " + str)
   }
 }
