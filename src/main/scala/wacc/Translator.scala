@@ -50,7 +50,7 @@ object Translator {
     None
   }
 
-  def findType(expr: Expr): Option[DeclarationType] = {
+  def findType(expr: ASTNode): Option[DeclarationType] = {
     expr match {
       case IdentLiteral(name) => {
         // Returns type of ident
@@ -96,13 +96,14 @@ object Translator {
         }
       }
       // TODO: unsure if pair type is correct
-      case PairLiteral() => Some(PairType(BaseType(BaseT.Any_T), BaseType(BaseT.Any_T)))
+      case PairLiteral() => Some(BaseType(BaseT.None_T))
       case StringLiteral(x) => Some(BaseType(BaseT.String_T))
       case BoolLiteral(x) => Some(BaseType(BaseT.Bool_T))
       case CharLiteral(x) => Some(BaseType(BaseT.Char_T))
       case IntLiteral(x) => Some(BaseType(BaseT.Int_T))
+      case t: PairType => Some(t)
+      case _ => None
     }
-    
   }
 
   def addNode(node: ASTNode, reg: TRegister) = {
