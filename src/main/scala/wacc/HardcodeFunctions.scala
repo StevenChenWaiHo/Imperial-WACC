@@ -159,24 +159,26 @@ object HardcodeFunctions {
   }
 
   def translate_readi(): List[String] = {
+    val lbl = new Label(".L._readi_str0")
     List(
-    ".data",
-	  "@ length of .L._readi_str0",
-		".word 2",
-	  ".L._readi_str0:",
-		".asciz \"%d\"",
-	  ".text",
-	  "_readi:",
-		"@ R0 contains the \"original\" value of the destination of the read",
-		"push {lr}",
-		"@ allocate space on the stack to store the read and place the original value there",
-		"@ if scanf cannot read because of EOF, the read will appear to do nothing",
-		"str r0, [sp, #-4]! @ push {r0}",
-		"mov r1, sp",
-		"ldr r0, =.L._readi_str0",
-		"bl scanf",
-		"ldr r0, [sp, #0]",
-		"add sp, sp, #4",
-		"pop {pc}")
+      DataSegmentTAC(),
+      Comments("length of " + lbl.name),
+      StringLengthDefinitionTAC(2, lbl),
+      StringDefinitionTAC("\"d\"", lbl),
+      TextSegmentTAC(),
+      Label("_readi")).map(tac => translateTAC(tac)).flatten ++
+    List(
+      translatePush("", List(lr)),
+      //str r0, [sp, #-4]! @ push {r0}
+      translateStr("", r0, r0, new BranchString("[sp, #-4]!")), // TODO: change this to correct type
+			translateMove("", r1, sp),
+      translateLdr("", r0, null, new LabelString(lbl.name)),
+      translateBranchLink("", new BranchString("scanf")),
+		  translateLdr("", r0, null, new BranchString("[sp, #0]"))
+    ) ++
+    translateAdd("", Status(), sp, sp, new ImmediateInt(4)) ++
+    List(
+      translatePop("", List{pc})
+    )
   }
 }
