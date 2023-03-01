@@ -201,7 +201,7 @@ object Translator {
   def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
     delegateASTNode(IdentLiteral(name)) match {
       // Hopefully find the identifier in the map already
-      case (_, aReg) => {
+      case (_, arrReg) => {
         val is = ListBuffer[TAC]()
         val rs = ListBuffer[TRegister]()
         indices.foreach(i => delegateASTNode(i) match {
@@ -210,9 +210,10 @@ object Translator {
             rs.addOne(iReg)
           }
         })
-        val next = nextRegister()
-        (is.toList ++ List(AssignmentTAC(new ArrayElemTAC(aReg, rs.toList), next)), next)
+        val dstReg = nextRegister()
+        (is.toList ++ List(GetArrayElem(findType(indices.head).get, arrReg, rs.toList, dstReg)), dstReg)
       }
+      case _ => (List(Label("Not translating ArrayElem")), null)
     }
   }
 

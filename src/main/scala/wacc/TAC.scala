@@ -110,7 +110,7 @@ object TAC {
   case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[Expr], srcReg: TRegister) extends TAC
   // GetArrayElem
   // ldr dstReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
-  case class GetArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[Expr], dstReg: TRegister) extends TAC
+  case class GetArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister) extends TAC
 
   case class Comments(string: String) extends TAC {
     override def toString(): String = "@ " + string
