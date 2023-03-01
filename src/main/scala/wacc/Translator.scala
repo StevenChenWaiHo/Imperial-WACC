@@ -180,14 +180,15 @@ object Translator {
 
   def translateRead(lval: LVal): (List[TAC], TRegister) = {
     val (tacList, outReg) = delegateASTNode(lval)
-    (tacList ++ List(AssignmentTAC(new TRegister(998), outReg)), outReg)
+    val dataType = findType(lval).getOrElse(BaseType(BaseT.Any_T))
+    (tacList ++ List(ReadTAC(dataType, outReg)), outReg)
   }
 
   def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
     val (pairRegList, pairReg) = delegateASTNode(lvalue)
     val (fstType, sndType) = findType(lvalue) match {
         case Some(PairType(fstType, sndType)) => (fstType, sndType)
-        case None =>  (null, null)
+        case None =>  (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
     }
      // Should not add this register to Map as it might update
     val dstReg = nextRegister()
@@ -338,7 +339,7 @@ object Translator {
         val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
         val (fstType, sndType) = findType(lvalue) match {
           case Some(PairType(fstType, sndType)) => (fstType, sndType)
-          case None =>  (null, null)
+          case None =>  (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
         }
         val elemType = if (elem == PairElemT.Fst) fstType else sndType
         (rvalueList ++ lvalueList ++ List(StorePairElem(elemType, lvalueReg, elem, rvalueReg)), lvalueReg)

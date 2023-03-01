@@ -124,6 +124,8 @@ object TAC {
   // ldr dstReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
   case class GetArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister) extends TAC
 
+  case class ReadTAC(dataType: DeclarationType, readReg: TRegister) extends TAC
+
   case class Comments(string: String) extends TAC {
     override def toString(): String = "@ " + string
   }
