@@ -154,6 +154,7 @@ object HardcodeFunctions {
   def translate_read(rType: String): List[String] = {
     rType match {
       case "_readi" => translate_readi()
+      case "_readc" => translate_readc()
       case _ => translate_readi()
     }
   }
