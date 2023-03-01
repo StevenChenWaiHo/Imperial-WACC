@@ -1,7 +1,6 @@
 package wacc
 
 import scala.collection.mutable._
-import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree._
@@ -16,6 +15,7 @@ object Translator {
   private val regList = ListBuffer[TRegister]()
   private val strings = Map[String, Label]()
   private val dataList = ListBuffer[TAC]()
+  private var labelCount = 0
 
   def newMap(): Map[ASTNode, TRegister] = { 
     // Push scope on to stack when entering new context
@@ -120,6 +120,11 @@ object Translator {
     next
   }
 
+  def generateLabel(): Label = {
+    labelCount += 1
+    new Label(".L" + labelCount.toString())
+  }
+
   def delegateASTNode(node: ASTNode): (List[TAC], TRegister) = {
     // Check if ASTNode has already been calculated
     findNode(node) match {
@@ -220,9 +225,9 @@ object Translator {
     newMap()
     val (statList, statReg) = delegateASTNode(stat)
     popMap()
-    val startLabel = new Label("start")
-    val bodyLabel = new Label("body")
-    val endLabel = new Label("end")
+    val startLabel = generateLabel()
+    val bodyLabel = generateLabel()
+    val endLabel = generateLabel()
     (List(startLabel) ++ expList
       ++ List(IfTAC(expReg, bodyLabel), GOTO(endLabel), bodyLabel)
       ++ statList ++ List(GOTO(startLabel), endLabel), statReg)
@@ -252,8 +257,8 @@ object Translator {
     newMap()
     val (trueList, reg2) = delegateASTNode(stat1)
     popMap()
-    val l1 = new Label("true")
-    val l2 = new Label("false")
+    val l1 = generateLabel()
+    val l2 = generateLabel()
     (condList ++ List(IfTAC(reg1, l1)) ++ falseList ++ List(GOTO(l2), l1) ++ trueList ++ List(l2),
       null)
   }
