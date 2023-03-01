@@ -1,6 +1,7 @@
 package wacc
 
 import scala.collection.mutable._
+import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree._
@@ -15,7 +16,6 @@ object Translator {
   private val regList = ListBuffer[TRegister]()
   private val strings = Map[String, Label]()
   private val dataList = ListBuffer[TAC]()
-  private var labelCount = 0
 
   def newMap(): Map[ASTNode, TRegister] = { 
     // Push scope on to stack when entering new context
@@ -96,7 +96,7 @@ object Translator {
           }
         }
       }
-      case PairLiteral() => Some(BaseType(BaseT.None_T))
+      case PairLiteral() => Some(PairType(NestedPair(),NestedPair()))
       case StringLiteral(x) => Some(BaseType(BaseT.String_T))
       case BoolLiteral(x) => Some(BaseType(BaseT.Bool_T))
       case CharLiteral(x) => Some(BaseType(BaseT.Char_T))
@@ -118,11 +118,6 @@ object Translator {
     val next = new TRegister(regList.length)
     regList += next
     next
-  }
-
-  def generateLabel(): Label = {
-    labelCount += 1
-    new Label(".L" + labelCount.toString())
   }
 
   def delegateASTNode(node: ASTNode): (List[TAC], TRegister) = {
@@ -177,7 +172,7 @@ object Translator {
         })
       }
       case IdentLiteral(x) => return (List(), next)
-      //case PairLiteral(x) => new PairLiteralTAC(x)
+      case PairLiteral() => new PairLiteralTAC()
       //case ArrayLiteral(x) => translateArrayLiteral(x)
     }
     (List(AssignmentTAC(lhs, next)), next)
@@ -225,9 +220,9 @@ object Translator {
     newMap()
     val (statList, statReg) = delegateASTNode(stat)
     popMap()
-    val startLabel = generateLabel()
-    val bodyLabel = generateLabel()
-    val endLabel = generateLabel()
+    val startLabel = new Label("start")
+    val bodyLabel = new Label("body")
+    val endLabel = new Label("end")
     (List(startLabel) ++ expList
       ++ List(IfTAC(expReg, bodyLabel), GOTO(endLabel), bodyLabel)
       ++ statList ++ List(GOTO(startLabel), endLabel), statReg)
@@ -257,8 +252,8 @@ object Translator {
     newMap()
     val (trueList, reg2) = delegateASTNode(stat1)
     popMap()
-    val l1 = generateLabel()
-    val l2 = generateLabel()
+    val l1 = new Label("true")
+    val l2 = new Label("false")
     (condList ++ List(IfTAC(reg1, l1)) ++ falseList ++ List(GOTO(l2), l1) ++ trueList ++ List(l2),
       null)
   }
@@ -313,7 +308,12 @@ object Translator {
         }
           
         }
-      case _ => (List(Label("Not translating Pair Value")), null)
+      case PairLiteral() => {
+        val reg = nextRegister()
+        (List(AssignmentTAC(PairLiteralTAC(), reg)), reg)
+      }
+      case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
+      case t => print(t); (List(Label("Not translating Pair Value")), null)
     }
   }
 
