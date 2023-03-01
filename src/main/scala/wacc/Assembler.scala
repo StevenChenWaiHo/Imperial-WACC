@@ -471,112 +471,6 @@ object Assembler {
     //Push and pop might not be in right place
     //Algorithm for determining if ldr is needed
     tripleAddressCode match {
-      // case BinaryOpTAC(op, t1, t2, res) => {
-      //   op match {
-          // case BinaryOpType.Add => {
-          //   val destinationRegister: Register= translateOperand(res).left.getOrElse(r0)
-          //   var t1t: Either[Register, Int] = translateOperand(t1)
-          //   var t2t: Either[Register, Int] = translateOperand(t2)
-          //   strList = strList ++ List(translatePush("", List(r8)))
-          //   strList = strList ++ List(translatePop("", List(r8)))
-          //   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-          //   strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-          //   t1t match {
-          //     case Left(x) => {
-          //       t2t match {
-          //         case Right(x) => {
-          //           if (determineLdr(x)) {
-          //             strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
-          //             t2t = Left(r9)
-          //           }
-          //         }
-          //       }
-          //       strList = strList ++ List(translateAdd("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
-          //     }
-          //     case Right(x) => {
-          //       if (determineLdr(x)) {
-          //         strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
-          //       } else {
-          //         strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Right(x))))
-          //       }
-          //       strList = strList ++ List(translateAdd("", Status(), destinationRegister, r8, ImmediateValueOrRegister(t2t)))
-          //     }
-          //   }
-          //   strList = strList ++ List(translateBranchLink("vs", "_errOverflow"))
-          //   return strList
-          // }
-          /*
-          case BinaryOpType.Sub => {
-          val destinationRegister: Register = translateOperand(res)
-            var t1t: Either[Register, Int] = translateOperand(t1)
-            var t2t: Either[Register, Int] = translateOperand(t2)
-            strList = strList ++ List(translatePush("", List(r8)))
-            strList = strList ++ List(translatePop("", List(r8)))
-            strList = strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-            strList = strList ++ List(translateMove("", r8, translate))
-            t1t match {
-              case Left(x) => {
-                t2t match {
-                  case Right(x) => {
-                    if (determineLdr(x)) {
-                      strList = strList ++ List(translateLdr("", r9, r0, Right("=" + x)))
-                      t2t = Left(r9)
-                    }
-                  }
-                }
-                strList = strList ++ List(translateSub("", Status(), destinationRegister, x, ImmediateValueOrRegister(t2t)))
-              }
-              case Right(x) => {
-                if (determineLdr(x)) {
-                  strList = strList ++ List(translateLdr("", r8, r0, Right("=" + x)))
-                }
-                strList = strList ++ List(translateRsb("", Status(), destinationRegister, r8, ImmediateValueOrRegister(t2t)))
-              }
-            }
-            strList = strList ++ List(translateBranchLink("vs", "_errOverflow"))
-            return strList
-            strList = strList ++ List(translateSub(translateOperand(res), translateOperand(t1), translateOperand(t2)))
-          }
-          case BinaryOpType.Mul => {
-            strList ++ List(translateSmull(r8, translateOperand(res), translateOperand(t1), translateOperand(t2)))
-            strList ++ List(translateCompare("", r9, ArithmeticShiftRight(r8, Right(31))))
-            strList ++ List(translateBranchLink("ne", "_errOverflow"))
-          }
-          case BinaryOpType.Div => {
-            strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r8))))
-            strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
-            strList ++ List(translateMove("", r0, ImmediateRegister(translateOperand(t1))))
-            strList ++ List(translateMove("", r1, ImmediateRegister(translateOperand(t2))))
-            strList ++ List(translateCompare("", r1, ImmediateValueOrRegister(Right(0))))
-            strList ++ List(translateBranchLink("eq", "_errDivZero"))
-            strList ++ List(translateBranchLink("", "__aeabi_idivmod"))
-            strList ++ List(translateMove("", r12, ImmediateValueOrRegister(Left(r0))))
-            strList ++ List(translateMove("", r8, ImmediateValueOrRegister(Left(r12))))
-            strList ++ List(translatePush("", List(r8)))
-          }
-          */
-      //   }
-      // }
-      // case AssignmentTAC(t1, res) => {
-      //   t1 match {
-      //     case TRegisterNum(Num) => {
-      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Right(Num))))
-      //     }
-      //     case IdentLiteralTAC(name) => {
-      //       strList = strList ++ List(translateMove("", r8, nameToAddress(name)))
-      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(Left(r8))))
-      //     }
-      //     case IntLiteralTAC(value) => {
-      //       strList = strList ++ List(translateMove("", translateOperand(res), ImmediateValueOrRegister(value)))
-      //     }
-      //     case StringLiteralTAC(string) => {
-      //       strList = strList ++ List(translateLdr("", translateOperand(res), nameToLabel(string)))
-      //     }
-      //   }
-      // }
-      // case TAC.Label(name) => {
-      //   str = labelToCodeTable()
-      // }
       case Label(name) => translateLabel(name)
       case Comments(str) => List("@ " + str)
       case DataSegmentTAC() => List(".data")
@@ -614,6 +508,7 @@ object Assembler {
   }
 
   def translateIf(t1: Operand, goto: Label): List[String] = {
+    translateCompare("", translateOperand(t1), new ImmediateInt(1)) ::
     translateBranch("eq", goto.name) :: List()
   }
 
