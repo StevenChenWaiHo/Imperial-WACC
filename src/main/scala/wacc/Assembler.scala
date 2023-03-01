@@ -230,8 +230,26 @@ object Assembler {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
+  def checkMov(dst: LHSop, operand: LHSop): String = {
+    operand match {
+      case ImmediateInt(i) if (i >= 0x00 && i <= 0xFF) => { // magicNum, other cases apply
+        "mov " + dst.toString + ", " + operand.toString()
+      }
+      case _ => {
+        translateLdr("", dst, r0, operand)
+      }
+    }
+  }
+
   def translateMove(condition: String, dst: LHSop, operand: LHSop): String = {
-    "mov " + dst.toString + ", " + operand.toString()
+    operand match {
+      case _: ImmediateInt => {
+        checkMov(dst, operand)
+      }
+      case _ => "mov " + dst.toString + ", " + operand.toString()
+    }
+    
+    
   }
 
   def translateBranch(condition: String, operand: String): String = {
@@ -435,17 +453,17 @@ object Assembler {
   }
 
   sealed trait LHSop
-  class Register extends LHSop
-  class StackOffset(offset: Int) extends LHSop{
+  case class Register() extends LHSop
+  case class StackOffset(offset: Int) extends LHSop{
     override def toString(): String = "STACK" + offset.toString()
   }
-  class ImmediateInt(i: Int) extends LHSop {
+  case class ImmediateInt(i: Int) extends LHSop {
     override def toString(): String = "#" + i.toString()
   }
-  class LabelString(name: String) extends LHSop {
+  case class LabelString(name: String) extends LHSop {
     override def toString(): String = "=" + name
   }
-  class BranchString(name: String) extends LHSop {
+  case class BranchString(name: String) extends LHSop {
     override def toString(): String = name
   }
   
