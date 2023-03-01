@@ -95,7 +95,6 @@ object Translator {
           }
         }
       }
-      // TODO: unsure if pair type is correct
       case PairLiteral() => Some(BaseType(BaseT.None_T))
       case StringLiteral(x) => Some(BaseType(BaseT.String_T))
       case BoolLiteral(x) => Some(BaseType(BaseT.Bool_T))
@@ -137,7 +136,7 @@ object Translator {
           case StatList(stats) => translateStatList(stats)
           case Command(command, input) => translateCommand(command, input)
           case lit: Literal => translateLiteral(lit)
-          // TODO: check this if can be included in translate literal
+
           case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
           case ArrayElem(name, indices) => translateArrayElem(name, indices)
@@ -188,11 +187,15 @@ object Translator {
   }
 
   def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
-    // TODO: Get datatype
     val (pairRegList, pairReg) = delegateASTNode(lvalue)
+    val (fstType, sndType) = findType(lvalue) match {
+        case Some(PairType(fstType, sndType)) => (fstType, sndType)
+        case None =>  (null, null)
+    }
      // Should not add this register to Map as it might update
     val dstReg = nextRegister()
-    (pairRegList ++ List(GetPairElem(null, pairReg, elem, dstReg)), dstReg)
+    val elemType = if (elem == PairElemT.Fst) fstType else sndType
+    (pairRegList ++ List(GetPairElem(elemType, pairReg, elem, dstReg)), dstReg)
   }
 
   def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
@@ -359,10 +362,14 @@ object Translator {
   def translatePairElemAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
     val (rvalueList, rvalueReg) = delegateASTNode(rvalue)
     lvalue match {
-      // TODO: Get datatype
       case PairElement(elem, lvalue) => { 
         val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
-        (rvalueList ++ lvalueList ++ List(StorePairElem(null, lvalueReg, elem, rvalueReg)), lvalueReg)
+        val (fstType, sndType) = findType(lvalue) match {
+          case Some(PairType(fstType, sndType)) => (fstType, sndType)
+          case None =>  (null, null)
+        }
+        val elemType = if (elem == PairElemT.Fst) fstType else sndType
+        (rvalueList ++ lvalueList ++ List(StorePairElem(elemType, lvalueReg, elem, rvalueReg)), lvalueReg)
       }
       case _ => (List(Label("Not translating PairElem")), null)
     }
