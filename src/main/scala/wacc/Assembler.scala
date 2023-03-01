@@ -182,6 +182,7 @@ object Assembler {
 
   //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): List[String] = {
+    addEndFunc("_errOverflow", translate_errOverflow())
     "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ::
     translateBranchLink("vs", new BranchString("_errOverflow")) :: List()
   }
