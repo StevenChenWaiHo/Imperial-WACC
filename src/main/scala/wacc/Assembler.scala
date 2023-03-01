@@ -78,10 +78,10 @@ object Assembler {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "LSL " + x
+          sourceRegister + ", " + "ROR " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "LSL " + "#" + value
+          sourceRegister + ", " + "ROR " + "#" + value
         }
       }
     }
@@ -315,6 +315,7 @@ object Assembler {
       case "_prints" => translate_prints()
       case "_printi" => translate_printi()
       case "_printc" => translate_printc()
+      case "_printb" => translate_printb()
       case "_println" => translate_println()
       case _ => translate_prints()
     }
@@ -336,7 +337,7 @@ object Assembler {
     translateBranchLink("", new BranchString("fflush")) ::
     translatePop("", List(pc)) :: List())
   }
-  
+
   def translate_printc(): List[String] = {
     val sLbl = new Label(".L._printc_str0")
     translateTAC(DataSegmentTAC()) ++ 
@@ -382,6 +383,39 @@ object Assembler {
     (translatePush("", List(lr)) ::
     translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
     translateBranchLink("", new BranchString("puts")) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translateBranchLink("", new BranchString("fflush")) ::
+    translatePop("", List(pc)) :: List())
+  }
+
+  def translate_printb(): List[String] = {
+    val fLbl = new Label(".L._printb_str0")
+    val tLbl = new Label(".L._printb_str1")
+    val sLbl = new Label(".L._printb_str2")
+    
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + fLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(5, fLbl)) ++
+    translateTAC(StringDefinitionTAC("false", fLbl)) ++
+    translateTAC(Comments("length of " + tLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(4, tLbl)) ++
+    translateTAC(StringDefinitionTAC("true", tLbl)) ++ 
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(4, sLbl)) ++
+    translateTAC(StringDefinitionTAC("%.*s", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++ 
+    translateTAC(Label("_printb")) ++
+    (translatePush("", List(lr)) ::
+    translateCompare("", r0, new ImmediateInt(0)) ::
+    translateBranch("ne", ".L_printb0") ::
+    translateLdr("", r2, r0, new LabelString(fLbl.name)) ::
+    translateBranch("", sLbl.name) ::
+    translateTAC(Label("_printb0"))) ++
+    (translateLdr("", r2, r0, new LabelString(tLbl.name)) ::
+    translateTAC(Label("_printb1"))) ++ 
+    ("ldr r1, [r2, #-4]" ::
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
+    translateBranchLink("", new BranchString("printf")) ::
     translateMove("", r0, new ImmediateInt(0)) ::
     translateBranchLink("", new BranchString("fflush")) ::
     translatePop("", List(pc)) :: List())
