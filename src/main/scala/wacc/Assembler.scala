@@ -6,6 +6,20 @@ import wacc.RegisterAllocator._
 
 object Assembler {
 
+  val endFuncs = collection.mutable.Map[String, List[String]]()
+
+  def addEndFunc(name: String, code: List[String]) = {
+    if (!endFuncs.contains(name)) {
+      endFuncs.addOne(name, "" :: code)
+    }
+  }
+
+  def endFuncsToList(): List[String] = {
+    endFuncs.toList.map(entry => entry match {
+      case (name, code) => code
+    }).flatten
+  }
+
   sealed trait Operand2
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends Operand2 {
     @Override
@@ -147,7 +161,7 @@ object Assembler {
 
   def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
-    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, Left(operand)) // TODO: change
+    return "ldr" + condition + " " + destinationRegister.toString + ", " + operand
   }
 
   def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
@@ -296,15 +310,58 @@ object Assembler {
     translateBranchLink("", new BranchString("exit")) :: List()
   }
 
+  def translate_print(pType: String): List[String] = {
+    pType match {
+      case "_prints" => translate_prints()
+      case "_printi" => translate_printi()
+      case "_println" => translate_println()
+      case _ => translate_prints()
+    }
+  }
+
   def translate_prints(): List[String] = {
-    translatePush("", List(lr)) ::
+    translateTAC(Label("_printi")) ++
+    (translatePush("", List(lr)) ::
     translateMove("", r2, r0) ::
     translateLdr("", r1, r0, new ImmediateInt(-4)) ::
     translateLdr("", r0, r0, new LabelString(".L.prints_str_0")) ::
     translateBranchLink("", new BranchString("printf")) ::
     translateMove("", r0, new ImmediateInt(0)) ::
     translateBranchLink("", new BranchString("fflush")) ::
-    translatePop("", List(pc)) :: List()
+    translatePop("", List(pc)) :: List())
+  }
+
+  def translate_printi(): List[String] = {
+    val sLbl = new Label(".L._printi_str0")
+    translateTAC(DataSegmentTAC()) ++ 
+    translateTAC(Comments("length of .L._printi_str0")) ++
+    translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
+    translateTAC(StringDefinitionTAC("%d", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++ 
+    translateTAC(Label("_printi")) ++
+    (translatePush("", List(lr)) ::
+    translateMove("", r1, r0) ::
+    translateLdr("", r0, r0, new LabelString(".L.printi_str_0")) ::
+    translateBranchLink("", new BranchString("printf")) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translateBranchLink("", new BranchString("fflush")) ::
+    translatePop("", List(pc)) :: List())
+  }
+
+  def translate_println(): List[String] = {
+    val sLbl = new Label(".L._println_str0")
+    translateTAC(DataSegmentTAC()) ++ 
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(0, sLbl)) ++
+    translateTAC(StringDefinitionTAC("", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++ 
+    translateTAC(Label("_println")) ++
+    (translatePush("", List(lr)) ::
+    translateLdr("", r0, r0, new LabelString(".L.println_str_0")) ::
+    translateBranchLink("", new BranchString("puts")) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
+    translateBranchLink("", new BranchString("fflush")) ::
+    translatePop("", List(pc)) :: List())
   }
 
   def determineLdr(x: Int): Boolean = {
@@ -476,7 +533,7 @@ object Assembler {
      tacList.foreach(tac => {
       output = output ++ translateTAC(tac)
     })
-    output
+    output ++ endFuncsToList()
   }
 
   def translateBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
@@ -533,8 +590,10 @@ object Assembler {
         case NestedPair() => "_printi"
         case PairType(fstType, sndType) => "_printi"
       }
+      addEndFunc(bl, translate_print(bl))
       var listEnd = List[String]()
       if (cmd == CmdT.PrintLn) {
+        addEndFunc("_println", translate_print("_println"))
         listEnd = translateBranchLink("", new BranchString("_println")) :: List() 
       }
       // TODO: Add the _prints function in at the end

@@ -53,7 +53,7 @@ object TAC {
   }
 
   case class Label(var name: String = "label") extends TAC with Operand {
-    this.name = name + getId(name)
+    this.name = name // TODO: change to include id but only in some cases
     override def toString(): String = name + ":"
   }
 
