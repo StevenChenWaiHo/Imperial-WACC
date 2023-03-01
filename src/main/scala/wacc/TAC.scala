@@ -32,7 +32,7 @@ object TAC {
   }
   case class CommandTAC(cmd: Cmd, t1: Operand, opType: DeclarationType) extends TAC
   case class PushParamTAC(t1: Operand) extends TAC
-  case class PopParamTAC(datatype: DeclarationType, t1: TRegister) extends TAC
+  case class PopParamTAC(datatype: DeclarationType, t1: TRegister, index: Int) extends TAC
   case class CallTAC(lbl: Label, args: List[TRegister], dstReg: TRegister) extends TAC 
   case class BeginFuncTAC() extends TAC
   case class EndFuncTAC() extends TAC

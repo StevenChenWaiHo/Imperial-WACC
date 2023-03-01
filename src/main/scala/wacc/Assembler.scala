@@ -547,7 +547,19 @@ object Assembler {
   }
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): List[String] = {
-    translateBranchLink("", new BranchString(lbl.name)) :: List()
+    var output = List[String]()
+    // save arg registers on the stack
+    output = output ++ List(translatePush("", List(r0, r1, r2, r3)))
+    // move all the args in to arg registers
+    val regs = List(r0, r1, r2, r3)
+    args.slice(0, 4).zip(regs).foreach(elem => {
+      elem match {
+        case (arg, reg) => output = output ++ List(translateMove("", reg, translateRegister(arg)))
+      }
+    })
+    output = output ++ List(translateBranchLink("", new BranchString(lbl.name)))
+    // get previous registers from stack
+    output ++ List(translatePop("", List(r0, r1, r2, r3)))
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[String] = {
