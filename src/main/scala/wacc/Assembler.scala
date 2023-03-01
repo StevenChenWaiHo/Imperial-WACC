@@ -519,7 +519,7 @@ object Assembler {
       // case TAC.Label(name) => {
       //   str = labelToCodeTable()
       // }
-      case Label(name) => List(name + ":")
+      case Label(name) => translateLabel(name)
       case Comments(str) => List("@ " + str)
       case DataSegmentTAC() => List(".data")
       case TextSegmentTAC() => List(".text")
@@ -539,6 +539,14 @@ object Assembler {
       output = output ++ translateTAC(tac)
     })
     output ++ endFuncsToList()
+  }
+
+  def translateLabel(name: String): List[String] = {
+    if (name == "main") {
+      List(".global main", name + ":")
+    } else {
+      List(name + ":")
+    }
   }
 
   def translateBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
