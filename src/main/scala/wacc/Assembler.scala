@@ -502,4 +502,8 @@ object Assembler {
     })
     output
   }
+
+  def translateComment(str: String) : List[String] = {
+    List("@ " + str)
+  }
 }
