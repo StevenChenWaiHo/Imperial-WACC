@@ -5,7 +5,6 @@ import wacc.TAC._
 import wacc.Assembler.ImmediateValueOrRegister
 
 object RegisterAllocator {
-  //also in assembler
 
   class Register {
     def toEither(): ImmediateValueOrRegister = {

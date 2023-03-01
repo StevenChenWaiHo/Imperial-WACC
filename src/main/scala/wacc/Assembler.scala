@@ -228,9 +228,6 @@ object Assembler {
 
   //TODO: implement other commands
   val OperandToLiteral = Map[TAC.Operand, Either[String, Either[Register, Int]]]()
-  def getRegister(TACRegister: TRegister): Register = {
-    return r0
-  }
   
   def translateOperand2(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
     if (!(!OperandToLiteral.contains(operand))) {
