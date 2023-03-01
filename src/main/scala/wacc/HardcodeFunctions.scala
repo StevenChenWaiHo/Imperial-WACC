@@ -12,10 +12,12 @@ object HardcodeFunctions {
   }
 
   def translate_errOverflow(): List[String] = {
-    translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
-    translateBranchLink("", new BranchString("_prints")) ::
-    translateMove("", r0, new ImmediateInt(255)) ::
-    translateBranchLink("", new BranchString("exit")) :: List()
+    // TODO: implement hardcode function
+    // translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
+    // translateBranchLink("", new BranchString("_prints")) ::
+    // translateMove("", r0, new ImmediateInt(255)) ::
+    // translateBranchLink("", new BranchString("exit")) :: List()
+    List("_errOverflow:")
   }
 
   def translate_arrStoreB(): List[String] = {
@@ -176,7 +178,7 @@ object HardcodeFunctions {
       translateBranchLink("", new BranchString("scanf")),
 		  translateLdr("", r0, sp, new ImmediateInt(0))
     ) ++
-    translateAdd("", Status(), sp, sp, new ImmediateInt(4)) ++
+    translateAdd("", None(), sp, sp, new ImmediateInt(4)) ++
     List(
       translatePop("", List{pc})
     )
@@ -199,7 +201,7 @@ object HardcodeFunctions {
       translateBranchLink("", new BranchString("scanf")),
 		  translateLdr("sb", r0, sp, new ImmediateInt(0))
     ) ++
-    translateAdd("", Status(), sp, sp, new ImmediateInt(1)) ++
+    translateAdd("", None(), sp, sp, new ImmediateInt(1)) ++
     List(
       translatePop("", List{pc})
     )
