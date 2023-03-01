@@ -78,10 +78,10 @@ object Assembler {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "LSL " + x
+          sourceRegister + ", " + "ROR " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "LSL " + "#" + value
+          sourceRegister + ", " + "ROR " + "#" + value
         }
       }
     }
