@@ -170,12 +170,11 @@ object HardcodeFunctions {
       Label("_readi")).map(tac => translateTAC(tac)).flatten ++
     List(
       translatePush("", List(lr)),
-      //str r0, [sp, #-4]! @ push {r0}
-      translateStr("", r0, r0, new BranchString("[sp, #-4]!")), // TODO: change this to correct type
+      translateStr("", r0, sp, new ImmediateInt(-4)),
 			translateMove("", r1, sp),
       translateLdr("", r0, null, new LabelString(lbl.name)),
       translateBranchLink("", new BranchString("scanf")),
-		  translateLdr("", r0, null, new BranchString("[sp, #0]"))
+		  translateLdr("", r0, sp, new ImmediateInt(0))
     ) ++
     translateAdd("", Status(), sp, sp, new ImmediateInt(4)) ++
     List(
@@ -194,11 +193,11 @@ object HardcodeFunctions {
       Label("_readc")).map(tac => translateTAC(tac)).flatten ++
     List(
       translatePush("", List(lr)),
-      translateStr("b", r0, r0, new BranchString("[sp, #-1]!")),
+      translateStr("b", r0, sp, new ImmediateInt(-1)),
 			translateMove("", r1, sp),
       translateLdr("", r0, null, new LabelString(lbl.name)),
       translateBranchLink("", new BranchString("scanf")),
-		  translateLdr("sb", r0, null, new BranchString("[sp, #0]"))
+		  translateLdr("sb", r0, sp, new ImmediateInt(0))
     ) ++
     translateAdd("", Status(), sp, sp, new ImmediateInt(1)) ++
     List(
