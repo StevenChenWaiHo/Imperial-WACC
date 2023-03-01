@@ -486,6 +486,7 @@ object Assembler {
       case GOTO(label) => translateGOTO(label)
       case CreatePairElem(pairElemType, pairPos, srcReg) => assemblePairElem(pairElemType, pairPos, srcReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, dstReg) => assemblePair(fstType, sndType, dstReg)
+      case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
     }
   }
 
@@ -520,6 +521,14 @@ object Assembler {
     translateMove("", r12, r0) ::
     translateStr("", r8, r12, new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
     translatePush("", List(r12)) :: List()
+  }
+
+  def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): List[String] = {
+    op match {
+      case UnaryOpType.Neg => {
+        translateMul("", None(), translateRegister(res), translateOperand(t1), new ImmediateInt(-1)) :: List()
+      }
+    }
   }
 
   def translateProgram(tacList: List[TAC]): List[String] = {
