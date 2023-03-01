@@ -330,19 +330,19 @@ object Assembler {
     //Push and pop might not be in right place
     //Algorithm for determining if ldr is needed
     tripleAddressCode match {
-      case Label(name) => translateLabel(name)
+      case Label(name) => assembleLabel(name)
       case Comments(str) => List("@ " + str)
       case DataSegmentTAC() => List(".data")
       case TextSegmentTAC() => List(".text")
-      case StringLengthDefinitionTAC(len, lbl) => translateStringLengthDef(len, lbl)
-      case StringDefinitionTAC(str, lbl) => translateStringDef(str, lbl)
-      case BeginFuncTAC() => translateBeginFunc()
-      case EndFuncTAC() => translateEndFunc()
-      case AssignmentTAC(operand, reg) => translateAssignment(operand, reg)
-      case CommandTAC(cmd, operand, opType) => translateCommand(cmd, operand, opType)
-      case BinaryOpTAC(operation, op1, op2, res) => translateBinOp(operation, op1, op2, res)
-      case IfTAC(t1, goto) => translateIf(t1, goto)
-      case GOTO(label) => translateGOTO(label)
+      case StringLengthDefinitionTAC(len, lbl) => assembleStringLengthDef(len, lbl)
+      case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
+      case BeginFuncTAC() => assembleBeginFunc()
+      case EndFuncTAC() => assembleEndFunc()
+      case AssignmentTAC(operand, reg) => assembleAssignment(operand, reg)
+      case CommandTAC(cmd, operand, opType) => assembleCommand(cmd, operand, opType)
+      case BinaryOpTAC(operation, op1, op2, res) => assembleBinOp(operation, op1, op2, res)
+      case IfTAC(t1, goto) => assembleIf(t1, goto)
+      case GOTO(label) => assembleGOTO(label)
       case CreatePairElem(pairElemType, pairPos, srcReg) => assemblePairElem(pairElemType, pairPos, srcReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, dstReg) => assemblePair(fstType, sndType, dstReg)
       case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
@@ -444,7 +444,7 @@ object Assembler {
     output ++ endFuncsToList()
   }
 
-  def translateLabel(name: String): List[String] = {
+  def assembleLabel(name: String): List[String] = {
     if (name == "main") {
       List(".global main", name + ":")
     } else {
@@ -452,16 +452,16 @@ object Assembler {
     }
   }
 
-  def translateGOTO(label: Label): List[String] = {
+  def assembleGOTO(label: Label): List[String] = {
     translateBranch("", label.name) :: List()
   }
 
-  def translateIf(t1: Operand, goto: Label): List[String] = {
+  def assembleIf(t1: Operand, goto: Label): List[String] = {
     translateCompare("", translateOperand(t1), new ImmediateInt(1)) ::
     translateBranch("eq", goto.name) :: List()
   }
 
-  def translateBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
+  def assembleBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister) = {
     operation match {
       case BinaryOpType.Add => {
         translateAdd("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
@@ -522,28 +522,28 @@ object Assembler {
     }
   }
 
-  def translateStringLengthDef(len: Int, lbl: Label) = {
+  def assembleStringLengthDef(len: Int, lbl: Label) = {
     List(".word " + len.toString())
   }
 
-  def translateStringDef(str: String, lbl: Label) = {
+  def assembleStringDef(str: String, lbl: Label) = {
     translateTAC(lbl) ++
     List(".asciz \"" + str + "\"")
   }
   
-  def translateBeginFunc() = {
+  def assembleBeginFunc() = {
     translatePush("", List(fp, lr)) ::
     translatePush("", List(r8, r10, r12)) ::
     translateMove("", fp, sp) :: List()
   }
 
-  def translateEndFunc() = {
+  def assembleEndFunc() = {
     translateMove("", r0, new ImmediateInt(0)) ::
     translatePop("", List(r8, r10, r12)) ::
     translatePop("", List(fp, pc)) :: List()
   }
 
-  def translateAssignment(operand: Operand, reg: TRegister) = {
+  def assembleAssignment(operand: Operand, reg: TRegister) = {
     operand match {
       case Label(name) => translateLdr("", translateRegister(reg), r0, translateOperand(operand)) :: List()
       case _=> translateMove("", translateRegister(reg), translateOperand(operand)) :: List()
@@ -551,7 +551,7 @@ object Assembler {
     
   }
 
-  def translateCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType) = {
+  def assembleCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType) = {
     if (cmd == CmdT.Exit) {
       translateMove("", r0, translateOperand(operand)) ::
       translateBranchLink("", new BranchString("exit")) :: List() 
