@@ -10,6 +10,7 @@ import wacc.AbstractSyntaxTree.BaseT
 object Translator {
 
   private val scopes = ListBuffer[Map[ASTNode, TRegister]]()
+  private val typeMaps = ListBuffer[Map[String, DeclarationType]]()
   private val regCountStack = Stack[Int]()
   private val regList = ListBuffer[TRegister]()
   private val strings = Map[String, Label]()
@@ -19,6 +20,9 @@ object Translator {
     // Push scope on to stack when entering new context
     val map = Map[ASTNode, TRegister]()
     scopes.addOne(map)
+    // Do the same for the map of ident->type
+    val typeMap = Map[String, DeclarationType]()
+    typeMaps.addOne(typeMap)
     // Push the current highest register for use later
     regCountStack.push(regList.length)
     map
@@ -27,6 +31,7 @@ object Translator {
   def popMap(): Int = {
     // Pop scope off the stack when exiting a context
     scopes.remove(scopes.length - 1)
+    typeMaps.remove(typeMaps.length - 1)
     // Remove the registers only used within that context
     val oldLength = regCountStack.pop()
     regList.remove(oldLength, regList.length - oldLength)
@@ -45,8 +50,68 @@ object Translator {
     None
   }
 
+  def findType(expr: ASTNode): Option[DeclarationType] = {
+    expr match {
+      case IdentLiteral(name) => {
+        // Returns type of ident
+        typeMaps.reverse.foreach(m => {
+          m.get(name) match {
+            case Some(x) => return Some(x)
+            case _ =>
+          }
+        })
+        None
+      }
+      case ArrayElem(name, indices) => {
+        if (indices.length == 0) {
+          Some(ArrayType(BaseType(BaseT.Any_T)))
+        } else {
+          findType(indices.head)
+        }
+      }
+      case UnaryOp(op, expr) => {
+        // match based on op
+        op match {
+          case UnaryOpType.Chr => {
+            Some(BaseType(BaseT.Char_T))
+          }
+          case UnaryOpType.Len | UnaryOpType.Neg | UnaryOpType.Ord => {
+            Some(BaseType(BaseT.Int_T))
+          }
+          case UnaryOpType.Not => {
+            // Assuming only booleans can be notted
+            Some(BaseType(BaseT.Bool_T))
+          }
+        }
+      }
+      case BinaryOp(op, expr1, expr2) => {
+        op match {
+          case BinaryOpType.Add | BinaryOpType.Div | 
+            BinaryOpType.Mod | BinaryOpType.Mul | BinaryOpType.Sub => {
+              Some(BaseType(BaseT.Int_T))
+          }
+          case _ => {
+            Some(BaseType(BaseT.Bool_T))
+          }
+        }
+      }
+      // TODO: unsure if pair type is correct
+      case PairLiteral() => Some(BaseType(BaseT.None_T))
+      case StringLiteral(x) => Some(BaseType(BaseT.String_T))
+      case BoolLiteral(x) => Some(BaseType(BaseT.Bool_T))
+      case CharLiteral(x) => Some(BaseType(BaseT.Char_T))
+      case IntLiteral(x) => Some(BaseType(BaseT.Int_T))
+      case t: PairType => Some(t)
+      case _ => None
+    }
+  }
+
   def addNode(node: ASTNode, reg: TRegister) = {
     scopes.last.addOne(node, reg)
+  }
+  
+  def addType(ident: IdentLiteral, bType: DeclarationType) = {
+    typeMaps.last.addOne(ident.name, bType)
   }
 
   def nextRegister(): TRegister = {
@@ -215,6 +280,7 @@ object Translator {
   }
 
   def translateDeclaration(dataType: DeclarationType, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
+    addType(ident, dataType)
     dataType match {
       case BaseType(baseType) => translateBaseDeclaration(baseType, ident, rvalue)
       case PairType(fstType, sndType) => translatePairDeclaration(fstType, sndType, ident, rvalue)
@@ -376,7 +442,7 @@ object Translator {
   def translateCommand(cmd : AbstractSyntaxTree.CmdT.Cmd, expr : AbstractSyntaxTree.Expr) : (List[TAC], TRegister) = {
     delegateASTNode(expr) match {
       case (eList, eReg) => {
-        (eList ++ List(CommandTAC(cmd, eReg)), null)
+        (eList ++ List(CommandTAC(cmd, eReg, findType(expr).getOrElse(BaseType(BaseT.Any_T)))), null)
       }
     }
   }
