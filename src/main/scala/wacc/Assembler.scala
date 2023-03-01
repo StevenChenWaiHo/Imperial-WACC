@@ -352,6 +352,7 @@ object Assembler {
       case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
       case PopParamTAC(datatype, t1, index) => List()
       case PushParamTAC(op) => List()
+      case ReadTAC(dataType, readReg) => assembleRead(dataType, readReg)
     }
   }
 
@@ -406,6 +407,23 @@ object Assembler {
         translateLdr("", translateRegister(res), r0, translateOperand(t1)) :: List()
       }
     }
+  }
+
+  def assembleRead(datatype: DeclarationType, readReg: TRegister): List[String] = {
+    val bl = datatype match {
+      case BaseType(baseType) => {
+        baseType match {
+          case BaseT.Int_T => "_readi"
+          case BaseT.Char_T => "_readc"
+          case BaseT.String_T => "_reads"
+          case BaseT.Bool_T => "_readb"
+          case _ => "_readi"
+        }
+      }
+      case _ => "_readi"
+    }
+    addEndFunc(bl, translate_read(bl))
+    List(translateBranchLink("", new BranchString(bl)))
   }
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): List[String] = {
