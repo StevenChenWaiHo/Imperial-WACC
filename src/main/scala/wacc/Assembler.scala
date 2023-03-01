@@ -1,100 +1,10 @@
 package wacc
 
 import wacc.TAC._
-
-import scala.collection.mutable.ListBuffer
+import wacc.AbstractSyntaxTree._
+import wacc.RegisterAllocator._
 
 object Assembler {
-  val stack = Array[Register]()
-  val memory = Array[Int]()
-
-  sealed trait Register {
-    def toEither(): ImmediateValueOrRegister = new ImmediateValueOrRegister(Left(this))
-  }
-
-  object r0 extends Register {
-    override def toString(): String = "r0"
-  }
-
-  object r1 extends Register {
-    override def toString(): String = "r1"
-  }
-
-  object r2 extends Register {
-    override def toString(): String = "r2"
-  }
-
-  object r3 extends Register {
-    override def toString(): String = "r3"
-  }
-
-  object r4 extends Register {
-    override def toString(): String = "r4"
-  }
-
-  object r5 extends Register {
-    override def toString(): String = "r5"
-  }
-
-  object r6 extends Register {
-    override def toString(): String = "r6"
-  }
-
-  object r7 extends Register {
-    override def toString(): String = "r7"
-  }
-
-  object r8 extends Register {
-    override def toString(): String = "r8"
-  }
-
-  object r9 extends Register {
-    override def toString(): String = "r9"
-  }
-
-  object r10 extends Register {
-    override def toString(): String = "r10"
-  }
-
-  object r11 extends Register {
-    override def toString(): String = "r11"
-  }
-
-  object r12 extends Register {
-    override def toString(): String = "r12"
-  }
-
-  object r13 extends Register {
-    override def toString(): String = "r13"
-  }
-
-  object r14 extends Register {
-    override def toString(): String = "r14"
-  }
-
-  object fp extends Register {
-    override def toString(): String = "fp"
-  }
-
-  object lr extends Register {
-    override def toString(): String = "lr"
-  }
-
-  object pc extends Register {
-    override def toString(): String = "pc"
-  }
-
-  object sp extends Register {
-    override def toString(): String = "sp"
-  }
-
-  val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 0, r2 -> 0, r3 -> 0, r4 -> 0, r5 -> 0, r6 -> 0,
-    r7 -> 0, r8 -> 0, r9 -> 0, r10 -> 0, r11 -> 0, r12 -> 0, r13 -> 0, r14 -> 0)
-
-  def value(): Unit = {
-    //TODO: implement register value func
-  }
-
   def push(register: Register): String = {
     "push {" + register.toString() + "}"
   }
@@ -108,16 +18,16 @@ object Assembler {
   }
 
   def movImm(registerDest: Register, operand: Int): Unit = {
-    listOfRegisters.updated(registerDest, operand)
+    //listOfRegisters.updated(registerDest, operand)
   }
 
   def store(registerDest: Register, registerSrc: Register, operand: Int = 0): Unit = {
-    val memoryLocation: Int = listOfRegisters(registerSrc) + operand
-    listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
+    //sval memoryLocation: Int = listOfRegisters(registerSrc) + operand
+    //listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
   }
 
-  def compare(registerDest: Register, registerSrc: Register): Boolean = {
-    listOfRegisters(registerDest) == listOfRegisters(registerSrc)
+  def compare(registerDest: Register, registerSrc: Register): Unit = {
+    //listOfRegisters(registerDest) == listOfRegisters(registerSrc)
   }
 
   def translateBeginEnd(stat: Stat, context: ScopeContext): List[String] = {
@@ -381,7 +291,7 @@ object Assembler {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
-  def translateMove(condition: String, dst: Register, operand: LHSop): String = {
+  def translateMove(condition: String, dst: LHSop, operand: LHSop): String = {
     "mov " + dst.toString + ", " + operand.toString()
   }
 

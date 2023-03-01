@@ -137,7 +137,6 @@ object Translator {
           case StatList(stats) => translateStatList(stats)
           case Command(command, input) => translateCommand(command, input)
           case lit: Literal => translateLiteral(lit)
-
           case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
           case ArrayLiteral(elements) => translateArrayLiteral(elements)
           case ArrayElem(ident, indices) => translateArrayElem(ident.name, indices)
