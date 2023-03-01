@@ -533,6 +533,13 @@ object Assembler {
         translateMove("ne", translateRegister(res), new ImmediateInt(1)) ::
         translateMove("eq", translateRegister(res), new ImmediateInt(0)) :: List()
       }
+      case UnaryOpType.Chr | UnaryOpType.Ord => {
+        translateMove("", translateRegister(res), translateOperand(t1)) :: List()
+      }
+      case UnaryOpType.Len => {
+        // ldr r8, [r4, #-4]
+        translateLdr("", translateRegister(res), r0, translateOperand(t1)) :: List()
+      }
     }
   }
 
