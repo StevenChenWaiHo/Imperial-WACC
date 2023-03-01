@@ -489,6 +489,7 @@ object Assembler {
       case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
+      case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
     }
   }
 
@@ -544,6 +545,11 @@ object Assembler {
       }
     }
   }
+
+  def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): List[String] = {
+    translateBranchLink("", new BranchString(lbl.name)) :: List()
+  }
+
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[String] = {
     translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) :: List()
   }
