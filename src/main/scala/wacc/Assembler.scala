@@ -528,6 +528,11 @@ object Assembler {
       case UnaryOpType.Neg => {
         translateRsb("", Status(), translateRegister(res), translateOperand(t1), new ImmediateInt(0)) :: List()
       }
+      case UnaryOpType.Not => {
+        translateCompare("", translateOperand(t1), new ImmediateInt(1)) ::
+        translateMove("ne", translateRegister(res), new ImmediateInt(1)) ::
+        translateMove("eq", translateRegister(res), new ImmediateInt(0)) :: List()
+      }
     }
   }
 
