@@ -3,87 +3,10 @@ package wacc
 import wacc.TAC._
 import wacc.AbstractSyntaxTree._
 import wacc.RegisterAllocator._
-import javax.swing.JSpinner.ListEditor
 
 object Assembler {
-  def push(register: Register): String = {
-    "push {" + register.toString() + "}"
-  }
-
-  def pop(register: Register): String = {
-    "pop {" + register.toString() + "}"
-  }
-
-  def mov(registerDest: Register, registerSrc: Register): String = {
-    "mov " + registerDest.toString() + ", " + registerSrc.toString()
-  }
-
-  def movImm(registerDest: Register, operand: Int): Unit = {
-    //listOfRegisters.updated(registerDest, operand)
-  }
-
-  def store(registerDest: Register, registerSrc: Register, operand: Int = 0): Unit = {
-    //sval memoryLocation: Int = listOfRegisters(registerSrc) + operand
-    //listOfRegisters.updated(registerDest, memory(listOfRegisters(registerSrc) + operand))
-  }
-
-  def compare(registerDest: Register, registerSrc: Register): Unit = {
-    //listOfRegisters(registerDest) == listOfRegisters(registerSrc)
-  }
-
-  def translateBeginEnd(stat: Stat, context: ScopeContext): List[String] = {
-    //Seems like it takes as many variables as it can find in every scope and pushes the corresponding
-    //number of registers, instead of just this scope.
-    var str: List[String] = List("")
-    var defaultRegistersList: List[Register] = List()
-    if (context.scopeLevel() == 0) {
-      defaultRegistersList = List(r8, r10, r12)
-    } else {
-      defaultRegistersList = List(r0)
-    }
-    val registersList: List[Register] = List(r6, r4, r7, r5, r1, r2)
-    if (context.scopeVarSize() >= 4) {
-      defaultRegistersList = defaultRegistersList ++ registersList
-    } else {
-      defaultRegistersList = defaultRegistersList ++ registersList.slice(0, context.scopeVarSize())
-    }
-    /*
-    str = str ++ translatePush("", List(fp, lr)) //Maybe not meant to be in BeginEnd
-    str = str ++ translatePush("", defaultRegistersList) //dependent on context
-    str = str ++ delegateASTNode(stat, context)
-    str = str ++ translatePop("", defaultRegistersList) // dependent on context
-    str = str ++ translatePop("", List(fp, pc)) //Maybe meant to be in prog
-    */
-    return str
-  }
-
-  def translateSkip(): List[String] = {
-    var str = List("")
-    return str
-  }
-
-  def translateCommand(cmd: AbstractSyntaxTree.CmdT.Cmd, expr: AbstractSyntaxTree.Expr): List[String] = {
-    List("")
-  }
-
-  def translateFunction(returnType: AbstractSyntaxTree.DeclarationType,
-                        ident: AbstractSyntaxTree.IdentLiteral,
-                        types: List[(AbstractSyntaxTree.DeclarationType,
-                          AbstractSyntaxTree.IdentLiteral)],
-                        code: Stat): List[String] = {
-    List("")
-  }
-
-  def translateARM(command: String, operand: String, operand2: String = ""): String = {
-    //Maybe add check to make sure command is valid
-    if (operand2 == "") {
-      command + " " + operand
-    }
-    command + " " + operand + ", " + operand2
-  }
 
   sealed trait Operand2
-
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends Operand2 {
     @Override
     override def toString: String = {
@@ -594,31 +517,31 @@ object Assembler {
 
   def translateCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType) = {
     if (cmd == CmdT.Exit) {
-          translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", new BranchString("exit")) :: List() 
-        } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
-          // TODO: change print behaviour of arrays and pairs
-          val bl = opType match {
-            case ArrayType(dataType, length) => "_printi"
-            case BaseType(baseType) => baseType match {
-              case BaseT.String_T => "_prints"
-              case BaseT.Char_T => "_printc"
-              case BaseT.Bool_T => "_printb" // ???
-              case BaseT.Int_T => "_printi"
-              case _ => "_printi"
-            }
-            case NestedPair() => "_printi"
-            case PairType(fstType, sndType) => "_printi"
-          }
-          var listEnd = List[String]()
-          if (cmd == CmdT.PrintLn) {
-            listEnd = translateBranchLink("", new BranchString("_println")) :: List() 
-          }
-          // TODO: Add the _prints function in at the end
-          translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", new BranchString(bl)) :: listEnd
-        } else {
-          List("Command not implemented")
+      translateMove("", r0, translateOperand(operand)) ::
+      translateBranchLink("", new BranchString("exit")) :: List() 
+    } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
+      // TODO: change print behaviour of arrays and pairs
+      val bl = opType match {
+        case ArrayType(dataType, length) => "_printi"
+        case BaseType(baseType) => baseType match {
+          case BaseT.String_T => "_prints"
+          case BaseT.Char_T => "_printc"
+          case BaseT.Bool_T => "_printb" // ???
+          case BaseT.Int_T => "_printi"
+          case _ => "_printi"
         }
+        case NestedPair() => "_printi"
+        case PairType(fstType, sndType) => "_printi"
+      }
+      var listEnd = List[String]()
+      if (cmd == CmdT.PrintLn) {
+        listEnd = translateBranchLink("", new BranchString("_println")) :: List() 
+      }
+      // TODO: Add the _prints function in at the end
+      translateMove("", r0, translateOperand(operand)) ::
+      translateBranchLink("", new BranchString(bl)) :: listEnd
+    } else {
+      List("Command not implemented")
+    }
   }
 }
