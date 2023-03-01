@@ -321,6 +321,7 @@ object Assembler {
       case CharLiteralTAC(chr) => new ImmediateInt(chr.toInt)
       case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true))
       case Label(name) => new LabelString(name)
+      case PairLiteralTAC() => new ImmediateInt(0)
       case a => println("translateOperand fail: " + a); null // TODO: this should not match
     }
   }
