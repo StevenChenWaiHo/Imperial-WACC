@@ -543,6 +543,7 @@ object Assembler {
         translateLdr("", translateRegister(res), r0, translateOperand(t1)) :: List()
       }
     }
+  }
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[String] = {
     translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) :: List()
   }
