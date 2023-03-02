@@ -381,6 +381,7 @@ class Assembler {
     }
     addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
     translateBranchLink("", new BranchString(bl))
+    translateMove("", translateRegister(readReg), r0)
   }
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): AssemblerState = {
