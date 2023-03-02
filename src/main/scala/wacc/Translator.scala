@@ -312,7 +312,10 @@ object Translator {
         val reg = nextRegister()
         (List(AssignmentTAC(PairLiteralTAC(), reg)), reg)
       }
+      
       case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
+      // PairLiteral or IdentLiteral
+      case lit: Literal => delegateASTNode(lit)
       case t => print(t); (List(Label("Not translating Pair Value")), null)
     }
   }

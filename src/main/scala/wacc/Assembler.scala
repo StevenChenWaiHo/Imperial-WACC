@@ -129,7 +129,7 @@ class Assembler {
   }
 
 
-  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
   }
 
@@ -153,7 +153,7 @@ class Assembler {
   }
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: Register, destinationHigh: Register,
-                    sourceRegister: Register, operand: Register): AssemblerState = {
+                    sourceRegister: Register, operand: Register): String = {
     var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
       "," + " " + operand
     return str
@@ -179,16 +179,12 @@ class Assembler {
     return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def CompareAssist(condition: String, register1: LHSop, operand: LHSop): AssemblerState = {
-    return condition + " " + register1.toString + ", " + operand.toString
-  }
-
   def translateCompare(condition: String, register1: LHSop, operand: LHSop): AssemblerState = {
-    return "cmp" + CompareAssist(condition, register1, operand)
+    return "cmp" + condition + " " + register1.toString + ", " + operand.toString
   }
 
   def translateCompareNeg(condition: String, register1: Register, operand: LHSop): AssemblerState = {
-    return "cmn" + CompareAssist(condition, register1, operand)
+    return "cmn" + condition + " " + register1.toString + ", " + operand.toString
   }
 
   def checkMovCases(i: Int): Boolean = {
