@@ -3,13 +3,22 @@ package wacc
 import wacc.Assembler._
 import wacc.RegisterAllocator._
 import wacc.TAC._
+import wacc.AssemblerTypes._
 
 object HardcodeFunctions {
+
+  def translate_errDivZero(): List[String] = {
+    translateTAC(Label("_errDivZero"))
+    // TODO: implement hardcode function
+  }
+
   def translate_errOverflow(): List[String] = {
-    translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
-    translateBranchLink("", new BranchString("_prints")) ::
-    translateMove("", r0, new ImmediateInt(255)) ::
-    translateBranchLink("", new BranchString("exit")) :: List()
+    // TODO: implement hardcode function
+    // translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
+    // translateBranchLink("", new BranchString("_prints")) ::
+    // translateMove("", r0, new ImmediateInt(255)) ::
+    // translateBranchLink("", new BranchString("exit")) :: List()
+    List("_errOverflow:")
   }
 
   def translate_arrStoreB(): List[String] = {
@@ -25,8 +34,6 @@ object HardcodeFunctions {
     translatePop("", List(pc)) :: List()
   }
 
-
-
   def translate_boundsCheck(): List[String] = {
     translateLdr("", r0, r0, new LabelString(".L._boundsCheck_str_0")) :: 
     translateBranchLink("", new BranchString("printf")) :: 
@@ -34,11 +41,6 @@ object HardcodeFunctions {
     translateBranchLink("", new BranchString("fflush")) :: 
     translateMove("", r0, new ImmediateInt(255)) :: 
     translateBranchLink("", new BranchString("exit")) :: List()
-  }
-
-  def translate_errDivZero(): List[String] = {
-    translateTAC(Label("_errDivZero"))
-    // TODO: implement hardcode function
   }
 
   def translate_print(pType: String): List[String] = {
@@ -150,5 +152,59 @@ object HardcodeFunctions {
     translateMove("", r0, new ImmediateInt(0)) ::
     translateBranchLink("", new BranchString("fflush")) ::
     translatePop("", List(pc)) :: List())
+  }
+
+  def translate_read(rType: String): List[String] = {
+    rType match {
+      case "_readi" => translate_readi()
+      case "_readc" => translate_readc()
+      case _ => translate_readi()
+    }
+  }
+
+  def translate_readi(): List[String] = {
+    val lbl = new Label(".L._readi_str0")
+    List(
+      DataSegmentTAC(),
+      Comments("length of " + lbl.name),
+      StringLengthDefinitionTAC(2, lbl),
+      StringDefinitionTAC("\"d\"", lbl),
+      TextSegmentTAC(),
+      Label("_readi")).map(tac => translateTAC(tac)).flatten ++
+    List(
+      translatePush("", List(lr)),
+      translateStr("", r0, sp, new ImmediateInt(-4)),
+			translateMove("", r1, sp),
+      translateLdr("", r0, null, new LabelString(lbl.name)),
+      translateBranchLink("", new BranchString("scanf")),
+		  translateLdr("", r0, sp, new ImmediateInt(0))
+    ) ++
+    translateAdd("", None(), sp, sp, new ImmediateInt(4)) ++
+    List(
+      translatePop("", List{pc})
+    )
+  }
+
+  def translate_readc(): List[String] = {
+    val lbl = new Label(".L._readc_str0")
+    List(
+      DataSegmentTAC(),
+      Comments("length of " + lbl.name),
+      StringLengthDefinitionTAC(3, lbl),
+      StringDefinitionTAC(" %c", lbl),
+      TextSegmentTAC(),
+      Label("_readc")).map(tac => translateTAC(tac)).flatten ++
+    List(
+      translatePush("", List(lr)),
+      translateStr("b", r0, sp, new ImmediateInt(-1)),
+			translateMove("", r1, sp),
+      translateLdr("", r0, null, new LabelString(lbl.name)),
+      translateBranchLink("", new BranchString("scanf")),
+		  translateLdr("sb", r0, sp, new ImmediateInt(0))
+    ) ++
+    translateAdd("", None(), sp, sp, new ImmediateInt(1)) ++
+    List(
+      translatePop("", List{pc})
+    )
   }
 }
