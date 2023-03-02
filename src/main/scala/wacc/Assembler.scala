@@ -6,6 +6,7 @@ import wacc.RegisterAllocator._
 import wacc.TAC._
 
 import scala.collection.mutable.ListBuffer
+import scala.None
 
 object StatelessAssembler {
   def pushPopAssist(condition: String, registers: List[Register]): String = {
@@ -296,9 +297,13 @@ class Assembler {
       case GOTO(label) => assembleGOTO(label)
       case CreatePairElem(pairElemType, pairPos, srcReg) => assemblePairElem(pairElemType, pairPos, srcReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, dstReg) => assemblePair(fstType, sndType, dstReg)
-      case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
+      case CreateArrayElem(arrayElemType, elemReg) => assembleArrayElem(arrayElemType, elemReg)
+      case CreateArray(arrayElemType, elemsReg, dstReg) => assembleArray(arrayElemType, elemsReg, dstReg)
+      case GetArrayElem(datatype, arrReg, arrPos, dstReg) => assembleGetArrayElem(datatype, arrayReg, arrayPos, dstReg)
+      case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => assembleStoreArrayElem(datatype, arrayReg, arrayPos, srcReg)
+      case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
       case PopParamTAC(datatype, t1, index) => List()
       case PushParamTAC(op) => List()
@@ -544,5 +549,34 @@ class Assembler {
     } else {
       List("Command not implemented")
     }
+  }
+
+  def assembleArray(arrayElemType: DeclarationType, dstReg: TRegister): AssemblerState = {
+    // Assume r8 and r12 not used
+    translateMove("", r0, new ImmediateInt(4 * (arrSize + 1))) :: //todo add arrSize
+      translateBranchLink("", new BranchString("malloc")) ::
+      translateMove("", r12, r0) ::
+      translateAdd("", None(), r12, r12, new ImmediateInt(4)) ::
+      translateMove("", r8, new ImmediateInt(arrSize)) ::
+      translateStr("", r8, r12, new ImmediateInt(-4)) ::
+      assembleArrayElems() ::
+      translateMove("", r4, r12)
+  }
+
+  def assembleArrayElems(): AssemblerState = {}
+
+  def assembleArrayElem(arrayElemType: DeclarationType, srcReg: TRegister): AssemblerState = {
+    translateMove("", r8) ::
+      translateStr("", r8)
+  }
+  
+  def assembleGetArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[TRegister], dstReg: TRegister): AssemblerState = {
+    translateMove("", r10, arrayPos.head) :: //TODO add nested
+      translateMove("", r3, arrayReg) :: // arrload uses r3
+      translateBranchLink("", new LabelString("_arrLoad"))
+  }
+  
+  def assembleStoreArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[Expr], srcReg: TRegister): AssemblerState = {
+
   }
 }
