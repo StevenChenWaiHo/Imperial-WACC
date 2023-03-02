@@ -38,7 +38,6 @@ object StatelessAssembler {
       case LabelString(x) => {
         str = str + "=" + x
       }
-      case
     }
     str
   }
