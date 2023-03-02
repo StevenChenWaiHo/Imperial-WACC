@@ -4,8 +4,6 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
-import wacc.Assembler.assembleProgram
-import wacc.Parser.ProgramParser
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -54,20 +52,21 @@ object Main {
     tac.foreach(l => println(l))
 
     // Convert the IR to ARM
-    val result = assembleProgram(tac)
+    val assembler = new Assembler()
+    val result = assembler.assembleProgram(tac)
     println("--- ARM ---")
-    result.foreach(l => println(l))
-    
+    print(result)
+
     /* Output the assembly file */
     if(OutputAssemblyFile) {
       val inputFilename = args.last.split("/").last
       val outputFilename = inputFilename.replace(".wacc", ".s")
       val outputFile = new File(outputFilename)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))
-      for(line <- result) fileWriter.write(line + "\n")
+      fileWriter.write(result + "\n")
       fileWriter.close()
     }
-    println("Compilation Successful!")
+    println("\n\nCompilation Successful!")
     sys.exit(SuccessCode)
   }
 }
