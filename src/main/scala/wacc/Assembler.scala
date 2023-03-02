@@ -17,7 +17,7 @@ object StatelessAssembler {
         str = str + register.toString
       }
     }
-    str
+    str + "}"
   }
 
   def translatePush(condition: String, registers: List[Register]): String = {
