@@ -147,7 +147,7 @@ object Translator {
         }
         // Only add literal assignments/declarations to the scope
         node match {
-          case x: IndentLiteral => addNode(node, tac._2)
+          case x: IdentLiteral => addNode(node, tac._2)
           case _ =>
         }
         tac
