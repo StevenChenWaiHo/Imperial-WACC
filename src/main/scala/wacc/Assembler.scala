@@ -38,6 +38,7 @@ object StatelessAssembler {
       case LabelString(x) => {
         str = str + "=" + x
       }
+      case
     }
     str
   }
@@ -96,6 +97,9 @@ class Assembler {
       }
       case LabelString(x) => {
         str = str + "=" + x
+      }
+      case default => {
+        str = str + "[" + sourceRegister.toString + ", " +operand.toString + "]"
       }
     }
     return str
@@ -305,7 +309,7 @@ class Assembler {
     }
   }
 
-  def getTypeSize(decType: DeclarationType): Integer = {
+  def getTypeSize(decType: DeclarationType): Int = {
     decType match {
       case BaseType(BaseT.Int_T) => 4
       case BaseType(BaseT.Char_T) => 1

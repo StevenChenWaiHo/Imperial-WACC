@@ -15,7 +15,8 @@ class HardcodeFunctions extends Assembler {
 
   def translate_errDivZero(): List[String] = {
     translateTAC(Label("_errDivZero"))
-    // TODO: implement hardcode function
+    translateLdr("", r0, r0, new LabelString(".L._errDivZero_str0"))
+    translateBranchLink("", new BranchString("_prints"))
   }
 
   def translate_errOverflow(): List[String] = {
@@ -27,7 +28,7 @@ class HardcodeFunctions extends Assembler {
     List("_errOverflow:")
   }
 
-  def translate_arrStoreB(): List[String] = {
+  def translate_arrStore(condition: String): List[String] = {
     translatePush("", List(lr)) ::
       translateCompare("", r10, new ImmediateInt(0)) ::
       translateMove("", r1, r10) ::
@@ -36,7 +37,7 @@ class HardcodeFunctions extends Assembler {
       translateCompare("eq", r10, lr) ::
       translateMove("ge", r1, r10) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      //translateStrb() ::
+      translateStr(condition, r8, r3, LogicalShiftLeft(r10, Right(2)))
       translatePop("", List(pc))
   }
 
