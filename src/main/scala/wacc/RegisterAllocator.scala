@@ -21,7 +21,7 @@ object RegisterAllocator {
     /* Push the least-recently-used register to the stack, freeing it */
     //TODO: I think only r0-r7 can be pushed ("low registers" only)(?)
     private def freeRegister: AssemblerState = {
-      this :: (translatePush("", List(used.head._2)))
+      code = code.addOne(translatePush("", List(used.head._2)))
       available = available.addOne(used.head._2)
       inMemory = inMemory.addOne(used.head._1)
       used = used.tail
@@ -58,7 +58,7 @@ object RegisterAllocator {
       /* Check the stack */
       val stackLocation: Int = inMemory.indexOf(target)
       if (stackLocation != (-1)) {
-        this :: translateLdr("", available.head, sp, new ImmediateInt(4 * stackLocation))
+        code = code.addOne(translateLdr("", available.head, sp, new ImmediateInt(4 * stackLocation)))
         inMemory = inMemory.updated(stackLocation, null)
       }
 
