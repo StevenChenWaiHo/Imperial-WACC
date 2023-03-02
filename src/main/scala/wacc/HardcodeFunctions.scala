@@ -4,8 +4,14 @@ import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
 
+import scala.collection.mutable.ListBuffer
+
 class HardcodeFunctions extends Assembler {
-  implicit def toStrings(state: AssemblerState) = state.code.toList
+  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
+
+  implicit private[this] def toStrings(state: AssemblerState) = state.code.toList
+
+  implicit private[this] def updateState(str: String): AssemblerState = state.addInstruction(str)
 
   def translate_errDivZero(): List[String] = {
     translateTAC(Label("_errDivZero"))

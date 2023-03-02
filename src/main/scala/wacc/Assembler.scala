@@ -44,12 +44,11 @@ object StatelessAssembler {
 }
 
 class Assembler {
-
+  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
   val endFuncs = collection.mutable.Map[String, List[String]]()
   var labelCount = 0
 
-  val allowedRegisters = ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11)
-  var state = new AssemblerState(allowedRegisters)
+
 
   def translateRegister(t: TRegister) = state.getRegister(t)
 
@@ -57,11 +56,11 @@ class Assembler {
    * It therefore needs to be kept up-to-date. These implicit methods ensure that it can be updated without modifying
    * too much of the code.
    * This isn't the nicest, but hopefully it shouldn't break things. */
-  implicit def updateState(str: String): AssemblerState = {
+  implicit private[this] def updateState(str: String): AssemblerState = {
     state.addInstruction(str)
   }
 
-  implicit def updateState(strs: List[String]): AssemblerState = {
+  implicit private[this] def updateState(strs: List[String]): AssemblerState = {
     state.addInstructions(strs)
   }
 
@@ -409,7 +408,8 @@ class Assembler {
     tacList.map(translateTAC)
     //TODO: It's possible some lines shouldn't have a new line after them. It's better if the translateX functions
     // Added a new line at the end of their return value instead.
-    state.code.addAll(endFuncsToList).mkString("\n")
+    state.code.addAll(endFuncsToList)
+    state.code.mkString("\n")
   }
 
   def assembleLabel(name: String): AssemblerState = {
@@ -540,7 +540,7 @@ class Assembler {
       addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
       var listEnd: AssemblerState = List[String]()
       if (cmd == CmdT.PrintLn) {
-        addEndFunc("_println", new HardcodeFunctions().translate_print("_println").code.toList)
+        addEndFunc("_println", new HardcodeFunctions().translate_print("_println"))
         listEnd = translateBranchLink("", new BranchString("_println"))
       }
       translateMove("", r0, translateOperand(operand)) ::
