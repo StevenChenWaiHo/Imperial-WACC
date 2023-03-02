@@ -17,7 +17,7 @@ object StatelessAssembler {
         str = str + register.toString
       }
     }
-    str
+    str + "}"
   }
 
   def translatePush(condition: String, registers: List[Register]): String = {
@@ -89,6 +89,9 @@ class Assembler {
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
+      case ImmediateInt(x) if !checkMovCases(x) => {
+        str = str + "=" + x
+      }
       case ImmediateInt(x) => {
         str = str + "[" + sourceRegister.toString + ", #" + x + "]"
       }
@@ -189,8 +192,22 @@ class Assembler {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
-  def translateMove(condition: String, dst: LHSop, operand: LHSop): AssemblerState = {
-    "mov " + dst.toString + ", " + operand.toString()
+  def checkMovCases(i: Int): Boolean = {
+    for (j <- 0 to 12) { // magicNums
+      val mask = (0xFF << (j * 2))
+      if ((i & ~mask) == 0) return true
+    }
+    if ((i & ~0xFC000003) == 0) return true
+    if ((i & ~0xF000000F) == 0) return true
+    if ((i & ~0xC000003F) == 0) return true
+    false
+  }
+
+  def translateMove(condition: String, dst: Register, operand: LHSop): AssemblerState = {
+    operand match {
+      case ImmediateInt(i) if !checkMovCases(i) => translateLdr("", dst, r0, operand)
+      case _ => "mov " + dst.toString + ", " + operand.toString()
+    }
   }
 
   def translateBranch(condition: String, operand: String): AssemblerState = {
@@ -250,7 +267,7 @@ class Assembler {
       return true
     }
   }
-
+  
   def translateOperand(op: Operand): LHSop = {
     op match {
       case reg: TRegister => translateRegister(reg)
