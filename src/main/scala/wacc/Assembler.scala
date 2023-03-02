@@ -230,22 +230,22 @@ object Assembler {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
-  def checkMov(dst: LHSop, operand: LHSop): String = {
-    operand match {
-      case ImmediateInt(i) if (i >= 0x00 && i <= 0xFF) => { // magicNum, other cases apply
-        "mov " + dst.toString + ", " + operand.toString()
-      }
-      case _ => {
-        translateLdr("", dst, r0, operand)
-      }
+  def checkMovCases(i: Int): Boolean = {
+    for (j <- 0 to 12) { // magicNums
+      val mask = (0xFF << (j * 2))
+      if ((i & ~mask) == 0) return true
     }
+    if ((i & ~0xFC000003) == 0) return true
+    if ((i & ~0xF000000F) == 0) return true
+    if ((i & ~0xC000003F) == 0) return true
+    false
   }
 
   def translateMove(condition: String, dst: LHSop, operand: LHSop): String = {
     operand match {
-      case _: ImmediateInt => {
-        checkMov(dst, operand)
-      }
+      case ImmediateInt(i) if checkMovCases(i) =>
+        "mov " + dst.toString + ", " + operand.toString()
+      case ImmediateInt(i) if !checkMovCases(i) => translateLdr("", dst, r0, operand)
       case _ => "mov " + dst.toString + ", " + operand.toString()
     }
     
