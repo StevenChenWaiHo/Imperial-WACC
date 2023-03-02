@@ -68,7 +68,7 @@ object Main {
       for(line <- result) fileWriter.write(line + "\n")
       fileWriter.close()
     }
-    println("Compilation Successful!")
+    println("\n\nCompilation Successful!")
     sys.exit(SuccessCode)
   }
 }

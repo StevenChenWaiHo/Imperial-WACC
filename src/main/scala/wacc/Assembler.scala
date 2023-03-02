@@ -7,7 +7,7 @@ import wacc.TAC._
 
 import scala.collection.mutable.ListBuffer
 
-object Assembler {
+object StatelessAssembler {
   def pushPopAssist(condition: String, registers: List[Register]): String = {
     var str = condition + " {"
     for (register <- registers) {
@@ -17,16 +17,16 @@ object Assembler {
         str = str + register.toString
       }
     }
-    str = str + "}"
-    return str
+    str
   }
 
   def translatePush(condition: String, registers: List[Register]): String = {
-    return "push" + pushPopAssist(condition, registers)
+    "push" + pushPopAssist(condition, registers)
   }
 
-  def translatePop(condition: String, registers: List[Register]): String = {
-    return "pop" + pushPopAssist(condition, registers)
+  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+    //Incomplete
+    "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
@@ -39,23 +39,11 @@ object Assembler {
         str = str + "=" + x
       }
     }
-    return str
-  }
-
-  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
-    //Incomplete
-    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
-  }
-
-  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
-    //Incomplete
-    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+    str
   }
 }
 
 class Assembler {
-
-  import Assembler._
 
   val endFuncs = collection.mutable.Map[String, List[String]]()
   var labelCount = 0
@@ -77,6 +65,50 @@ class Assembler {
     state.addInstructions(strs)
   }
 
+  def pushPopAssist(condition: String, registers: List[Register]): String = {
+    var str = condition + " {"
+    for (register <- registers) {
+      if (register != registers.last) {
+        str = str + register.toString + ", "
+      } else {
+        str = str + register.toString
+      }
+    }
+    str = str + "}"
+    return str
+  }
+
+  def translatePush(condition: String, registers: List[Register]): AssemblerState = {
+    return "push" + pushPopAssist(condition, registers)
+  }
+
+  def translatePop(condition: String, registers: List[Register]): AssemblerState = {
+    return "pop" + pushPopAssist(condition, registers)
+  }
+
+  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+    var str = condition + " " + destinationRegister.toString + ", "
+    operand match {
+      case ImmediateInt(x) => {
+        str = str + "[" + sourceRegister.toString + ", #" + x + "]"
+      }
+      case LabelString(x) => {
+        str = str + "=" + x
+      }
+    }
+    return str
+  }
+
+  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
+    //Incomplete
+    return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  }
+
+  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
+    //Incomplete
+    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  }
+
   def generateLabel(): Label = {
     labelCount += 1
     new Label(".La" + labelCount.toString())
@@ -95,77 +127,77 @@ class Assembler {
   }
 
 
-  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
   }
 
   //Incomplete, no condition
-  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
     "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ++
       translateBranchLink("vs", new BranchString("_errOverflow"))
   }
 
-  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+  def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     return "rsb" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateMul(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, sourceRegisterTwo: LHSop): String = {
+  def translateMul(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, sourceRegisterTwo: LHSop): AssemblerState = {
     return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, sourceRegisterTwo)
   }
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: Register, destinationHigh: Register,
-                    sourceRegister: Register, operand: Register): String = {
+                    sourceRegister: Register, operand: Register): AssemblerState = {
     var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
       "," + " " + operand
     return str
   }
 
-  def translateMla(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
+  def translateMla(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "mla" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateUmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
+  def translateUmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "umull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateUmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
+  def translateUmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "umlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateSmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
+  def translateSmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "smull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateSmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): String = {
+  def translateSmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def CompareAssist(condition: String, register1: LHSop, operand: LHSop): String = {
+  def CompareAssist(condition: String, register1: LHSop, operand: LHSop): AssemblerState = {
     return condition + " " + register1.toString + ", " + operand.toString
   }
 
-  def translateCompare(condition: String, register1: LHSop, operand: LHSop): String = {
+  def translateCompare(condition: String, register1: LHSop, operand: LHSop): AssemblerState = {
     return "cmp" + CompareAssist(condition, register1, operand)
   }
 
-  def translateCompareNeg(condition: String, register1: Register, operand: LHSop): String = {
+  def translateCompareNeg(condition: String, register1: Register, operand: LHSop): AssemblerState = {
     return "cmn" + CompareAssist(condition, register1, operand)
   }
 
-  def translateMove(condition: String, dst: LHSop, operand: LHSop): String = {
+  def translateMove(condition: String, dst: LHSop, operand: LHSop): AssemblerState = {
     "mov " + dst.toString + ", " + operand.toString()
   }
 
-  def translateBranch(condition: String, operand: String): String = {
+  def translateBranch(condition: String, operand: String): AssemblerState = {
     return "b" + condition + " " + operand
   }
 
-  def translateBranchLink(condition: String, operand: LHSop): String = {
+  def translateBranchLink(condition: String, operand: LHSop): AssemblerState = {
     return "bl" + condition + " " + operand
   }
 
@@ -360,7 +392,7 @@ class Assembler {
     tacList.map(translateTAC)
     //TODO: It's possible some lines shouldn't have a new line after them. It's better if the translateX functions
     // Added a new line at the end of their return value instead.
-    state.code.addAll(endFuncsToList()).mkString("\n")
+    state.code.addAll(endFuncsToList).mkString("\n")
   }
 
   def assembleLabel(name: String): AssemblerState = {

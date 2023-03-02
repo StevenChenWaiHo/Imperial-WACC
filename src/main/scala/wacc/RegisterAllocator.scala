@@ -1,6 +1,6 @@
 package wacc
 
-import wacc.Assembler.{translateLdr, translatePop, translatePush}
+import wacc.StatelessAssembler.{translateLdr, translatePush}
 import wacc.AssemblerTypes.{ImmediateInt, Register, sp}
 import wacc.TAC._
 

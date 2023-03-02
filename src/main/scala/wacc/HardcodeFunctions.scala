@@ -1,6 +1,5 @@
 package wacc
 
-import wacc.Assembler._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
@@ -32,7 +31,7 @@ class HardcodeFunctions extends Assembler {
       translateMove("ge", r1, r10) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
       //translateStrb() ::
-      translatePop("", List(pc)) :: List()
+      translatePop("", List(pc))
   }
 
   def translate_boundsCheck(): List[String] = {
@@ -41,7 +40,7 @@ class HardcodeFunctions extends Assembler {
       translateMove("", r0, new ImmediateInt(255)) ::
       translateBranchLink("", new BranchString("fflush")) ::
       translateMove("", r0, new ImmediateInt(255)) ::
-      translateBranchLink("", new BranchString("exit")) :: List()
+      translateBranchLink("", new BranchString("exit"))
   }
 
   def translate_print(pType: String): List[String] = {
@@ -69,7 +68,7 @@ class HardcodeFunctions extends Assembler {
         translateBranchLink("", new BranchString("printf")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
         translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)) :: List())
+        translatePop("", List(pc)))
   }
 
   def translate_printc(): List[String] = {
@@ -86,7 +85,7 @@ class HardcodeFunctions extends Assembler {
         translateBranchLink("", new BranchString("printf")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
         translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)) :: List())
+        translatePop("", List(pc)))
   }
 
   def translate_printi(): List[String] = {
@@ -103,7 +102,7 @@ class HardcodeFunctions extends Assembler {
         translateBranchLink("", new BranchString("printf")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
         translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)) :: List())
+        translatePop("", List(pc)))
   }
 
   def translate_println(): List[String] = {
@@ -119,7 +118,7 @@ class HardcodeFunctions extends Assembler {
         translateBranchLink("", new BranchString("puts")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
         translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)) :: List())
+        translatePop("", List(pc)))
   }
 
   def translate_printb(): List[String] = {
@@ -152,7 +151,7 @@ class HardcodeFunctions extends Assembler {
         translateBranchLink("", new BranchString("printf")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
         translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)) :: List())
+        translatePop("", List(pc)))
   }
 
   def translate_read(rType: String): List[String] = {
@@ -173,16 +172,14 @@ class HardcodeFunctions extends Assembler {
       TextSegmentTAC(),
       Label("_readi")).map(tac => translateTAC(tac))
 
-    state.addInstructions(List(
-      translatePush("", List(lr)),
-      translateStr("", r0, sp, new ImmediateInt(-4)),
-      translateMove("", r1, sp),
-      translateLdr("", r0, null, new LabelString(lbl.name)),
-      translateBranchLink("", new BranchString("scanf")),
-      translateLdr("", r0, sp, new ImmediateInt(0)),
-      translateAdd("", None(), sp, sp, new ImmediateInt(4)),
+      translatePush("", List(lr))
+      translateStr("", r0, sp, new ImmediateInt(-4))
+      translateMove("", r1, sp)
+      translateLdr("", r0, null, new LabelString(lbl.name))
+      translateBranchLink("", new BranchString("scanf"))
+      translateLdr("", r0, sp, new ImmediateInt(0))
+      translateAdd("", None(), sp, sp, new ImmediateInt(4))
       translatePop("", List(pc))
-    ))
   }
 
   def translate_readc(): List[String] = {
@@ -195,15 +192,13 @@ class HardcodeFunctions extends Assembler {
       TextSegmentTAC(),
       Label("_readc")).map(tac => translateTAC(tac))
 
-    state.addInstructions(List(
-      translatePush("", List(lr)),
-      translateStr("b", r0, sp, new ImmediateInt(-1)),
-      translateMove("", r1, sp),
-      translateLdr("", r0, null, new LabelString(lbl.name)),
-      translateBranchLink("", new BranchString("scanf")),
-      translateLdr("sb", r0, sp, new ImmediateInt(0)),
-      translateAdd("", None(), sp, sp, new ImmediateInt(1)),
+      translatePush("", List(lr))
+      translateStr("b", r0, sp, new ImmediateInt(-1))
+      translateMove("", r1, sp)
+      translateLdr("", r0, null, new LabelString(lbl.name))
+      translateBranchLink("", new BranchString("scanf"))
+      translateLdr("sb", r0, sp, new ImmediateInt(0))
+      translateAdd("", None(), sp, sp, new ImmediateInt(1))
       translatePop("", List(pc))
-    ))
   }
 }
