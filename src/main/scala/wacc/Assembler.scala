@@ -89,6 +89,9 @@ class Assembler {
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
+      case ImmediateInt(x) if !checkMovCases(x) => {
+        str = str + "=" + x
+      }
       case ImmediateInt(x) => {
         str = str + "[" + sourceRegister.toString + ", #" + x + "]"
       }
@@ -200,10 +203,8 @@ class Assembler {
     false
   }
 
-  def translateMove(condition: String, dst: LHSop, operand: LHSop): AssemblerState = {
+  def translateMove(condition: String, dst: Register, operand: LHSop): AssemblerState = {
     operand match {
-      case ImmediateInt(i) if checkMovCases(i) =>
-        "mov " + dst.toString + ", " + operand.toString()
       case ImmediateInt(i) if !checkMovCases(i) => translateLdr("", dst, r0, operand)
       case _ => "mov " + dst.toString + ", " + operand.toString()
     }
