@@ -88,9 +88,9 @@ class Assembler {
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
-      case ImmediateInt(x) if !checkMovCases(x) => {
-        str = str + "=" + x
-      }
+      // case ImmediateInt(x) if !checkMovCases(x) => {
+      //   str = str + "=" + x
+      // }
       case ImmediateInt(x) => {
         str = str + "[" + sourceRegister.toString + ", #" + x + "]"
       }
