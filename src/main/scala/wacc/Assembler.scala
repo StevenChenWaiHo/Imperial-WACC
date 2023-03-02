@@ -92,7 +92,7 @@ class Assembler {
       //   str = str + "=" + x
       // }
       case ImmediateInt(x) => {
-        str = str + "[" + sourceRegister.toString + ", #" + x + "]"
+        str = str + "[" + sourceRegister.toString + ", #" + x + "]!"
       }
       case LabelString(x) => {
         str = str + "=" + x
