@@ -316,8 +316,8 @@ class Assembler {
   val POINTER_BYTE_SIZE = 4
 
   def assemblePair(fstType: DeclarationType, sndType: DeclarationType, dstReg: TRegister): AssemblerState = {
-    // Assume r8 and r12 not used
     // r12: pointer to pair r8: pointer to pairElem
+    translatePush("", List(r8, r12)) ::
     translateMove("", r0, new ImmediateInt(2 * POINTER_BYTE_SIZE)) ::
       translateBranchLink("", new BranchString("malloc")) ::
       translateMove("", r12, r0) ::
@@ -325,7 +325,8 @@ class Assembler {
       translateStr("", r8, r12, new ImmediateInt(POINTER_BYTE_SIZE)) ::
       translatePop("", List(r8)) ::
       translateStr("", r8, r12, new ImmediateInt(0)) ::
-      translateMove("", translateRegister(dstReg), r12)
+      translateMove("", translateRegister(dstReg), r12) ::
+      translatePop("", List(r8, r12))
   }
 
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
@@ -336,6 +337,7 @@ class Assembler {
       translateMove("", r12, r0) ::
       translateStr("", r8, r12, new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
       translatePush("", List(r12))
+      translatePop("", List(r8, r12))
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
