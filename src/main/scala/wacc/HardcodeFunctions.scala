@@ -193,7 +193,7 @@ class HardcodeFunctions extends Assembler {
       DataSegmentTAC(),
       Comments("length of " + lbl.name),
       StringLengthDefinitionTAC(2, lbl),
-      StringDefinitionTAC("\\\"d\\\"", lbl),
+      StringDefinitionTAC("%d", lbl),
       TextSegmentTAC(),
       Label("_readi")).map(tac => translateTAC(tac))
 
