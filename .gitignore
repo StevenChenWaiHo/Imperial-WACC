@@ -15,7 +15,3 @@ target
 
 #ignore output assembly files
 *.s
-
-#ignore .idea
-.idea
-.bsp
