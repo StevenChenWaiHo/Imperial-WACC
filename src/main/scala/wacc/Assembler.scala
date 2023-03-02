@@ -518,33 +518,41 @@ class Assembler {
   }
 
   def assembleCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType): AssemblerState = {
-    if (cmd == CmdT.Exit) {
-      translateMove("", r0, translateOperand(operand)) ::
+    cmd match {
+      case CmdT.Exit => {
+        translateMove("", r0, translateOperand(operand)) ::
         translateBranchLink("", new BranchString("exit"))
-    } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
-      // TODO: change print behaviour of arrays and pairs
+    }
+
+    case CmdT.Print | CmdT.PrintLn => {
       val bl = opType match {
-        case ArrayType(dataType, length) => "_prints"
-        case BaseType(baseType) => baseType match {
-          case BaseT.String_T => "_prints"
-          case BaseT.Char_T => "_printc"
-          case BaseT.Bool_T => "_printb"
-          case BaseT.Int_T => "_printi"
-          case _ => "_printi"
+      case ArrayType(dataType, length) => "_prints"
+      case BaseType(baseType) => baseType match {
+        case BaseT.String_T => "_prints"
+        case BaseT.Char_T => "_printc"
+        case BaseT.Bool_T => "_printb"
+        case BaseT.Int_T => "_printi"
+        case _ => "_printi"
         }
-        case NestedPair() => "_printi"
-        case PairType(fstType, sndType) => "_printi"
+      case NestedPair() => "_printp"
+      case PairType(fstType, sndType) => "_printp"
       }
+      var printLn: AssemblerState = List[String]()
       addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
-      var listEnd: AssemblerState = List[String]()
       if (cmd == CmdT.PrintLn) {
         addEndFunc("_println", new HardcodeFunctions().translate_print("_println"))
-        listEnd = translateBranchLink("", new BranchString("_println"))
+        translateMove("", r0, translateOperand(operand)) ::
+        translateBranchLink("", new BranchString(bl)) ::
+        translateBranchLink("", new BranchString("_println"))
       }
-      translateMove("", r0, translateOperand(operand)) ::
-        translateBranchLink("", new BranchString(bl)) :: listEnd
-    } else {
-      List("Command not implemented")
+      else{
+        translateMove("", r0, translateOperand(operand)) ::
+        translateBranchLink("", new BranchString(bl))
+      }
     }
+
+    case _ => List("Command not implemented")
+    }
+    
   }
 }
