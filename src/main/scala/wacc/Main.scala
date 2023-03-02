@@ -57,8 +57,8 @@ object Main {
     val assembler = new Assembler()
     val result = assembler.assembleProgram(tac)
     println("--- ARM ---")
-    result.foreach(l => println(l))
-    
+    print(result)
+
     /* Output the assembly file */
     if(OutputAssemblyFile) {
       val inputFilename = args.last.split("/").last
