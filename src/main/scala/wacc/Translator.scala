@@ -1,11 +1,11 @@
 package wacc
 
-import scala.collection.mutable._
-import wacc.AbstractSyntaxTree._
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree._
 import wacc.TAC._
+
+import scala.collection.mutable._
 
 
 object Translator {
@@ -17,7 +17,7 @@ object Translator {
   private val strings = Map[String, Label]()
   private val dataList = ListBuffer[TAC]()
 
-  def newMap(): Map[ASTNode, TRegister] = { 
+  def newMap(): Map[ASTNode, TRegister] = {
     // Push scope on to stack when entering new context
     val map = Map[ASTNode, TRegister]()
     scopes.addOne(map)
@@ -87,16 +87,16 @@ object Translator {
       }
       case BinaryOp(op, expr1, expr2) => {
         op match {
-          case BinaryOpType.Add | BinaryOpType.Div | 
-            BinaryOpType.Mod | BinaryOpType.Mul | BinaryOpType.Sub => {
-              Some(BaseType(BaseT.Int_T))
+          case BinaryOpType.Add | BinaryOpType.Div |
+               BinaryOpType.Mod | BinaryOpType.Mul | BinaryOpType.Sub => {
+            Some(BaseType(BaseT.Int_T))
           }
           case _ => {
             Some(BaseType(BaseT.Bool_T))
           }
         }
       }
-      case PairLiteral() => Some(PairType(NestedPair(),NestedPair()))
+      case PairLiteral() => Some(PairType(NestedPair(), NestedPair()))
       case StringLiteral(x) => Some(BaseType(BaseT.String_T))
       case BoolLiteral(x) => Some(BaseType(BaseT.Bool_T))
       case CharLiteral(x) => Some(BaseType(BaseT.Char_T))
@@ -109,7 +109,7 @@ object Translator {
   def addNode(node: ASTNode, reg: TRegister) = {
     scopes.last.addOne(node, reg)
   }
-  
+
   def addType(ident: IdentLiteral, bType: DeclarationType) = {
     typeMaps.last.addOne(ident.name, bType)
   }
@@ -147,7 +147,7 @@ object Translator {
         }
         // Only add literal assignments/declarations to the scope
         node match {
-          case x: Literal => addNode(node, tac._2)
+          case node: Literal => addNode(node, tac._2)
           case _ =>
         }
         tac
@@ -187,10 +187,10 @@ object Translator {
   def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
     val (pairRegList, pairReg) = delegateASTNode(lvalue)
     val (fstType, sndType) = findType(lvalue) match {
-        case Some(PairType(fstType, sndType)) => (fstType, sndType)
-        case None =>  (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
+      case Some(PairType(fstType, sndType)) => (fstType, sndType)
+      case None => (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
     }
-     // Should not add this register to Map as it might update
+    // Should not add this register to Map as it might update
     val dstReg = nextRegister()
     val elemType = if (elem == PairElemT.Fst) fstType else sndType
     (pairRegList ++ List(GetPairElem(elemType, pairReg, elem, dstReg)), dstReg)
@@ -282,7 +282,7 @@ object Translator {
         val arrReg = nextRegister()
         addNode(ident, arrReg)
         (List(Comments("Array Declaration Start")) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, arrReg),
-         Comments("Array Declaration End")), arrReg)
+          Comments("Array Declaration End")), arrReg)
       }
       case _ => (List(new Label("Array Type not Matched")), null)
     }
@@ -300,14 +300,14 @@ object Translator {
             addNode(exp2, sndReg)
             val pairReg = nextRegister()
             addNode(pairValue, pairReg)
-            (List(Comments("Creating newpair")) ++ 
-            exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, fstReg)) ++ 
-            exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, sndReg), 
-            CreatePair(fstType, sndType, fstReg, sndReg, pairReg), Comments("Created newpair")), pairReg)
+            (List(Comments("Creating newpair")) ++
+              exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, fstReg)) ++
+              exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, sndReg),
+              CreatePair(fstType, sndType, fstReg, sndReg, pairReg), Comments("Created newpair")), pairReg)
           }
         }
-          
-        }
+
+      }
       case PairLiteral() => {
         val reg = nextRegister()
         (List(AssignmentTAC(PairLiteralTAC(), reg)), reg)
@@ -317,7 +317,7 @@ object Translator {
     }
   }
 
-  def translatePairDeclaration(fstType: DeclarationType, sndType: DeclarationType, ident: IdentLiteral, pairValue: RVal): (List[TAC], TRegister) = {   
+  def translatePairDeclaration(fstType: DeclarationType, sndType: DeclarationType, ident: IdentLiteral, pairValue: RVal): (List[TAC], TRegister) = {
     val (pairList, pairReg) = translatePairValue(fstType, sndType, pairValue)
     addNode(ident, pairReg)
     (pairList, pairReg)
@@ -340,11 +340,11 @@ object Translator {
   def translatePairElemAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
     val (rvalueList, rvalueReg) = delegateASTNode(rvalue)
     lvalue match {
-      case PairElement(elem, lvalue) => { 
+      case PairElement(elem, lvalue) => {
         val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
         val (fstType, sndType) = findType(lvalue) match {
           case Some(PairType(fstType, sndType)) => (fstType, sndType)
-          case None =>  (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
+          case None => (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
         }
         val elemType = if (elem == PairElemT.Fst) fstType else sndType
         (rvalueList ++ lvalueList ++ List(StorePairElem(elemType, lvalueReg, elem, rvalueReg)), lvalueReg)
@@ -365,15 +365,9 @@ object Translator {
   }
 
   def translateIdentAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
-    delegateASTNode(lvalue) match {
-      case (lList, lReg) => {
-        delegateASTNode(rvalue) match {
-          case (rList, rReg) => {
-            (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), lReg)
-          }
-        }
-      }
-    }
+    val (lList, lReg) = delegateASTNode(lvalue) // this is the variable: it should have a register assigned to it, but no value. /
+    val (rList, rReg) = delegateASTNode(rvalue) // this is the value: it should ALWAYS be assigned to a different node to all variables.
+    (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), lReg)
   }
 
   def translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
@@ -444,7 +438,7 @@ object Translator {
       }
     })
     val returnReg = nextRegister()
-    addNode(Call(ident,args), returnReg)
+    addNode(Call(ident, args), returnReg)
     (argTacList ++ List(CallTAC(new Label(ident.name), argOutList, returnReg)), returnReg)
   }
 
@@ -454,14 +448,14 @@ object Translator {
     func match {
       case Func(returnType, ident, types, code) => {
         // PopParam
-        types.zipWithIndex.foreach{
-            case ((t, paramName), index) => {
-              val paramReg = nextRegister()
-              addNode(paramName, paramReg)
-              addType(paramName, t)
-              paramList = paramList ++ List(PopParamTAC(t, paramReg, index))
-              }
-            }
+        types.zipWithIndex.foreach {
+          case ((t, paramName), index) => {
+            val paramReg = nextRegister()
+            addNode(paramName, paramReg)
+            addType(paramName, t)
+            paramList = paramList ++ List(PopParamTAC(t, paramReg, index))
+          }
+        }
         delegateASTNode(code) match {
           case (tacList, outReg) => {
             // Remove the map from scope
@@ -469,7 +463,7 @@ object Translator {
             // Clear the register list
             regList.clear()
           }
-          List(new Label(ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList ++ List(EndFuncTAC())
+            List(new Label(ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList ++ List(EndFuncTAC())
         }
       }
     }
