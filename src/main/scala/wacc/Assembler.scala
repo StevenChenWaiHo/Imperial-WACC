@@ -89,7 +89,7 @@ class Assembler {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
       case ImmediateInt(x) => {
-        str = str + "[" + sourceRegister.toString + ", #" + x + "]!"
+        str = str + "[" + sourceRegister.toString + ", #" + x + "]"
       }
       case LabelString(x) => {
         str = str + "=" + x
