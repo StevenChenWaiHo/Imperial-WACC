@@ -108,7 +108,17 @@ object RegisterAllocator {
 
   def translateRegister(treg: TRegister): Register = {
     // TODO: add handling of treg mapped to stack
-    registerMap.getOrElse(treg, r0)
+    treg.num match {
+      case 0 => r4
+      case 1 => r5
+      case 2 => r6
+      case 3 => r7
+      case 4 => r8
+      case 5 => r9
+      case 6 => r10
+      case 7 => r11
+      case _ => r11
+    }
   }
 
   def getRegister(tReg: TRegister): Register = {
