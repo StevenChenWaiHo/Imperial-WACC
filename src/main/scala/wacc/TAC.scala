@@ -32,7 +32,7 @@ object TAC {
   }
   case class CommandTAC(cmd: Cmd, t1: Operand, opType: DeclarationType) extends TAC
   case class PushParamTAC(t1: Operand) extends TAC
-  case class PopParamTAC(datatype: DeclarationType, t1: TRegister) extends TAC
+  case class PopParamTAC(datatype: DeclarationType, t1: TRegister, index: Int) extends TAC
   case class CallTAC(lbl: Label, args: List[TRegister], dstReg: TRegister) extends TAC 
   case class BeginFuncTAC() extends TAC
   case class EndFuncTAC() extends TAC
@@ -58,14 +58,14 @@ object TAC {
   }
 
   // Pairs Operations to ARM
-  //   --- CreatePairFstElem() --- 
+  //   --- CreatePairElem(Fst) --- 
   // Save r8 and r12
   // malloc fst elem with reference to its type
   // mov r8 fstReg
   // mov r12 r0
   // str r8, [r12, #0]
   // push r12
-  //   --- CreatePairSndElem() --- 
+  //   --- CreatePairElem(Snd) --- 
   // Save r8 and r12
   // r8 = sndReg = register with sndElem
   // malloc snd elem with reference to its type
@@ -81,8 +81,7 @@ object TAC {
   // pop r8  
   // str r8 [r12, #0]
   // mov dstReg r12
-  case class CreatePairFstElem(fstType: DeclarationType, fstReg: TRegister) extends TAC
-  case class CreatePairSndElem(sndType: DeclarationType, sndReg: TRegister) extends TAC
+  case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, fstReg: TRegister) extends TAC
   case class CreatePair(fstType: DeclarationType, sndType: DeclarationType, 
                         fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
 
@@ -137,6 +136,9 @@ object TAC {
   class LiteralTAC() extends Operand
     case class IdentLiteralTAC(name: String) extends LiteralTAC {
       override def toString(): String = name
+    }
+    case class PairLiteralTAC() extends LiteralTAC {
+      override def toString(): String = "null"
     }
     case class IntLiteralTAC(value: Int) extends LiteralTAC {
       override def toString(): String = value.toString()

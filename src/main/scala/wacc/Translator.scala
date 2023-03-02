@@ -96,7 +96,7 @@ object Translator {
           }
         }
       }
-      case PairLiteral() => Some(BaseType(BaseT.None_T))
+      case PairLiteral() => Some(PairType(NestedPair(),NestedPair()))
       case StringLiteral(x) => Some(BaseType(BaseT.String_T))
       case BoolLiteral(x) => Some(BaseType(BaseT.Bool_T))
       case CharLiteral(x) => Some(BaseType(BaseT.Char_T))
@@ -172,7 +172,7 @@ object Translator {
         })
       }
       case IdentLiteral(x) => return (List(), next)
-      //case PairLiteral(x) => new PairLiteralTAC(x)
+      case PairLiteral() => new PairLiteralTAC()
       //case ArrayLiteral(x) => translateArrayLiteral(x)
     }
     (List(AssignmentTAC(lhs, next)), next)
@@ -301,14 +301,19 @@ object Translator {
             val pairReg = nextRegister()
             addNode(pairValue, pairReg)
             (List(Comments("Creating newpair")) ++ 
-            exp1List ++ List(CreatePairFstElem(fstType, fstReg)) ++ 
-            exp2List ++ List(CreatePairSndElem(sndType, sndReg), 
+            exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, fstReg)) ++ 
+            exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, sndReg), 
             CreatePair(fstType, sndType, fstReg, sndReg, pairReg), Comments("Created newpair")), pairReg)
           }
         }
           
         }
-      case _ => (List(Label("Not translating Pair Value")), null)
+      case PairLiteral() => {
+        val reg = nextRegister()
+        (List(AssignmentTAC(PairLiteralTAC(), reg)), reg)
+      }
+      case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
+      case t => print(t); (List(Label("Not translating Pair Value")), null)
     }
   }
 
@@ -443,19 +448,18 @@ object Translator {
     (argTacList ++ List(CallTAC(new Label(ident.name), argOutList, returnReg)), returnReg)
   }
 
-
   def translateFunction(func: Func): List[TAC] = {
     newMap()
     var paramList = List[TAC]()
     func match {
       case Func(returnType, ident, types, code) => {
         // PopParam
-        types.foreach{
-            case (t, paramName) => {
+        types.zipWithIndex.foreach{
+            case ((t, paramName), index) => {
               val paramReg = nextRegister()
               addNode(paramName, paramReg)
               addType(paramName, t)
-              paramList = paramList ++ List(PopParamTAC(t, paramReg))
+              paramList = paramList ++ List(PopParamTAC(t, paramReg, index))
               }
             }
         delegateASTNode(code) match {
