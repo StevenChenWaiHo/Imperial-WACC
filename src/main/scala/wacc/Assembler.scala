@@ -89,7 +89,7 @@ class Assembler {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
       case ImmediateInt(x) => {
-        str = str + "[" + sourceRegister.toString + ", #" + x + "]"
+        str = str + "[" + sourceRegister.toString + ", #" + x + "]!"
       }
       case LabelString(x) => {
         str = str + "=" + x
@@ -135,9 +135,12 @@ class Assembler {
 
   //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ++
+    if (destinationRegister == sp) { // Don't overflow for sp
+      "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    } else {
+      "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ++
       translateBranchLink("vs", new BranchString("_errOverflow"))
+    }
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
@@ -382,6 +385,7 @@ class Assembler {
     }
     addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
     translateBranchLink("", new BranchString(bl))
+    translateMove("", translateRegister(readReg), r0)
   }
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): AssemblerState = {
