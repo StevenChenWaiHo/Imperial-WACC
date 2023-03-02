@@ -38,7 +38,6 @@ object StatelessAssembler {
       case LabelString(x) => {
         str = str + "=" + x
       }
-      case
     }
     str
   }
@@ -360,23 +359,6 @@ class Assembler {
         translateLdr("", translateRegister(res), r0, translateOperand(t1))
       }
     }
-  }
-
-  def assembleRead(datatype: DeclarationType, readReg: TRegister): List[String] = {
-    val bl = datatype match {
-      case BaseType(baseType) => {
-        baseType match {
-          case BaseT.Int_T => "_readi"
-          case BaseT.Char_T => "_readc"
-          case BaseT.String_T => "_reads"
-          case BaseT.Bool_T => "_readb"
-          case _ => "_readi"
-        }
-      }
-      case _ => "_readi"
-    }
-    addEndFunc(bl, translate_read(bl))
-    List(translateBranchLink("", new BranchString(bl)))
   }
 
   def assembleRead(datatype: DeclarationType, readReg: TRegister): AssemblerState = {
