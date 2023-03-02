@@ -147,7 +147,7 @@ object Translator {
         }
         // Only add literal assignments/declarations to the scope
         node match {
-          case node: Literal => addNode(node, tac._2)
+          case node: IdentLiteral => addNode(node, tac._2)
           case _ =>
         }
         tac
@@ -315,8 +315,12 @@ object Translator {
       
       case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
       // PairLiteral or IdentLiteral
-      case lit: Literal => delegateASTNode(lit)
-      case t => print(t); (List(Label("Not translating Pair Value")), null)
+      case lit: Literal => {
+        val reg = nextRegister()
+        val (srcRegList, srcReg) = delegateASTNode(lit)
+        (srcRegList ++ List(AssignmentTAC(srcReg, reg)), reg)
+      }
+      case t => throw new ArithmeticException("Not translating Pair Value"); (List(Label("Not translating Pair Value")), null)
     }
   }
 

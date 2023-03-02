@@ -56,10 +56,28 @@ class HardcodeFunctions extends Assembler {
       case "_printi" => translate_printi()
       case "_printc" => translate_printc()
       case "_printb" => translate_printb()
+      case "_printp" => translate_printp()
       case "_println" => translate_println()
       case _ => translate_prints()
     }
   }
+
+   def translate_printp(): List[String] = {
+    val sLbl = new Label(".L._printp_str0")
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
+    translateTAC(StringDefinitionTAC("%p", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++
+    translateTAC(Label("_printp")) ++
+    (translatePush("", List(lr)) ::
+        translateMove("", r1, r0) ::
+        translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
+        translateBranchLink("", new BranchString("printf")) ::
+        translateMove("", r0, new ImmediateInt(0)) ::
+        translateBranchLink("", new BranchString("fflush")) ::
+        translatePop("", List(pc)))
+   }
 
   def translate_prints(): List[String] = {
     val sLbl = new Label(".L._prints_str0")
