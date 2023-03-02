@@ -88,9 +88,6 @@ class Assembler {
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
-      case ImmediateInt(x) if !checkMovCases(x) => {
-        str = str + "=" + x
-      }
       case ImmediateInt(x) => {
         str = str + "[" + sourceRegister.toString + ", #" + x + "]"
       }
@@ -203,7 +200,7 @@ class Assembler {
 
   def translateMove(condition: String, dst: Register, operand: LHSop): AssemblerState = {
     operand match {
-      case ImmediateInt(i) if !checkMovCases(i) => translateLdr("", dst, r0, operand)
+      case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
       case _ => "mov " + dst.toString + ", " + operand.toString()
     }
   }
@@ -308,6 +305,13 @@ class Assembler {
     }
   }
 
+  def getInstructionType(decType: DeclarationType): String = {
+    decType match {
+      case BaseType(BaseT.Char_T) => "b"
+      case _ => ""
+    }
+  }
+
   def getTypeSize(decType: DeclarationType): Int = {
     decType match {
       case BaseType(BaseT.Int_T) => 4
@@ -398,11 +402,11 @@ class Assembler {
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
-    translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
+    translateLdr(getInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
   }
 
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
-    translateStr("", translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
+    translateStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
   }
 
   def assembleProgram(tacList: List[TAC]): String = {
