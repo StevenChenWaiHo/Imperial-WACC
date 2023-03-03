@@ -215,7 +215,7 @@ object Translator {
           }
         })
         val dstReg = nextRegister()
-        (is.toList ++ List(GetArrayElem(findType(indices.head).get, arrReg, rs.toList, dstReg)), dstReg)
+        (is.toList ++ List(LoadArrayElem(findType(indices.head).get, arrReg, rs.toList, dstReg)), dstReg)
       }
       case _ => (List(Label("Not translating ArrayElem")), null)
     }

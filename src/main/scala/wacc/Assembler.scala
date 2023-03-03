@@ -301,7 +301,7 @@ class Assembler {
       case InitialiseArray(arrLen, dstReg) => assembleArrayInit(arrLen, dstReg)
       case CreateArrayElem(arrayElemType, elemPos, elemReg) => assembleArrayElem(arrayElemType, elemPos, elemReg)
       case CreateArray(arrayElemType, elemsReg, dstReg) => assembleArray(arrayElemType, dstReg)
-      case GetArrayElem(datatype, arrReg, arrPos, dstReg) => assembleGetArrayElem(datatype, arrReg, arrPos, dstReg)
+      case LoadArrayElem(datatype, arrReg, arrPos, dstReg) => assembleLoadArrayElem(datatype, arrReg, arrPos, dstReg)
       case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => assembleStoreArrayElem(datatype, arrReg, arrPos, srcReg)
       case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
@@ -624,7 +624,7 @@ class Assembler {
     translateStr("", r8, r12, new ImmediateInt(4 * elemPos))
   }
   
-  def assembleGetArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[TRegister], dstReg: TRegister): AssemblerState = {
+  def assembleLoadArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     translateMove("", r3, translateOperand(arrayReg)) :: // arrLoad uses r3
     translateBranchLink("", new LabelString("_arrLoad"))
   }
