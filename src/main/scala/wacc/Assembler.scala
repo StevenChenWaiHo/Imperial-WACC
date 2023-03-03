@@ -419,8 +419,10 @@ class Assembler {
     translateCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
     translateBranchLink("eq",  new BranchString("_errNull")) ::
     translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
+    translatePush("", List(translateRegister(pairReg))) ::
     translateMove("", translateRegister(pairReg), translateRegister(dstReg)) ::
-    translateLdr(getLdrInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(0))
+    translateLdr(getLdrInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(0)) ::
+    translatePop("", List(translateRegister(pairReg)))
   }
 
   // StorePairElem
