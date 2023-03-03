@@ -498,6 +498,16 @@ class Assembler {
           translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
           translateTAC(lbl)
       }
+      case BinaryOpType.Or => {
+        val lbl = generateLabel()
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+          translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
+          translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
+          translateBranch("eq", lbl.name) ::
+          translateCompare("", translateOperand(op2), new ImmediateInt(1)) ::
+          translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
+          translateTAC(lbl)
+      }
     }
   }
 
