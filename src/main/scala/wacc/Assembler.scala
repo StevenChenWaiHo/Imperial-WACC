@@ -399,7 +399,7 @@ class Assembler {
     // move the result into dst before r0 is popped back
     output = output ++ (translateMove("", translateRegister(dstReg), r0))
     // get previous registers from stack
-    output ++ (translatePop("", List(r0, r1, r2, r3)))
+    output ++ (translatePop("", regs))
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
