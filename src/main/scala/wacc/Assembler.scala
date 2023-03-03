@@ -175,7 +175,7 @@ class Assembler {
   def translateSmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "smull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
-
+    
   def translateSmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
@@ -294,8 +294,9 @@ class Assembler {
       case BinaryOpTAC(operation, op1, op2, res) => assembleBinOp(operation, op1, op2, res)
       case IfTAC(t1, goto) => assembleIf(t1, goto)
       case GOTO(label) => assembleGOTO(label)
-      case CreatePairElem(pairElemType, pairPos, srcReg) => assemblePairElem(pairElemType, pairPos, srcReg)
-      case CreatePair(fstType, sndType, fstReg, sndReg, dstReg) => assemblePair(fstType, sndType, dstReg)
+      case CreatePairElem(pairElemType, pairPos, ptrReg, pairElemReg) => assemblePairElem(pairElemType, pairPos, ptrReg, pairElemReg)
+      case CreatePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg) => assemblePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg)
+      case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
       case InitialiseArray(arrLen, dstReg) => assembleArrayInit(arrLen, dstReg)
@@ -318,6 +319,14 @@ class Assembler {
     }
   }
 
+  def getLdrInstructionType(decType: DeclarationType): String = {
+    decType match {
+      case BaseType(BaseT.Char_T) => "sb"
+      case _ => ""
+    }
+  }
+
+
   def getTypeSize(decType: DeclarationType): Int = {
     decType match {
       case BaseType(BaseT.Int_T) => 4
@@ -328,30 +337,25 @@ class Assembler {
 
   val POINTER_BYTE_SIZE = 4
 
-  def assemblePair(fstType: DeclarationType, sndType: DeclarationType, dstReg: TRegister): AssemblerState = {
+  def assemblePair(fstType: DeclarationType, sndType: DeclarationType, fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister): AssemblerState = {
     // r12: pointer to pair r8: pointer to pairElem
-    translatePush("", List(r8, r12)) ::
+    translatePop("", List(translateRegister(fstReg))) ::
+    translatePop("", List(translateRegister(sndReg))) ::
     translateMove("", r0, new ImmediateInt(2 * POINTER_BYTE_SIZE)) ::
       translateBranchLink("", new BranchString("malloc")) ::
-      translateMove("", r12, r0) ::
-      translatePop("", List(r8)) ::
-      translateStr("", r8, r12, new ImmediateInt(POINTER_BYTE_SIZE)) ::
-      translatePop("", List(r8)) ::
-      translateStr("", r8, r12, new ImmediateInt(0)) ::
-      translateMove("", translateRegister(dstReg), r12) ::
-      translatePop("", List(r8, r12))
+      translateMove("", translateRegister(ptrReg), r0) ::
+      translateStr("", translateRegister(fstReg), translateRegister(ptrReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
+      translateStr("", translateRegister(sndReg), translateRegister(ptrReg), new ImmediateInt(0)) ::
+      translateMove("", translateRegister(dstReg), translateRegister(ptrReg))
   }
 
-  def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
-    translatePush("", List(r8, r12)) ::
+  def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): AssemblerState = {
       translateMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
       translateBranchLink("", new BranchString("malloc")) ::
-      translateMove("", r8, translateRegister(srcReg)) ::
-      translateMove("", r12, r0) ::
-      translateStr("", r8, r12, new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
-      translateMove("", translateRegister(srcReg), r12) ::
-      translatePop("", List(r8, r12)) ::
-      translatePush("", List(translateRegister(srcReg)))
+      translateMove("", translateRegister(ptrReg), r0) ::
+      translateStr(getInstructionType(pairElemType), translateRegister(pairElem), translateRegister(ptrReg), new ImmediateInt(0)) ::
+      translateMove("", translateRegister(pairElem), translateRegister(ptrReg)) ::
+      translatePush("", List(translateRegister(pairElem)))
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
@@ -409,12 +413,31 @@ class Assembler {
     output ++ (translatePop("", regs))
   }
 
+  // GetPairElem
+  // Check Null
+  // ldr dstReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
+  // mov pairReg dstReg
+  // ldr(type) dstReg [pairReg, 0]
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
-    translateLdr(getInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
+    // TODO: Check Null
+    addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    
+    translateCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
+    translateBranchLink("eq",  new BranchString("_errNull")) ::
+    translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
+    translatePush("", List(translateRegister(pairReg))) ::
+    translateMove("", translateRegister(pairReg), translateRegister(dstReg)) ::
+    translateLdr(getLdrInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(0)) ::
+    translatePop("", List(translateRegister(pairReg)))
   }
 
+  // StorePairElem
+  // ldr pairReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
+  // str srcReg [pairReg, 0]
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
-    translateStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
+    translateLdr("", translateRegister(pairReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
+    translateStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(0))
   }
 
   def assembleProgram(tacList: List[TAC]): String = {
@@ -462,53 +485,47 @@ class Assembler {
           translateBranchLink("", new BranchString("__aeabi_idivmod"))
       }
       case BinaryOpType.Eq => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("eq", translateRegister(res), new ImmediateInt(1))
+          translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("ne", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Neq => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
-          translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("ne", translateRegister(res), new ImmediateInt(1))
+        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
+          translateMove("ne", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("eq", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Lt => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("lt", translateRegister(res), new ImmediateInt(1))
+          translateMove("lt", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("ge", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Gt => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
-          translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("gt", translateRegister(res), new ImmediateInt(1))
+        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
+          translateMove("gt", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("le", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Lte => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("le", translateRegister(res), new ImmediateInt(1))
+          translateMove("le", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("gt", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Gte => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("ge", translateRegister(res), new ImmediateInt(1))
+          translateMove("ge", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("lt", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.And => {
-        val lbl = generateLabel()
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
-          translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
+        translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
           translateCompare("eq", translateOperand(op2), new ImmediateInt(1)) ::
-          translateBranch("ne", lbl.name) ::
-          translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
-          translateTAC(lbl)
+          translateMove("ne", translateRegister(res), new ImmediateInt(0)) ::
+          translateMove("eq", translateRegister(res), new ImmediateInt(1))
       }
       case BinaryOpType.Or => {
-        val lbl = generateLabel()
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
-          translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
+        translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
           translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
-          translateBranch("eq", lbl.name) ::
-          translateCompare("", translateOperand(op2), new ImmediateInt(1)) ::
-          translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
-          translateTAC(lbl)
+          translateCompare("ne", translateOperand(op2), new ImmediateInt(1)) ::
+          translateMove("ne", translateRegister(res), ImmediateInt(0)) ::
+          translateMove("eq", translateRegister(res), ImmediateInt(1))
       }
     }
   }
