@@ -1,7 +1,7 @@
 package wacc
 
 import wacc.StatelessAssembler.{translateLdr, translatePush}
-import wacc.AssemblerTypes.{ImmediateInt, Register, sp}
+import wacc.AssemblerTypes.{ImmediateInt, Register, sp, fp}
 import wacc.TAC._
 
 import scala.collection.AbstractSeq
@@ -58,7 +58,7 @@ object RegisterAllocator {
       /* Check the stack */
       val stackLocation: Int = inMemory.indexOf(target)
       if (stackLocation != (-1)) {
-        code = code.addOne(translateLdr("", available.head, sp, new ImmediateInt(4 * stackLocation + 4)))
+        code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-4 * stackLocation - 4)))
         inMemory = inMemory.updated(stackLocation, null)
       }
 
