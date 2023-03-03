@@ -287,7 +287,7 @@ class Assembler {
     tripleAddressCode match {
       case Label(name) => assembleLabel(name)
       case Comments(str) => List("@ " + str)
-      case DataSegmentTAC() => List(".data")
+      case DataSegmentTAC() => List("\n.data")
       case TextSegmentTAC() => List(".text")
       case StringLengthDefinitionTAC(len, lbl) => assembleStringLengthDef(len, lbl)
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
@@ -579,7 +579,6 @@ class Assembler {
       case NestedPair() => "_printp"
       case PairType(fstType, sndType) => "_printp"
       }
-      var printLn: AssemblerState = List[String]()
       addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
       if (cmd == CmdT.PrintLn) {
         addEndFunc("_println", new HardcodeFunctions().translate_print("_println"))
