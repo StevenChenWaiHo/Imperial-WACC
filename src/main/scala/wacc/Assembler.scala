@@ -89,7 +89,7 @@ class Assembler {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
       case ImmediateInt(x) => {
-        str = str + "[" + sourceRegister.toString + ", #" + x + "]!"
+        str = str + "[" + sourceRegister.toString + ", #" + x + "]"
       }
       case LabelString(x) => {
         str = str + "=" + x
@@ -109,6 +109,10 @@ class Assembler {
   def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
     //Incomplete
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  }
+
+  def translateStrPre(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
+    translateStr(condition, destinationRegister, sourceRegister, operand) + "!"
   }
 
   def generateLabel(): Label = {

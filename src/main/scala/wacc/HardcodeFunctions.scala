@@ -171,7 +171,7 @@ class HardcodeFunctions extends Assembler {
         translateTAC(Label(".L_printb0"))) ++
       (translateLdr("", r2, r0, new LabelString(tLbl.name)) ::
         translateTAC(Label(".L_printb1"))) ++
-      ("ldr r1, [r2, #-4]" ::
+      (translateLdr("", r1, r2, ImmediateInt(-4)) ::
         translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
         translateBranchLink("", new BranchString("printf")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
@@ -198,7 +198,7 @@ class HardcodeFunctions extends Assembler {
       Label("_readi")).map(tac => translateTAC(tac))
 
       translatePush("", List(lr))
-      translateStr("", r0, sp, new ImmediateInt(-4))
+      translateStrPre("", r0, sp, new ImmediateInt(-4))
       translateMove("", r1, sp)
       translateLdr("", r0, null, new LabelString(lbl.name))
       translateBranchLink("", new BranchString("scanf"))
@@ -218,7 +218,7 @@ class HardcodeFunctions extends Assembler {
       Label("_readc")).map(tac => translateTAC(tac))
 
       translatePush("", List(lr))
-      translateStr("b", r0, sp, new ImmediateInt(-1))
+      translateStrPre("b", r0, sp, new ImmediateInt(-1))
       translateMove("", r1, sp)
       translateLdr("", r0, null, new LabelString(lbl.name))
       translateBranchLink("", new BranchString("scanf"))
