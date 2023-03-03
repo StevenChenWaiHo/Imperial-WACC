@@ -419,7 +419,7 @@ class Assembler {
     tacList.map(translateTAC)
     //TODO: It's possible some lines shouldn't have a new line after them. It's better if the translateX functions
     // Added a new line at the end of their return value instead.
-    state.code.addAll(endFuncsToList)
+    state.code.addAll(endFuncsToList())
     state.code.mkString("\n")
   }
 
@@ -505,9 +505,28 @@ class Assembler {
     List(".word " + len.toString())
   }
 
+  def escape(s: String): String = "\"" + s.flatMap(escapeChar) + "\""
+  def escapeChar(ch: Char): String = ch match {
+    case '\b' => "\\b"
+    case '\t' => "\\t"
+    case '\n' => "\\n"
+    case '\f' => "\\f"
+    case '\r' => "\\r"
+    case '"'  => "\\\""
+    case '\'' => "\\\'"
+    case '\\' => "\\\\"
+    case _    => {
+      if (ch.isControl) {
+        "\\0" + Integer.toOctalString(ch.toInt)
+      } else {
+        String.valueOf(ch)
+      }
+    }
+  }
+
   def assembleStringDef(str: String, lbl: Label): AssemblerState = {
     translateTAC(lbl) ++
-      List(".asciz \"" + str + "\"")
+      List(".asciz " + escape(str))
   }
 
   def assembleBeginFunc() = {
