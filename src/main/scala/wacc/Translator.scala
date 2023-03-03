@@ -384,16 +384,29 @@ object Translator {
   }
 
   def translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
-    // Initialise the .data segment
-    dataList.addOne(DataSegmentTAC())
-    // Start the code segment with the functions first
-    val funcTAClist = ListBuffer[TAC](TextSegmentTAC())
-    funcs.foreach(f => {
-      funcTAClist.addAll(translateFunction(f))
-    })
     newMap()
+    // Initialise the main .data segment
+    dataList.addOne(DataSegmentTAC())
+    // Translate main to TAC
     var (tacList, reg) = delegateASTNode(s)
-    dataList.toList ++ funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
+    // Save main .data and .text segment
+    val mainDataList = dataList ++ List[TAC](TextSegmentTAC())
+    // Translate funcs after main to TAC
+    val allFuncTAClist = ListBuffer[TAC]()
+    funcs.foreach(f => {
+      // New .data and .text for each func
+      dataList.clear()
+      dataList.addOne(DataSegmentTAC())
+      val funcTAClist = ListBuffer[TAC]()
+      funcTAClist.addOne(TextSegmentTAC())
+      funcTAClist.addAll(translateFunction(f))
+      // Prepend the .data segment
+      allFuncTAClist.addAll(dataList ++ funcTAClist)
+    })
+    mainDataList.toList ++ 
+    List(Label("main"), BeginFuncTAC()) ++ 
+    tacList ++ List(EndFuncTAC()) ++ 
+    allFuncTAClist.toList
   }
 
   def translateStatList(stats: List[Stat]): (List[TAC], TRegister) = {
