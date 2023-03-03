@@ -206,7 +206,7 @@ class Assembler {
   def translateMove(condition: String, dst: Register, operand: LHSop): AssemblerState = {
     operand match {
       case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
-      case _ => "mov " + dst.toString + ", " + operand.toString()
+      case _ => "mov" + condition + " " + dst.toString + ", " + operand.toString()
     }
   }
 
