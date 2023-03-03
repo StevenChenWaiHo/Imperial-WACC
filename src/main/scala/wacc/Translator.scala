@@ -398,10 +398,10 @@ object Translator {
       dataList.clear()
       dataList.addOne(DataSegmentTAC())
       val funcTAClist = ListBuffer[TAC]()
-      funcTAClist.addOne(TextSegmentTAC())
+      //funcTAClist.addOne(TextSegmentTAC())
       funcTAClist.addAll(translateFunction(f))
       // Prepend the .data segment
-      allFuncTAClist.addAll(dataList ++ funcTAClist)
+      allFuncTAClist.addAll(funcTAClist)
     })
     mainDataList.toList ++ 
     List(Label("main"), BeginFuncTAC()) ++ 
