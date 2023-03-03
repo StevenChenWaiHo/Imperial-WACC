@@ -24,7 +24,8 @@ object CFG {
   }
 
   class CFG[A](instrs: Vector[TAC], regLimit: Int) {
-    val nodes: Vector[CFGNode] = iterate(instrs.zipWithIndex.map(x => makeNode(x._1, x._2)))
+    var nodes: Vector[CFGNode] = instrs.zipWithIndex.map(x => makeNode(x._1, x._2))
+    nodes = iterate(nodes)
     val interferences: InterferenceGraph[A] = buildInterferenceGraph
 
     implicit def toCFGReg(tReg: TRegister): TReg = TReg(tReg.num)
@@ -57,6 +58,9 @@ object CFG {
           uses = List(t1)
           succs = List(id + 1, getId(lbl))
         }
+        case EndFuncTAC() => {
+          succs = Nil
+        }
         case CommandTAC(_, t1, _) =>
           uses = List(t1)
         case PushParamTAC(t1) =>
@@ -78,7 +82,7 @@ object CFG {
 
         //TODO
       }
-      CFGNode(id, instr, uses, defs, succs)
+      CFGNode(id, instr, uses, defs, succs.toSet)
     }
 
     def getNodes(succs: Set[Id]): Set[CFGNode] = succs.map(nodes(_))

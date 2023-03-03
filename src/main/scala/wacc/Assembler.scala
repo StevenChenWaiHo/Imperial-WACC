@@ -44,7 +44,7 @@ object StatelessAssembler {
   }
 }
 
-class Assembler(tacs: Vector[TAC] = Vector()) {
+class Assembler(tacs: Vector[TAC]) {
   val generalPurposeRegisters = List(r4, r5, r6, r7, r8, r9, r10, r11)
   val cfg = new CFG[Register](tacs, 9)
   val registerAllocation = cfg.findColouring(generalPurposeRegisters).getOrElse({
