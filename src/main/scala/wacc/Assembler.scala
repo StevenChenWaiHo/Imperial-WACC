@@ -299,10 +299,11 @@ class Assembler {
       case CreatePair(fstType, sndType, fstReg, sndReg, dstReg) => assemblePair(fstType, sndType, dstReg)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
-      case CreateArrayElem(arrayElemType, elemReg) => assembleArrayElem(arrayElemType, elemReg)
-      case CreateArray(arrayElemType, elemsReg, dstReg) => assembleArray(arrayElemType, elemsReg, dstReg)
-      case GetArrayElem(datatype, arrReg, arrPos, dstReg) => assembleGetArrayElem(datatype, arrayReg, arrayPos, dstReg)
-      case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => assembleStoreArrayElem(datatype, arrayReg, arrayPos, srcReg)
+      case InitialiseArray(arrLen, dstReg) => assembleArrayInit(arrLen, dstReg)
+      case CreateArrayElem(arrayElemType, elemPos, elemReg) => assembleArrayElem(arrayElemType, elemPos, elemReg)
+      case CreateArray(arrayElemType, elemsReg, dstReg) => assembleArray(arrayElemType, dstReg)
+      case GetArrayElem(datatype, arrReg, arrPos, dstReg) => assembleGetArrayElem(datatype, arrReg, arrPos, dstReg)
+      case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => assembleStoreArrayElem(datatype, arrReg, arrPos, srcReg)
       case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
       case PopParamTAC(datatype, t1, index) => List()
@@ -551,32 +552,31 @@ class Assembler {
     }
   }
 
-  def assembleArray(arrayElemType: DeclarationType, dstReg: TRegister): AssemblerState = {
-    // Assume r8 and r12 not used
-    translateMove("", r0, new ImmediateInt(4 * (arrSize + 1))) :: //todo add arrSize
+  // Assume r8 and r12 not used
+  def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
+    translateMove("", r0, new ImmediateInt(4 * (arrLen + 1))) ::
       translateBranchLink("", new BranchString("malloc")) ::
       translateMove("", r12, r0) ::
-      translateAdd("", None(), r12, r12, new ImmediateInt(4)) ::
-      translateMove("", r8, new ImmediateInt(arrSize)) ::
-      translateStr("", r8, r12, new ImmediateInt(-4)) ::
-      assembleArrayElems() ::
-      translateMove("", r4, r12)
+      translateAdd("", Status(), r12, r12, new ImmediateInt(4)) ::
+      translateMove("", r8, new ImmediateInt(arrLen)) ::
+      translateStr("", r8, r12, new ImmediateInt(-4))
   }
 
-  def assembleArrayElems(): AssemblerState = {}
+  def assembleArray(arrayElemType: DeclarationType, dstReg: TRegister): AssemblerState = {
+    translateMove("", r4, r12)
+  }
 
-  def assembleArrayElem(arrayElemType: DeclarationType, srcReg: TRegister): AssemblerState = {
-    translateMove("", r8) ::
-      translateStr("", r8)
+  def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, srcReg: TRegister): AssemblerState = {
+    translateStr("", r8, r12, new ImmediateInt(4 * elemPos))
   }
   
   def assembleGetArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[TRegister], dstReg: TRegister): AssemblerState = {
-    translateMove("", r10, arrayPos.head) :: //TODO add nested
-      translateMove("", r3, arrayReg) :: // arrload uses r3
-      translateBranchLink("", new LabelString("_arrLoad"))
+    translateMove("", r3, translateOperand(arrayReg)) :: // arrLoad uses r3
+    translateBranchLink("", new LabelString("_arrLoad"))
   }
   
   def assembleStoreArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[Expr], srcReg: TRegister): AssemblerState = {
-
+    translateMove("", r3, translateOperand(arrayReg)) :: // arrStore uses r3
+    translateBranchLink("", new LabelString("_arrStore"))
   }
 }

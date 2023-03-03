@@ -267,21 +267,21 @@ object Translator {
     }
   }
 
-  def translateArrayDeclaration(dataType: DeclarationType, length: Integer, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
+  def translateArrayDeclaration(dataType: DeclarationType, length: Int, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
     rvalue match {
       case ArrayLiteral(elements) => {
         val tacs = ListBuffer[TAC]()
         val tRegs = ListBuffer[TRegister]() //required?
-        elements.foreach(e => {
-          val (elemTacs, reg) = delegateASTNode(e)
-          addNode(e, reg)
+        for (i <- 0 to elements.length - 1) {
+          val (elemTacs, reg) = delegateASTNode(elements(i))
+          addNode(elements(i), reg)
           tacs ++= elemTacs
-          tacs += CreateArrayElem(dataType, reg)
-          tRegs += reg
-        })
+          tacs += CreateArrayElem(dataType, i, reg)
+          tRegs += reg          
+        }
         val arrReg = nextRegister()
         addNode(ident, arrReg)
-        (List(Comments("Array Declaration Start")) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, arrReg),
+        (List(Comments("Array Declaration Start"), InitialiseArray(tRegs.length, arrReg)) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, arrReg),
          Comments("Array Declaration End")), arrReg)
       }
       case _ => (List(new Label("Array Type not Matched")), null)
