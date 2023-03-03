@@ -16,34 +16,62 @@ object CFG {
   // Temporary Register
   case class TReg(x: Int) extends CFGReg
 
-  implicit def toCFGReg(tReg: TRegister): TReg = TReg(tReg.num)
-
-  implicit def toUsedRegisters(ops: Set[Operand]): Set[CFGReg] = ops.collect {
-    case TRegister(num) => TReg(num)
-  }.toSet
-
   case class CFGNode(val id: Id, instr: TAC, uses: Set[CFGReg], defs: Set[CFGReg],
                      succs: Set[Id], liveIn: Set[CFGReg] = Set(), liveOut: Set[CFGReg] = Set()) {
-    def addLiveIns(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn + regs, liveOut)
+    def addLiveIns(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn union regs, liveOut)
 
-    def addLiveOuts(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn, liveOut + regs)
+    def addLiveOuts(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn, liveOut union regs)
   }
 
   class CFG[A](instrs: Vector[TAC], regLimit: Int) {
     val nodes: Vector[CFGNode] = iterate(instrs.zipWithIndex.map(x => makeNode(x._1, x._2)))
     val interferences: InterferenceGraph[A] = buildInterferenceGraph
 
+    implicit def toCFGReg(tReg: TRegister): TReg = TReg(tReg.num)
+    implicit def toUsedRegisters(ops: List[Operand]): Set[CFGReg] = ops.collect {
+      case TRegister(num) => TReg(num)
+    }.toSet
+
+    def getId(l: Label): Id = instrs.indexOf(l)
+
+
     def makeNode(instr: TAC, id: Id): CFGNode = {
       var uses: Set[CFGReg] = Set()
       var defs: Set[CFGReg] = Set()
-      var succs: Set[Id] = Set()
+      var succs: List[Id] = List(id + 1)
 
       instr match {
         case BinaryOpTAC(_, t1, t2, res) => {
-          uses = Set(t1, t2)
-          defs = Set(res)
-          succs = Set(id + 1)
+          uses = List(t1, t2)
+          defs = List(res)
         }
+        case UnaryOpTAC(_, t1, res) => {
+          uses = List(t1)
+          defs = List(res)
+        }
+        case AssignmentTAC(t1, res) => {
+          uses = List(t1)
+          defs = List(res)
+        }
+        case IfTAC(t1, lbl) => {
+          uses = List(t1)
+          succs = List(id + 1, getId(lbl))
+        }
+        case CommandTAC(_, t1, _) =>
+          uses = List(t1)
+        case PushParamTAC(t1) =>
+          uses = List(t1)
+        case PopParamTAC(_, t1, _) =>
+          uses = List(t1)
+        case CallTAC(lbl, args, dstReg) =>
+          uses = args //TODO: I'm fairly sure uses should be left empty here.
+          defs = List(dstReg)
+          succs = List(id + 1, getId(lbl)) //TODO: does this work?
+        case GOTO(lbl) =>
+          succs = List(getId(lbl))
+
+        case _ =>
+
         //TODO
       }
       CFGNode(id, instr, uses, defs, succs)
@@ -80,13 +108,14 @@ object CFG {
 
     /* Returns either a mapping or the furthest register it got to before no mapping was possible.
     * Note: regs should be comparable using ==. */
-    def findColouring(regs: List[A]): Option[Map[TReg, A]] = {
+    def findColouring(regs: List[A]): Option[Map[CFGReg, A]] = {
       // Extremely inefficient:
-      def colour(rRegs: List[A], ints: InterferenceGraph[A]): Option[Map[TReg, A]] = {
+      def colour(rRegs: List[A], ints: InterferenceGraph[A]): Option[Map[CFGReg, A]] = {
+        if(ints.tRegisters.isEmpty) return Some(Map())
         for(t <- ints.tRegisters) {
           for(r <- rRegs) {
             if(ints.canAssign(t, RReg(r))) {
-              val result = colour(rRegs, ints.assign(t, RReg(r)))
+              val result = colour(rRegs, ints.assign(t, RReg(r))).map(_.updated(t, r))
               if(result.isDefined) return result
             }
           }

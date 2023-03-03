@@ -52,7 +52,7 @@ object Main {
     tac.foreach(l => println(l))
 
     // Convert the IR to ARM
-    val assembler = new Assembler()
+    val assembler = new Assembler(tac.toVector)
     val result = assembler.assembleProgram(tac)
     println("--- ARM ---")
     print(result)
