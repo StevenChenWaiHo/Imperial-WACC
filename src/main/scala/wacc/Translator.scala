@@ -465,7 +465,7 @@ object Translator {
     })
     val returnReg = nextRegister()
     addNode(Call(ident, args), returnReg)
-    (argTacList ++ List(CallTAC(new Label(ident.name), argOutList, returnReg)), returnReg)
+    (argTacList ++ List(CallTAC(new Label("wacc_" + ident.name), argOutList, returnReg)), returnReg)
   }
 
   def translateFunction(func: Func): List[TAC] = {
@@ -489,7 +489,7 @@ object Translator {
             // Clear the register list
             regList.clear()
           }
-            List(new Label(ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList
+            List(new Label("wacc_" + ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList
         }
       }
     }
