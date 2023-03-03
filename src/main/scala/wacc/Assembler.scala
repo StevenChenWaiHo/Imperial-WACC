@@ -555,10 +555,13 @@ class Assembler {
       translateMove("", fp, sp)
   }
 
-  def assembleEndFunc() = {
-    translateMove("", r0, new ImmediateInt(0)) ::
+  def assembleEndFunc(): AssemblerState = {
+    state.used.map(e => e match {
+      case (treg, reg) => translatePop("", List(reg))
+    }).toList.fold(null)((x, y) => x :: y) ::
+    (translateMove("", r0, new ImmediateInt(0)) ::
       translatePop("", List(r8, r10, r12)) ::
-      translatePop("", List(fp, pc))
+      translatePop("", List(fp, pc)))
   }
 
   def assembleAssignment(operand: Operand, reg: TRegister) = {
