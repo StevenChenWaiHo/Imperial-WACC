@@ -103,7 +103,7 @@ object AssemblerTypes {
 
   sealed trait Operand2
 
-  case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends Operand2 {
+  case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends LHSop {
     @Override
     override def toString: String = {
       operand match {
@@ -117,61 +117,61 @@ object AssemblerTypes {
     }
   }
 
-  case class LogicalShiftLeft(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
+  case class LogicalShiftLeft(sourceRegister: Register, operand: Either[Register, Int]) extends LHSop {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "LSL " + x
+          sourceRegister + ", " + "lsl " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "LSL " + "#" + value
+          sourceRegister + ", " + "lsl " + "#" + value
         }
       }
     }
   }
 
-  case class LogicalShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
+  case class LogicalShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends LHSop {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "LSR " + x
+          sourceRegister + ", " + "lsr " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "LSR " + " " + "#" + value
+          sourceRegister + ", " + "lsr " + " " + "#" + value
         }
       }
     }
   }
 
-  case class ArithmeticShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
+  case class ArithmeticShiftRight(sourceRegister: Register, operand: Either[Register, Int]) extends LHSop {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "ASR " + x
+          sourceRegister + ", " + "asr " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "ASR " + "#" + value
+          sourceRegister + ", " + "asr " + "#" + value
         }
       }
     }
   }
 
-  case class RotateRight(sourceRegister: Register, operand: Either[Register, Int]) extends Operand2 {
+  case class RotateRight(sourceRegister: Register, operand: Either[Register, Int]) extends LHSop {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "ROR " + x
+          sourceRegister + ", " + "ror " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "ROR " + "#" + value
+          sourceRegister + ", " + "ror " + "#" + value
         }
       }
     }
   }
 
-  case class RotateRightExtended(sourceRegister: Register) extends Operand2 {
+  case class RotateRightExtended(sourceRegister: Register) extends LHSop {
     override def toString: String = {
-      sourceRegister + ", " + "RRX"
+      sourceRegister + ", " + "rrx"
     }
   }
 
@@ -206,5 +206,4 @@ object AssemblerTypes {
       ""
     }
   }
-
 }

@@ -45,12 +45,11 @@ object StatelessAssembler {
 }
 
 class Assembler {
-
+  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
   val endFuncs = collection.mutable.Map[String, List[String]]()
   var labelCount = 0
 
-  val allowedRegisters = ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11)
-  var state = new AssemblerState(allowedRegisters)
+
 
   def translateRegister(t: TRegister) = state.getRegister(t)
 
@@ -58,11 +57,11 @@ class Assembler {
    * It therefore needs to be kept up-to-date. These implicit methods ensure that it can be updated without modifying
    * too much of the code.
    * This isn't the nicest, but hopefully it shouldn't break things. */
-  implicit def updateState(str: String): AssemblerState = {
+  implicit private[this] def updateState(str: String): AssemblerState = {
     state.addInstruction(str)
   }
 
-  implicit def updateState(strs: List[String]): AssemblerState = {
+  implicit private[this] def updateState(strs: List[String]): AssemblerState = {
     state.addInstructions(strs)
   }
 
@@ -90,27 +89,29 @@ class Assembler {
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
-      case ImmediateInt(x) if !checkMovCases(x) => {
-        str = str + "=" + x
-      }
       case ImmediateInt(x) => {
         str = str + "[" + sourceRegister.toString + ", #" + x + "]"
       }
       case LabelString(x) => {
         str = str + "=" + x
       }
+      case default => {
+        str = str + "[" + sourceRegister.toString + ", " +operand.toString + "]"
+      }
     }
     return str
   }
 
   def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
-    //Incomplete
     return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
   def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
-    //Incomplete
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  }
+
+  def translateStrPre(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
+    "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand).toString + "!".toString()
   }
 
   def generateLabel(): Label = {
@@ -120,7 +121,7 @@ class Assembler {
 
   def addEndFunc(name: String, code: List[String]): Unit = {
     if (!endFuncs.contains(name)) {
-      endFuncs.addOne(name, "" :: code)
+      endFuncs.addOne(name, code)
     }
   }
 
@@ -137,9 +138,7 @@ class Assembler {
 
   //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ++
-      translateBranchLink("vs", new BranchString("_errOverflow"))
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
@@ -202,8 +201,8 @@ class Assembler {
 
   def translateMove(condition: String, dst: Register, operand: LHSop): AssemblerState = {
     operand match {
-      case ImmediateInt(i) if !checkMovCases(i) => translateLdr("", dst, r0, operand)
-      case _ => "mov " + dst.toString + ", " + operand.toString()
+      case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
+      case _ => "mov" + condition + " " + dst.toString + ", " + operand.toString()
     }
   }
 
@@ -270,7 +269,7 @@ class Assembler {
       case reg: TRegister => translateRegister(reg)
       case IntLiteralTAC(value) => new ImmediateInt(value)
       case CharLiteralTAC(chr) => new ImmediateInt(chr.toInt)
-      case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true))
+      case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true) + 1)
       case Label(name) => new LabelString(name)
       case PairLiteralTAC() => new ImmediateInt(0)
       case a => println("translateOperand fail: " + a); null // TODO: this should not match
@@ -284,7 +283,7 @@ class Assembler {
     tripleAddressCode match {
       case Label(name) => assembleLabel(name)
       case Comments(str) => List("@ " + str)
-      case DataSegmentTAC() => List(".data")
+      case DataSegmentTAC() => List("\n.data")
       case TextSegmentTAC() => List(".text")
       case StringLengthDefinitionTAC(len, lbl) => assembleStringLengthDef(len, lbl)
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
@@ -312,7 +311,14 @@ class Assembler {
     }
   }
 
-  def getTypeSize(decType: DeclarationType): Integer = {
+  def getInstructionType(decType: DeclarationType): String = {
+    decType match {
+      case BaseType(BaseT.Char_T) => "b"
+      case _ => ""
+    }
+  }
+
+  def getTypeSize(decType: DeclarationType): Int = {
     decType match {
       case BaseType(BaseT.Int_T) => 4
       case BaseType(BaseT.Char_T) => 1
@@ -323,8 +329,8 @@ class Assembler {
   val POINTER_BYTE_SIZE = 4
 
   def assemblePair(fstType: DeclarationType, sndType: DeclarationType, dstReg: TRegister): AssemblerState = {
-    // Assume r8 and r12 not used
     // r12: pointer to pair r8: pointer to pairElem
+    translatePush("", List(r8, r12)) ::
     translateMove("", r0, new ImmediateInt(2 * POINTER_BYTE_SIZE)) ::
       translateBranchLink("", new BranchString("malloc")) ::
       translateMove("", r12, r0) ::
@@ -332,7 +338,8 @@ class Assembler {
       translateStr("", r8, r12, new ImmediateInt(POINTER_BYTE_SIZE)) ::
       translatePop("", List(r8)) ::
       translateStr("", r8, r12, new ImmediateInt(0)) ::
-      translateMove("", translateRegister(dstReg), r12)
+      translateMove("", translateRegister(dstReg), r12) ::
+      translatePop("", List(r8, r12))
   }
 
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
@@ -342,7 +349,9 @@ class Assembler {
       translateMove("", r8, translateRegister(srcReg)) ::
       translateMove("", r12, r0) ::
       translateStr("", r8, r12, new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
-      translatePush("", List(r12))
+      translateMove("", translateRegister(srcReg), r12) ::
+      translatePop("", List(r8, r12)) ::
+      translatePush("", List(translateRegister(srcReg)))
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
@@ -380,6 +389,7 @@ class Assembler {
     }
     addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
     translateBranchLink("", new BranchString(bl))
+    translateMove("", translateRegister(readReg), r0)
   }
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): AssemblerState = {
@@ -393,25 +403,26 @@ class Assembler {
       }
     })
     output = output ++ (translateBranchLink("", new BranchString(lbl.name)))
-    // move the result into r12 before r0 is popped back
-    output = output ++ (translateMove("", r12, r0))
+    // move the result into dst before r0 is popped back
+    output = output ++ (translateMove("", translateRegister(dstReg), r0))
     // get previous registers from stack
-    output ++ (translatePop("", List(r0, r1, r2, r3)))
+    output ++ (translatePop("", regs))
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
-    translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
+    translateLdr(getInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
   }
 
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
-    translateStr("", translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
+    translateStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
   }
 
   def assembleProgram(tacList: List[TAC]): String = {
     tacList.map(translateTAC)
     //TODO: It's possible some lines shouldn't have a new line after them. It's better if the translateX functions
     // Added a new line at the end of their return value instead.
-    state.code.addAll(endFuncsToList).mkString("\n")
+    state.code.addAll(endFuncsToList())
+    state.code.mkString("\n")
   }
 
   def assembleLabel(name: String): AssemblerState = {
@@ -489,6 +500,16 @@ class Assembler {
           translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
           translateTAC(lbl)
       }
+      case BinaryOpType.Or => {
+        val lbl = generateLabel()
+        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
+          translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
+          translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
+          translateBranch("eq", lbl.name) ::
+          translateCompare("", translateOperand(op2), new ImmediateInt(1)) ::
+          translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
+          translateTAC(lbl)
+      }
     }
   }
 
@@ -496,9 +517,28 @@ class Assembler {
     List(".word " + len.toString())
   }
 
+  def escape(s: String): String = "\"" + s.flatMap(escapeChar) + "\""
+  def escapeChar(ch: Char): String = ch match {
+    case '\b' => "\\b"
+    case '\t' => "\\t"
+    case '\n' => "\\n"
+    case '\f' => "\\f"
+    case '\r' => "\\r"
+    case '"'  => "\\\""
+    case '\'' => "\\\'"
+    case '\\' => "\\\\"
+    case _    => {
+      if (ch.isControl) {
+        "\\0" + Integer.toOctalString(ch.toInt)
+      } else {
+        String.valueOf(ch)
+      }
+    }
+  }
+
   def assembleStringDef(str: String, lbl: Label): AssemblerState = {
     translateTAC(lbl) ++
-      List(".asciz \"" + str + "\"")
+      List(".asciz " + escape(str))
   }
 
   def assembleBeginFunc() = {
@@ -522,34 +562,48 @@ class Assembler {
   }
 
   def assembleCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType): AssemblerState = {
-    if (cmd == CmdT.Exit) {
-      translateMove("", r0, translateOperand(operand)) ::
+    cmd match {
+      case CmdT.Exit => {
+        translateMove("", r0, translateOperand(operand)) ::
         translateBranchLink("", new BranchString("exit"))
-    } else if (cmd == CmdT.Print || cmd == CmdT.PrintLn) {
-      // TODO: change print behaviour of arrays and pairs
+    }
+
+    case CmdT.Print | CmdT.PrintLn => {
       val bl = opType match {
-        case ArrayType(dataType, length) => "_prints"
-        case BaseType(baseType) => baseType match {
-          case BaseT.String_T => "_prints"
-          case BaseT.Char_T => "_printc"
-          case BaseT.Bool_T => "_printb"
-          case BaseT.Int_T => "_printi"
-          case _ => "_printi"
+      case ArrayType(dataType, length) => "_prints"
+      case BaseType(baseType) => baseType match {
+        case BaseT.String_T => "_prints"
+        case BaseT.Char_T => "_printc"
+        case BaseT.Bool_T => "_printb"
+        case BaseT.Int_T => "_printi"
+        case _ => "_printi"
         }
-        case NestedPair() => "_printi"
-        case PairType(fstType, sndType) => "_printi"
+      case NestedPair() => "_printp"
+      case PairType(fstType, sndType) => "_printp"
       }
       addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
-      var listEnd: AssemblerState = List[String]()
       if (cmd == CmdT.PrintLn) {
-        addEndFunc("_println", new HardcodeFunctions().translate_print("_println").code.toList)
-        listEnd = translateBranchLink("", new BranchString("_println"))
+        addEndFunc("_println", new HardcodeFunctions().translate_print("_println"))
+        translateMove("", r0, translateOperand(operand)) ::
+        translateBranchLink("", new BranchString(bl)) ::
+        translateBranchLink("", new BranchString("_println"))
       }
-      translateMove("", r0, translateOperand(operand)) ::
-        translateBranchLink("", new BranchString(bl)) :: listEnd
-    } else {
-      List("Command not implemented")
+      else{
+        translateMove("", r0, translateOperand(operand)) ::
+        translateBranchLink("", new BranchString(bl))
+      }
     }
+    case CmdT.Ret => {
+      translateMove("", r0, translateOperand(operand)) ::
+        translateMove("", sp, fp) ::
+        translatePop("", List(r8, r10, r12)) ::
+        translatePop("", List(fp, pc)) ::
+        ".ltorg"
+    }
+
+    case _ => List("Command not implemented")
+    }
+    
   }
 
   // Assume r8 and r12 not used

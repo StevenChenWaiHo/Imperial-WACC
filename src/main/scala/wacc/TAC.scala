@@ -61,18 +61,22 @@ object TAC {
   //   --- CreatePairElem(Fst) --- 
   // Save r8 and r12
   // malloc fst elem with reference to its type
-  // mov r8 fstReg
+  // mov r8 pairElemReg
   // mov r12 r0
   // str r8, [r12, #0]
-  // push r12
+  // mov fstReg r12
+  // Restore r8 and r12
+  // push pairElemReg
   //   --- CreatePairElem(Snd) --- 
   // Save r8 and r12
   // r8 = sndReg = register with sndElem
   // malloc snd elem with reference to its type
-  // mov r8 sndReg
+  // mov r8 pairElemReg
   // mov r12 r0
   // str r8, [r12, #4]
-  // push r12
+  // mov sndReg r12
+  // Restore r8 and r12
+  // push pairElemReg
   //   --- CreatePair() --- 
   // malloc 2 * 4 bytes for 2 pointers
   // mov r12 r0
@@ -81,7 +85,7 @@ object TAC {
   // pop r8  
   // str r8 [r12, #0]
   // mov dstReg r12
-  case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, fstReg: TRegister) extends TAC
+  case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, pairElemReg: TRegister) extends TAC
   case class CreatePair(fstType: DeclarationType, sndType: DeclarationType, 
                         fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
 

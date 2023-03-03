@@ -4,8 +4,6 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
-import wacc.Assembler
-import wacc.Parser.ProgramParser
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
