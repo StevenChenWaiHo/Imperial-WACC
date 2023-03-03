@@ -120,7 +120,7 @@ class Assembler {
 
   def addEndFunc(name: String, code: List[String]): Unit = {
     if (!endFuncs.contains(name)) {
-      endFuncs.addOne(name, "" :: code)
+      endFuncs.addOne(name, code)
     }
   }
 
