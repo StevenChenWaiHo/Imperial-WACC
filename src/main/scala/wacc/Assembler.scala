@@ -594,8 +594,8 @@ class Assembler {
     case CmdT.Ret => {
       translateMove("", r0, translateOperand(operand)) ::
         translateMove("", sp, fp) ::
-        translatePop("", List(fp, pc)) ::
         translatePop("", List(r8, r10, r12)) ::
+        translatePop("", List(fp, pc)) ::
         ".ltorg"
     }
 
