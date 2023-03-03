@@ -456,53 +456,47 @@ class Assembler {
           translateBranchLink("", new BranchString("__aeabi_idivmod"))
       }
       case BinaryOpType.Eq => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("eq", translateRegister(res), new ImmediateInt(1))
+          translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("ne", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Neq => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
-          translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("ne", translateRegister(res), new ImmediateInt(1))
+        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
+          translateMove("ne", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("eq", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Lt => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("lt", translateRegister(res), new ImmediateInt(1))
+          translateMove("lt", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("ge", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Gt => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
-          translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("gt", translateRegister(res), new ImmediateInt(1))
+        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
+          translateMove("gt", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("le", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Lte => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("le", translateRegister(res), new ImmediateInt(1))
+          translateMove("le", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("gt", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Gte => {
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("ge", translateRegister(res), new ImmediateInt(1))
+          translateMove("ge", translateRegister(res), new ImmediateInt(1)) ::
+          translateMove("lt", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.And => {
-        val lbl = generateLabel()
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
-          translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
+        translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
           translateCompare("eq", translateOperand(op2), new ImmediateInt(1)) ::
-          translateBranch("ne", lbl.name) ::
-          translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
-          translateTAC(lbl)
+          translateMove("ne", translateRegister(res), new ImmediateInt(0)) ::
+          translateMove("eq", translateRegister(res), new ImmediateInt(1))
       }
       case BinaryOpType.Or => {
-        val lbl = generateLabel()
-        translateMove("", translateRegister(res), new ImmediateInt(0)) ::
-          translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
+        translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
           translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
-          translateBranch("eq", lbl.name) ::
-          translateCompare("", translateOperand(op2), new ImmediateInt(1)) ::
-          translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
-          translateTAC(lbl)
+          translateCompare("ne", translateOperand(op2), new ImmediateInt(1)) ::
+          translateMove("ne", translateRegister(res), ImmediateInt(0)) ::
+          translateMove("eq", translateRegister(res), ImmediateInt(1))
       }
     }
   }
