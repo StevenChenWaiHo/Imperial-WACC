@@ -120,7 +120,7 @@ class Assembler {
 
   def addEndFunc(name: String, code: List[String]): Unit = {
     if (!endFuncs.contains(name)) {
-      endFuncs.addOne(name, "" :: code)
+      endFuncs.addOne(name, code)
     }
   }
 
@@ -137,12 +137,7 @@ class Assembler {
 
   //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    if (destinationRegister == sp) { // Don't overflow for sp
-      "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
-    } else {
-      "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ++
-      translateBranchLink("vs", new BranchString("_errOverflow"))
-    }
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
@@ -287,7 +282,7 @@ class Assembler {
     tripleAddressCode match {
       case Label(name) => assembleLabel(name)
       case Comments(str) => List("@ " + str)
-      case DataSegmentTAC() => List(".data")
+      case DataSegmentTAC() => List("\n.data")
       case TextSegmentTAC() => List(".text")
       case StringLengthDefinitionTAC(len, lbl) => assembleStringLengthDef(len, lbl)
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
@@ -402,10 +397,10 @@ class Assembler {
       }
     })
     output = output ++ (translateBranchLink("", new BranchString(lbl.name)))
-    // move the result into r12 before r0 is popped back
-    output = output ++ (translateMove("", r12, r0))
+    // move the result into dst before r0 is popped back
+    output = output ++ (translateMove("", translateRegister(dstReg), r0))
     // get previous registers from stack
-    output ++ (translatePop("", List(r0, r1, r2, r3)))
+    output ++ (translatePop("", regs))
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
@@ -580,7 +575,6 @@ class Assembler {
       case NestedPair() => "_printp"
       case PairType(fstType, sndType) => "_printp"
       }
-      var printLn: AssemblerState = List[String]()
       addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
       if (cmd == CmdT.PrintLn) {
         addEndFunc("_println", new HardcodeFunctions().translate_print("_println"))
@@ -592,6 +586,13 @@ class Assembler {
         translateMove("", r0, translateOperand(operand)) ::
         translateBranchLink("", new BranchString(bl))
       }
+    }
+    case CmdT.Ret => {
+      translateMove("", r0, translateOperand(operand)) ::
+        translateMove("", sp, fp) ::
+        translatePop("", List(r8, r10, r12)) ::
+        translatePop("", List(fp, pc)) ::
+        ".ltorg"
     }
 
     case _ => List("Command not implemented")

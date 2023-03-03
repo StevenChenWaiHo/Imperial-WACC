@@ -14,18 +14,13 @@ class HardcodeFunctions extends Assembler {
   implicit private[this] def updateState(str: String): AssemblerState = state.addInstruction(str)
 
   def translate_errDivZero(): List[String] = {
-    translateTAC(Label("_errDivZero"))
-    translateLdr("", r0, r0, new LabelString(".L._errDivZero_str0"))
+    translateTAC(Label("_errDivZero")) ::
     translateBranchLink("", new BranchString("_prints"))
   }
 
   def translate_errOverflow(): List[String] = {
-    // TODO: implement hardcode function
-    // translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
-    // translateBranchLink("", new BranchString("_prints")) ::
-    // translateMove("", r0, new ImmediateInt(255)) ::
-    // translateBranchLink("", new BranchString("exit")) :: List()
-    List("_errOverflow:")
+    translateTAC(Label("_errOverflow")) ::
+    translateBranchLink("", new BranchString("_prints"))
   }
 
   def translate_arrStore(condition: String): List[String] = {

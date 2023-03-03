@@ -384,16 +384,22 @@ object Translator {
   }
 
   def translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
-    // Initialise the .data segment
+    newMap()
+    // Initialise the main .data segment
     dataList.addOne(DataSegmentTAC())
-    // Start the code segment with the functions first
-    val funcTAClist = ListBuffer[TAC](TextSegmentTAC())
+    // Translate main to TAC
+    var (tacList, reg) = delegateASTNode(s)
+    // Translate funcs after main to TAC
+    val funcTAClist = ListBuffer[TAC]()
     funcs.foreach(f => {
       funcTAClist.addAll(translateFunction(f))
     })
-    newMap()
-    var (tacList, reg) = delegateASTNode(s)
-    dataList.toList ++ funcTAClist.toList ++ List(Label("main"), BeginFuncTAC()) ++ tacList ++ List(EndFuncTAC())
+    // Save main .data and .text segment
+    dataList.toList ++ 
+    List[TAC](TextSegmentTAC()) ++
+    List(Label("main"), BeginFuncTAC()) ++ 
+    tacList ++ List(EndFuncTAC()) ++ 
+    funcTAClist.toList
   }
 
   def translateStatList(stats: List[Stat]): (List[TAC], TRegister) = {
@@ -452,7 +458,7 @@ object Translator {
     })
     val returnReg = nextRegister()
     addNode(Call(ident, args), returnReg)
-    (argTacList ++ List(CallTAC(new Label(ident.name), argOutList, returnReg)), returnReg)
+    (argTacList ++ List(CallTAC(new Label("wacc_" + ident.name), argOutList, returnReg)), returnReg)
   }
 
   def translateFunction(func: Func): List[TAC] = {
@@ -476,7 +482,7 @@ object Translator {
             // Clear the register list
             regList.clear()
           }
-            List(new Label(ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList ++ List(EndFuncTAC())
+            List(new Label("wacc_" + ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList
         }
       }
     }
