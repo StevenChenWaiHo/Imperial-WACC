@@ -546,7 +546,7 @@ class Assembler {
   }
 
   def assembleEndFunc() = {
-    //translateMove("", r0, new ImmediateInt(0)) ::
+    translateMove("", r0, new ImmediateInt(0)) ::
       translatePop("", List(r8, r10, r12)) ::
       translatePop("", List(fp, pc))
   }
@@ -596,6 +596,7 @@ class Assembler {
       translateMove("", r0, translateOperand(operand)) ::
         translateMove("", sp, fp) ::
         translatePop("", List(fp, pc)) ::
+        translatePop("", List(r8, r10, r12)) ::
         ".ltorg"
     }
 
