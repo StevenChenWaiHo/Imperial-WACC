@@ -24,6 +24,10 @@ object StatelessAssembler {
     "push" + pushPopAssist(condition, registers)
   }
 
+  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  }
+
   def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
     "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)

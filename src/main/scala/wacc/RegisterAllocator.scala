@@ -1,6 +1,6 @@
 package wacc
 
-import wacc.StatelessAssembler.{translateLdr, translatePush}
+import wacc.StatelessAssembler.{translateLdr, translatePush, translateStr}
 import wacc.AssemblerTypes.{ImmediateInt, Register, sp, fp}
 import wacc.TAC._
 
@@ -21,7 +21,8 @@ object RegisterAllocator {
     /* Push the least-recently-used register to the stack, freeing it */
     //TODO: I think only r0-r7 can be pushed ("low registers" only)(?)
     private def freeRegister: AssemblerState = {
-      code = code.addOne(translatePush("", List(used.head._2)))
+      val stackLocation: Int = inMemory.length
+      code = code.addOne(translateStr("", used.head._2, fp, new ImmediateInt(-4 * stackLocation - 4)))
       available = available.addOne(used.head._2)
       inMemory = inMemory.addOne(used.head._1)
       used = used.tail
