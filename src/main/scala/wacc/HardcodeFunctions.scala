@@ -13,6 +13,21 @@ class HardcodeFunctions extends Assembler {
 
   implicit private[this] def updateState(str: String): AssemblerState = state.addInstruction(str)
 
+  def translate_errNull(): List[String] = {
+    // TODO: Magic Number
+    val sLbl = new Label(".L._errNull_str0")
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(45, sLbl)) ++
+    translateTAC(StringDefinitionTAC("fatal error: null pair dereferenced or freed\n", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++
+    translateTAC(Label("_errNull")) ::
+    translateLdr("", r0, r0, new LabelString(".L._errNull_str0")) ::
+    translateBranchLink("", new BranchString("_prints")) ::
+    translateMove("", r0, new ImmediateInt(255)) ::
+    translateBranchLink("", new BranchString("exit"))
+  }
+  
   def translate_errDivZero(): List[String] = {
     translateTAC(Label("_errDivZero"))
     translateLdr("", r0, r0, new LabelString(".L._errDivZero_str0"))
