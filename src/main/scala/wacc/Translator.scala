@@ -395,8 +395,8 @@ object Translator {
       funcTAClist.addAll(translateFunction(f))
     })
     // Save main .data and .text segment
-    dataList ++ 
-    List[TAC](TextSegmentTAC())
+    dataList.toList ++ 
+    List[TAC](TextSegmentTAC()) ++
     List(Label("main"), BeginFuncTAC()) ++ 
     tacList ++ List(EndFuncTAC()) ++ 
     funcTAClist.toList
