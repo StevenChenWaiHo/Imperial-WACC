@@ -546,7 +546,7 @@ class Assembler {
   }
 
   def assembleEndFunc() = {
-    translateMove("", r0, new ImmediateInt(0)) ::
+    //translateMove("", r0, new ImmediateInt(0)) ::
       translatePop("", List(r8, r10, r12)) ::
       translatePop("", List(fp, pc))
   }
@@ -591,6 +591,12 @@ class Assembler {
         translateMove("", r0, translateOperand(operand)) ::
         translateBranchLink("", new BranchString(bl))
       }
+    }
+    case CmdT.Ret => {
+      translateMove("", r0, translateOperand(operand)) ::
+        translateMove("", sp, fp) ::
+        translatePop("", List(fp, pc)) ::
+        ".ltorg"
     }
 
     case _ => List("Command not implemented")
