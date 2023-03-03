@@ -115,10 +115,11 @@ object TAC {
 		mov r8, #1
 		str r8, [r12, #12]
   */
+  case class InitialiseArray(arrLen: Int, dstReg: TRegister) extends TAC
   //delegates each element in an array
-  case class CreateArrayElem(elemType: DeclarationType, elemReg: TRegister) extends TAC
+  case class CreateArrayElem(arrayElemType: DeclarationType, elemPos: Int, elemReg: TRegister) extends TAC
   //delegates an array with all of its elements
-  case class CreateArray(elemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
+  case class CreateArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
   
   // StoreArrayElem
   // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
