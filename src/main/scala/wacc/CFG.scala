@@ -6,13 +6,14 @@ import scala.language.implicitConversions
 
 object CFG {
   private val labelMap = collection.mutable.Map[Label, Id]()
-
   type Id = Int
 
   sealed trait CFGReg
 
+  // Real Register
   case class RReg(x: Int) extends CFGReg
 
+  // Temporary Register
   case class TReg(x: Int) extends CFGReg
 
   implicit def toCFGReg(tReg: TRegister): TReg = TReg(tReg.num)
@@ -21,8 +22,16 @@ object CFG {
     case TRegister(num) => TReg(num)
   }.toSet
 
+  case class CFGNode(val id: Id, instr: TAC, uses: Set[CFGReg], defs: Set[CFGReg],
+                     succs: Set[Id], liveIn: Set[CFGReg] = Set(), liveOut: Set[CFGReg] = Set()) {
+    def addLiveIns(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn + regs, liveOut)
+
+    def addLiveOuts(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn, liveOut + regs)
+  }
+
   class CFG(instrs: Vector[TAC]) {
-    var nodes: Vector[CFGNode] = instrs.zipWithIndex.map(x => makeNode(x._1, x._2))
+    val nodes: Vector[CFGNode] = iterate(instrs.zipWithIndex.map(x => makeNode(x._1, x._2)))
+    val interferences = buildInterferenceGraph
 
     def makeNode(instr: TAC, id: Id): CFGNode = {
       var uses: Set[CFGReg] = Set()
@@ -40,13 +49,6 @@ object CFG {
       new CFGNode(id, instr, uses, defs, succs)
     }
 
-    case class CFGNode(val id: Id, instr: TAC, uses: Set[CFGReg], defs: Set[CFGReg],
-                       succs: Set[Id], liveIn: Set[CFGReg] = Set(), liveOut: Set[CFGReg] = Set()) {
-      def addLiveIns(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn + regs, liveOut)
-
-      def addLiveOuts(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn, liveOut + regs)
-    }
-
     def getNodes(succs: Set[Id]): Set[CFGNode] = succs.map(nodes(_))
 
     def updateLiveIns(node: CFGNode): CFGNode =
@@ -55,14 +57,16 @@ object CFG {
     def updateLiveOuts(node: CFGNode): CFGNode =
       node.addLiveOuts(getNodes(node.succs).flatMap(_.liveIn))
 
-    private def iterate: Unit = {
-      var result: Vector[CFGNode] = null
-      while (result != nodes) {
-        result = nodes
-        nodes.map(x => {
+    private def iterate(nodes: Vector[CFGNode]): Vector[CFGNode] = {
+      var before: Vector[CFGNode] = null
+      var after: Vector[CFGNode] = nodes
+      while (before != after) {
+        before = after
+        after = after.map(x => {
           updateLiveOuts(updateLiveIns(x))
         })
       }
+      after
     }
 
     private def buildInterferenceGraph: Map[CFGReg, Set[CFGReg]] = {
@@ -74,9 +78,6 @@ object CFG {
       interferes.toMap
     }
 
-    private def canAssign(t: TReg, r: RReg): Boolean = {
-      
-    }
 
   }
   // def buildCFGNode(instr: TAC, id: Id) : CFGNode = {
