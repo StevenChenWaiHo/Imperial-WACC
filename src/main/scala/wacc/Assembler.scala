@@ -350,7 +350,7 @@ class Assembler {
       translateMove("", r8, translateRegister(srcReg)) ::
       translateMove("", r12, r0) ::
       translateStr("", r8, r12, new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
-      translatePush("", List(r12))
+      translatePush("", List(r12)) ::
       translatePop("", List(r8, r12))
   }
 
