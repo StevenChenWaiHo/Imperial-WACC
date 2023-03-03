@@ -206,7 +206,7 @@ class Assembler {
   def translateMove(condition: String, dst: Register, operand: LHSop): AssemblerState = {
     operand match {
       case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
-      case _ => "mov " + dst.toString + ", " + operand.toString()
+      case _ => "mov" + condition + " " + dst.toString + ", " + operand.toString()
     }
   }
 
@@ -348,8 +348,9 @@ class Assembler {
       translateMove("", r8, translateRegister(srcReg)) ::
       translateMove("", r12, r0) ::
       translateStr("", r8, r12, new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
-      translatePush("", List(r12)) ::
-      translatePop("", List(r8, r12))
+      translateMove("", translateRegister(srcReg), r12) ::
+      translatePop("", List(r8, r12)) ::
+      translatePush("", List(translateRegister(srcReg)))
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
