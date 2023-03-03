@@ -2,16 +2,16 @@ package wacc
 
 import wacc.TAC._
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 object CFG {
-  private val labelMap = collection.mutable.Map[Label, Id]()
   type Id = Int
 
   sealed trait CFGReg
 
   // Real Register
-  case class RReg(x: Int) extends CFGReg
+  case class RReg[A](x: A) extends CFGReg
 
   // Temporary Register
   case class TReg(x: Int) extends CFGReg
@@ -29,9 +29,9 @@ object CFG {
     def addLiveOuts(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn, liveOut + regs)
   }
 
-  class CFG(instrs: Vector[TAC]) {
+  class CFG[A](instrs: Vector[TAC], regLimit: Int) {
     val nodes: Vector[CFGNode] = iterate(instrs.zipWithIndex.map(x => makeNode(x._1, x._2)))
-    val interferences = buildInterferenceGraph
+    val interferences: InterferenceGraph[A] = buildInterferenceGraph
 
     def makeNode(instr: TAC, id: Id): CFGNode = {
       var uses: Set[CFGReg] = Set()
@@ -46,7 +46,7 @@ object CFG {
         }
         //TODO
       }
-      new CFGNode(id, instr, uses, defs, succs)
+      CFGNode(id, instr, uses, defs, succs)
     }
 
     def getNodes(succs: Set[Id]): Set[CFGNode] = succs.map(nodes(_))
@@ -69,16 +69,50 @@ object CFG {
       after
     }
 
-    private def buildInterferenceGraph: Map[CFGReg, Set[CFGReg]] = {
+    private def buildInterferenceGraph: InterferenceGraph[A] = {
       var interferes = scala.collection.mutable.Map[CFGReg, Set[CFGReg]]()
       nodes.foreach {
         case CFGNode(_, _, _, _, _, _, liveOut) =>
           liveOut.foreach(t => interferes.update(t, interferes(t) union liveOut))
       }
-      interferes.toMap
+      new InterferenceGraph(interferes.toMap)
     }
 
+    /* Returns either a mapping or the furthest register it got to before no mapping was possible.
+    * Note: regs should be comparable using ==. */
+    def findColouring(regs: List[A]): Option[Map[TReg, A]] = {
+      // Extremely inefficient:
+      def colour(rRegs: List[A], ints: InterferenceGraph[A]): Option[Map[TReg, A]] = {
+        for(t <- ints.tRegisters) {
+          for(r <- rRegs) {
+            if(ints.canAssign(t, RReg(r))) {
+              val result = colour(rRegs, ints.assign(t, RReg(r)))
+              if(result.isDefined) return result
+            }
+          }
+        }
+        None
+      }
+      colour(regs, interferences)
+    }
+  }
 
+  class InterferenceGraph[A](interferences: Map[CFGReg, Set[CFGReg]]) {
+    def tRegisters = interferences.keys
+    // no interference when assigning r to t
+    def canAssign(t: CFGReg, r: CFGReg): Boolean = !(interferences(t).excl(t) contains r)
+
+    // Assign reg2 to reg1
+    def assign(reg1: CFGReg, reg2: CFGReg): InterferenceGraph[A] = {
+      val newInterferences: mutable.Map[CFGReg, Set[CFGReg]] = interferences.to(mutable.Map)
+      for (r <- interferences.keys) {
+        if (interferences(r) contains reg1) {
+          newInterferences.update(r, interferences(r).excl(r).incl(reg2))
+        }
+      }
+      newInterferences.remove(reg1)
+      new InterferenceGraph[A](newInterferences.toMap)
+    }
   }
   // def buildCFGNode(instr: TAC, id: Id) : CFGNode = {
   //   instr match {
