@@ -77,7 +77,7 @@ object TAC {
   // mov ptrReg r0
   // pop srcReg
   // str srcReg [ptrReg, #4]
-  // pop srcReg  
+  // pop srcReg
   // str srcReg [ptrReg, #0]
   // mov dstReg r12
   case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElemReg: TRegister) extends TAC

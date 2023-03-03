@@ -64,12 +64,16 @@ object CFG {
         case PopParamTAC(_, t1, _) =>
           uses = List(t1)
         case CallTAC(lbl, args, dstReg) =>
-          uses = args //TODO: I'm fairly sure uses should be left empty here.
+          uses = args //TODO: uses could probably be left empty here
           defs = List(dstReg)
           succs = List(id + 1, getId(lbl)) //TODO: does this work?
         case GOTO(lbl) =>
           succs = List(getId(lbl))
-
+        case CreatePairElem(_, _, ptr, value) =>  //TODO: These pair-related ones could be wrong:
+          uses = List(value)
+          defs = List(ptr)
+        case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) =>  //TODO: This should really be a three address code, it uses up about half the registers
+          print("CreatePair not yet translated in CFG.scala")
         case _ =>
 
         //TODO
