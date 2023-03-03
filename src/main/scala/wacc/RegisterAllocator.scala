@@ -1,8 +1,9 @@
 package wacc
 
-import wacc.StatelessAssembler.{translateLdr, translatePush, translateStr}
+import wacc.StatelessAssembler.{translateLdr, translatePush, translateStr, translateSub}
 import wacc.AssemblerTypes.{ImmediateInt, Register, sp, fp}
 import wacc.TAC._
+import wacc.AssemblerTypes.None
 
 import scala.collection.AbstractSeq
 import scala.collection.mutable.ListBuffer
@@ -23,6 +24,7 @@ object RegisterAllocator {
     private def freeRegister: AssemblerState = {
       val stackLocation: Int = inMemory.length
       code = code.addOne(translateStr("", used.head._2, fp, new ImmediateInt(-4 * stackLocation - 4)))
+      code = code.addOne(translateSub("", None(), sp, sp, ImmediateInt(4)))
       available = available.addOne(used.head._2)
       inMemory = inMemory.addOne(used.head._1)
       used = used.tail

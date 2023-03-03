@@ -33,6 +33,14 @@ object StatelessAssembler {
     "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+    "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  }
+
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
+  }
+
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
