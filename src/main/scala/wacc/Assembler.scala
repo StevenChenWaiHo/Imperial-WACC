@@ -137,12 +137,7 @@ class Assembler {
 
   //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    if (destinationRegister == sp) { // Don't overflow for sp
-      "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
-    } else {
-      "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ++
-      translateBranchLink("vs", new BranchString("_errOverflow"))
-    }
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
