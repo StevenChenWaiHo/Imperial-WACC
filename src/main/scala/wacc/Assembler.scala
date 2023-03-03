@@ -607,6 +607,7 @@ class Assembler {
   }
 
   // Assume r8 and r12 not used
+  // TODO n-D arrays
   def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
     translateMove("", r0, new ImmediateInt(4 * (arrLen + 1))) ::
       translateBranchLink("", new BranchString("malloc")) ::
@@ -616,21 +617,25 @@ class Assembler {
       translateStr("", r8, r12, new ImmediateInt(-4))
   }
 
+  // Assume r4 not used
+  // r4 is array register
   def assembleArray(arrayElemType: DeclarationType, dstReg: TRegister): AssemblerState = {
     translateMove("", r4, r12)
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, srcReg: TRegister): AssemblerState = {
-    translateStr("", r8, r12, new ImmediateInt(4 * elemPos))
+    translateStr("", translateRegister(srcReg), r12, new ImmediateInt(4 * elemPos))
   }
   
   def assembleLoadArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[TRegister], dstReg: TRegister): AssemblerState = {
-    translateMove("", r3, translateOperand(arrayReg)) :: // arrLoad uses r3
-    translateBranchLink("", new LabelString("_arrLoad"))
+    addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad("_arrLoad"))
+    translateMove("", r3, r4) :: // arrLoad uses ? = r3[r10]
+    translateBranchLink("", new BranchString("_arrLoad"))
   }
   
   def assembleStoreArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[Expr], srcReg: TRegister): AssemblerState = {
-    translateMove("", r3, translateOperand(arrayReg)) :: // arrStore uses r3
-    translateBranchLink("", new LabelString("_arrStore"))
+    addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore("_arrStore"))
+    translateMove("", r3, r4) :: // arrStore uses r3[r10] = r8
+    translateBranchLink("", new BranchString("_arrStore"))
   }
 }
