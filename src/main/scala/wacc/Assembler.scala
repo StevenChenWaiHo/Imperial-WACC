@@ -556,8 +556,9 @@ class Assembler {
   }
 
   def assembleEndFunc(): AssemblerState = {
-    state.used.map(e => e match {
-      case (treg, reg) => translatePop("", List(reg))
+    val usedMap = state.used.toMap
+    state.inMemory.map(m => {
+      translatePop("", List(usedMap.getOrElse(m, null)))
     }).toList.fold(null)((x, y) => x :: y) ::
     (translateMove("", r0, new ImmediateInt(0)) ::
       translatePop("", List(r8, r10, r12)) ::
