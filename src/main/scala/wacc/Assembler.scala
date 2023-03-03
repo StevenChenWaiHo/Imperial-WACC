@@ -395,16 +395,16 @@ class Assembler {
     var output = translatePush("", List(r0, r1, r2, r3))
     // move all the args in to arg registers
     val regs = List(r0, r1, r2, r3)
-    args.slice(0, 4).zip(regs).foreach(elem => {
-      elem match {
-        case (arg, reg) => output = output ++ translateMove("", reg, translateRegister(arg))
-      }
-    })
+    // args.slice(0, 4).zip(regs).foreach(elem => {
+    //   elem match {
+    //     case (arg, reg) => output = output ++ translateMove("", reg, translateRegister(arg))
+    //   }
+    // })
     output = output ++ (translateBranchLink("", new BranchString(lbl.name)))
     // move the result into dst before r0 is popped back
-    output = output ++ (translateMove("", translateRegister(dstReg), r0))
+    output ++ (translateMove("", translateRegister(dstReg), r0))
     // get previous registers from stack
-    output ++ (translatePop("", List(r0, r1, r2, r3)))
+    //output ++ (translatePop("", List(r0, r1, r2, r3)))
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
