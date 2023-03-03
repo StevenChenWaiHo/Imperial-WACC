@@ -102,17 +102,15 @@ class Assembler {
   }
 
   def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
-    //Incomplete
     return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
   def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
-    //Incomplete
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
   def translateStrPre(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
-    translateStr(condition, destinationRegister, sourceRegister, operand) + "!"
+    "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand).toString + "!".toString()
   }
 
   def generateLabel(): Label = {
