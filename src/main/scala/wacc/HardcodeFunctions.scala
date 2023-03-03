@@ -89,6 +89,7 @@ class HardcodeFunctions extends Assembler {
       translateTAC(Label("_prints")) ++
       (translatePush("", List(lr)) ::
         translateMove("", r2, r0) ::
+        translateLdr("", r1, r0, ImmediateInt(-4)) ::
         translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
         translateBranchLink("", new BranchString("printf")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
