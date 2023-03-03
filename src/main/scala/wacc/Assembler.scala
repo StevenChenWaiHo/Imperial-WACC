@@ -401,8 +401,8 @@ class Assembler {
       }
     })
     output = output ++ (translateBranchLink("", new BranchString(lbl.name)))
-    // move the result into r12 before r0 is popped back
-    output = output ++ (translateMove("", r12, r0))
+    // move the result into dst before r0 is popped back
+    output = output ++ (translateMove("", translateRegister(dstReg), r0))
     // get previous registers from stack
     output ++ (translatePop("", List(r0, r1, r2, r3)))
   }
