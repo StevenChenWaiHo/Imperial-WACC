@@ -489,7 +489,7 @@ object Translator {
             // Clear the register list
             regList.clear()
           }
-            List(new Label(ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList ++ List(EndFuncTAC())
+            List(new Label(ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList
         }
       }
     }
