@@ -121,7 +121,7 @@ class Assembler {
 
   def addEndFunc(name: String, code: List[String]): Unit = {
     if (!endFuncs.contains(name)) {
-      endFuncs.addOne(name, code)
+      endFuncs.addOne(name, "" :: code)
     }
   }
 
@@ -283,7 +283,7 @@ class Assembler {
     tripleAddressCode match {
       case Label(name) => assembleLabel(name)
       case Comments(str) => List("@ " + str)
-      case DataSegmentTAC() => List("\n.data")
+      case DataSegmentTAC() => List(".data")
       case TextSegmentTAC() => List(".text")
       case StringLengthDefinitionTAC(len, lbl) => assembleStringLengthDef(len, lbl)
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
