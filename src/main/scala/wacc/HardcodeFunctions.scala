@@ -4,25 +4,44 @@ import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
 
-class HardcodeFunctions extends Assembler {
-  implicit def toStrings(state: AssemblerState) = state.code.toList
+import scala.collection.mutable.ListBuffer
 
+class HardcodeFunctions extends Assembler {
+  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
+
+  implicit private[this] def toStrings(state: AssemblerState) = state.code.toList
+
+  implicit private[this] def updateState(str: String): AssemblerState = state.addInstruction(str)
+
+  def translate_errNull(): List[String] = {
+    // TODO: Magic Number
+    val sLbl = new Label(".L._errNull_str0")
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(45, sLbl)) ++
+    translateTAC(StringDefinitionTAC("fatal error: null pair dereferenced or freed\n", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++
+    translateTAC(Label("_errNull")) ::
+    translateLdr("", r0, r0, new LabelString(".L._errNull_str0")) ::
+    translateBranchLink("", new BranchString("_prints")) ::
+    translateMove("", r0, new ImmediateInt(255)) ::
+    translateBranchLink("", new BranchString("exit"))
+  }
+  
   def translate_errDivZero(): List[String] = {
-    translateTAC(Label("_errDivZero"))
-    // TODO: implement hardcode function
+    translateTAC(Label("_errDivZero")) ::
+    translateBranchLink("", new BranchString("_prints"))
   }
 
   def translate_errOverflow(): List[String] = {
-    // TODO: implement hardcode function
-    // translateLdr("", r0, r0, new LabelString(".L._errOverflow_str0")) :: 
-    // translateBranchLink("", new BranchString("_prints")) ::
-    // translateMove("", r0, new ImmediateInt(255)) ::
-    // translateBranchLink("", new BranchString("exit")) :: List()
-    List("_errOverflow:")
+    translateTAC(Label("_errOverflow")) ::
+    translateBranchLink("", new BranchString("_prints"))
   }
 
-  def translate_arrStoreB(): List[String] = {
-    translatePush("", List(lr)) ::
+  // ? = r3[r10]
+  def translate_arrLoad(condition: String): List[String] = {
+    translateTAC(Label("_arrLoad")) ++
+    (translatePush("", List(lr)) ::
       translateCompare("", r10, new ImmediateInt(0)) ::
       translateMove("", r1, r10) ::
       translateBranchLink("lt", new BranchString("_boundsCheck")) ::
@@ -30,8 +49,23 @@ class HardcodeFunctions extends Assembler {
       translateCompare("eq", r10, lr) ::
       translateMove("ge", r1, r10) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      //translateStrb() ::
-      translatePop("", List(pc))
+      translateLdr(condition, r3, r3, LogicalShiftLeft(r10, Right(2))) ::
+      translatePop("", List(pc)))
+  }
+
+  // r3[r10] = r8
+  def translate_arrStore(condition: String): List[String] = {
+    translateTAC(Label("_arrStore")) ++
+    (translatePush("", List(lr)) ::
+      translateCompare("", r10, new ImmediateInt(0)) ::
+      translateMove("", r1, r10) ::
+      translateBranchLink("lt", new BranchString("_boundsCheck")) ::
+      translateLdr("", lr, r3, new ImmediateInt(-4)) ::
+      translateCompare("eq", r10, lr) ::
+      translateMove("ge", r1, r10) ::
+      translateBranchLink("ge", new BranchString("_boundsCheck")) ::
+      translateStr(condition, r8, r3, LogicalShiftLeft(r10, Right(2))) ::
+      translatePop("", List(pc)))
   }
 
   def translate_boundsCheck(): List[String] = {
@@ -49,10 +83,28 @@ class HardcodeFunctions extends Assembler {
       case "_printi" => translate_printi()
       case "_printc" => translate_printc()
       case "_printb" => translate_printb()
+      case "_printp" => translate_printp()
       case "_println" => translate_println()
       case _ => translate_prints()
     }
   }
+
+   def translate_printp(): List[String] = {
+    val sLbl = new Label(".L._printp_str0")
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
+    translateTAC(StringDefinitionTAC("%p", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++
+    translateTAC(Label("_printp")) ++
+    (translatePush("", List(lr)) ::
+        translateMove("", r1, r0) ::
+        translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
+        translateBranchLink("", new BranchString("printf")) ::
+        translateMove("", r0, new ImmediateInt(0)) ::
+        translateBranchLink("", new BranchString("fflush")) ::
+        translatePop("", List(pc)))
+   }
 
   def translate_prints(): List[String] = {
     val sLbl = new Label(".L._prints_str0")
@@ -64,6 +116,7 @@ class HardcodeFunctions extends Assembler {
       translateTAC(Label("_prints")) ++
       (translatePush("", List(lr)) ::
         translateMove("", r2, r0) ::
+        translateLdr("", r1, r0, ImmediateInt(-4)) ::
         translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
         translateBranchLink("", new BranchString("printf")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
@@ -146,7 +199,7 @@ class HardcodeFunctions extends Assembler {
         translateTAC(Label(".L_printb0"))) ++
       (translateLdr("", r2, r0, new LabelString(tLbl.name)) ::
         translateTAC(Label(".L_printb1"))) ++
-      ("ldr r1, [r2, #-4]" ::
+      (translateLdr("", r1, r2, ImmediateInt(-4)) ::
         translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
         translateBranchLink("", new BranchString("printf")) ::
         translateMove("", r0, new ImmediateInt(0)) ::
@@ -168,12 +221,12 @@ class HardcodeFunctions extends Assembler {
       DataSegmentTAC(),
       Comments("length of " + lbl.name),
       StringLengthDefinitionTAC(2, lbl),
-      StringDefinitionTAC("\"d\"", lbl),
+      StringDefinitionTAC("%d", lbl),
       TextSegmentTAC(),
       Label("_readi")).map(tac => translateTAC(tac))
 
       translatePush("", List(lr))
-      translateStr("", r0, sp, new ImmediateInt(-4))
+      translateStrPre("", r0, sp, new ImmediateInt(-4))
       translateMove("", r1, sp)
       translateLdr("", r0, null, new LabelString(lbl.name))
       translateBranchLink("", new BranchString("scanf"))
@@ -193,7 +246,7 @@ class HardcodeFunctions extends Assembler {
       Label("_readc")).map(tac => translateTAC(tac))
 
       translatePush("", List(lr))
-      translateStr("b", r0, sp, new ImmediateInt(-1))
+      translateStrPre("b", r0, sp, new ImmediateInt(-1))
       translateMove("", r1, sp)
       translateLdr("", r0, null, new LabelString(lbl.name))
       translateBranchLink("", new BranchString("scanf"))
@@ -201,4 +254,5 @@ class HardcodeFunctions extends Assembler {
       translateAdd("", None(), sp, sp, new ImmediateInt(1))
       translatePop("", List(pc))
   }
+
 }

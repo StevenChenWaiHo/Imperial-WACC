@@ -15,6 +15,12 @@ do
         echo "Exit code: ${?}"
         continue
     fi
+    
+    if grep -q "read" "$f"; then
+        echo "Skipping due to input"
+        let ERRORS++
+        continue
+    fi
 
     FNAME=$(sed 's/.wacc/.s/' <<< "${f##*/}")
     arm-linux-gnueabi-gcc -o testEXE -mcpu=arm1176jzf-s -mtune=arm1176jzf-s $FNAME

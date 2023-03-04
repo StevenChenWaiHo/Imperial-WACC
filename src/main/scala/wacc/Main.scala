@@ -4,8 +4,6 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
-import wacc.Assembler
-import wacc.Parser.ProgramParser
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -65,7 +63,7 @@ object Main {
       val outputFilename = inputFilename.replace(".wacc", ".s")
       val outputFile = new File(outputFilename)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))
-      for(line <- result) fileWriter.write(line + "\n")
+      fileWriter.write(result + "\n")
       fileWriter.close()
     }
     println("\n\nCompilation Successful!")

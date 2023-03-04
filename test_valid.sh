@@ -3,6 +3,7 @@ ERRORS=0
 TOTAL=0
 for f in $(find ../wacc_examples/valid -name '*.wacc');
 do 
+    echo $f
     let TOTAL++
     #echo $f;
     # Compile file recording output
@@ -15,6 +16,13 @@ do
         echo "Exit code: ${?}"
         continue
     fi
+
+    if grep -q "read" "$f"; then
+        echo "Skipping due to input"
+        let ERRORS++
+        continue
+    fi
+
 
     FNAME=$(sed 's/.wacc/.s/' <<< "${f##*/}")
     arm-linux-gnueabi-gcc -o testEXE -mcpu=arm1176jzf-s -mtune=arm1176jzf-s $FNAME

@@ -59,37 +59,40 @@ object TAC {
 
   // Pairs Operations to ARM
   //   --- CreatePairElem(Fst) --- 
-  // Save r8 and r12
   // malloc fst elem with reference to its type
-  // mov r8 fstReg
-  // mov r12 r0
-  // str r8, [r12, #0]
-  // push r12
+  // mov ptrReg r0
+  // str pairElemReg, [ptrReg, #0]
+  // mov fstReg ptrReg
+  // push pairElemReg
   //   --- CreatePairElem(Snd) --- 
-  // Save r8 and r12
-  // r8 = sndReg = register with sndElem
   // malloc snd elem with reference to its type
-  // mov r8 sndReg
-  // mov r12 r0
-  // str r8, [r12, #4]
-  // push r12
+  // mov ptrReg r0
+  // str pairElemReg, [ptrReg, #4]
+  // mov sndReg ptrReg
+  // push pairElemReg
   //   --- CreatePair() --- 
+  // pop fstReg
+  // pop sndReg
   // malloc 2 * 4 bytes for 2 pointers
-  // mov r12 r0
-  // pop r8
-  // str r8 [r12, #4]
-  // pop r8  
-  // str r8 [r12, #0]
+  // mov ptrReg r0
+  // pop srcReg
+  // str srcReg [ptrReg, #4]
+  // pop srcReg  
+  // str srcReg [ptrReg, #0]
   // mov dstReg r12
-  case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, fstReg: TRegister) extends TAC
+  case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElemReg: TRegister) extends TAC
   case class CreatePair(fstType: DeclarationType, sndType: DeclarationType, 
-                        fstReg: TRegister, sndReg: TRegister, dstReg: TRegister) extends TAC
+                        fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister) extends TAC
 
   // StorePairElem
+  // ldr pairReg [pairReg, pairPos]
   // str srcReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
   case class StorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister) extends TAC
   // GetPairElem
+  // Check Null
   // ldr dstReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
+  // mov pairReg dstReg
+  // ldr(type) dstReg [pairReg, 0]
   case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister) extends TAC
 
   
@@ -111,17 +114,18 @@ object TAC {
 		mov r8, #1
 		str r8, [r12, #12]
   */
+  case class InitialiseArray(arrLen: Int, dstReg: TRegister) extends TAC
   //delegates each element in an array
-  case class CreateArrayElem(elemType: DeclarationType, elemReg: TRegister) extends TAC
+  case class CreateArrayElem(arrayElemType: DeclarationType, elemPos: Int, elemReg: TRegister) extends TAC
   //delegates an array with all of its elements
-  case class CreateArray(elemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
+  case class CreateArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
   
   // StoreArrayElem
   // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
   case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[Expr], srcReg: TRegister) extends TAC
-  // GetArrayElem
+  // LoadArrayElem
   // ldr dstReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
-  case class GetArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister) extends TAC
+  case class LoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister) extends TAC
 
   case class ReadTAC(dataType: DeclarationType, readReg: TRegister) extends TAC
 
