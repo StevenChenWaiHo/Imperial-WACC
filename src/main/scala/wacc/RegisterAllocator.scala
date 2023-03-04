@@ -12,36 +12,46 @@ object RegisterAllocator {
   class AssemblerState(var code: ListBuffer[String],
                        var available: ListBuffer[Register],
                        var used: ListBuffer[(TRegister, Register)],
-                       var inMemory: ListBuffer[TRegister]) {
+                       var memory: ListBuffer[ListBuffer[TRegister]]) {
     //var assembler: Assembler[Register]) extends StateTracker[Register, TRegister] {
     val offset = 1024
     var currentOffset = offset
 
+    def storeRegister = {
+      val currentScope = memory.head
+      var index = currentScope.indexOf(used.head._1)
+      if(index == -1) {
+        index = memory.length
+        currentScope.addOne(used.head._1)
+      }
+      code = code.addOne(translateStr("", used.head._2, fp, ImmediateInt(-offset + 4 * index)))
+      available.addOne(used.head._2)
+      used.remove(0)
+      this
+    }
+
+    /* When entering and exiting a function, the scope is completely redefined */
     def enterFunction: RegisterAllocator.AssemblerState = {
       code.addOne(translateSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
       currentOffset = offset
+      memory.addOne(ListBuffer[TRegister]())
       this
     }
     def exitFunction: RegisterAllocator.AssemblerState = {
       code.addOne(translateAdd("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
       currentOffset = 0
+      memory.remove(0)
+      this
+    }
+
+    /* When passing a label, make sure all variables are stored in memory. */
+    def enterLabel: RegisterAllocator.AssemblerState = {
+      while(used.nonEmpty) storeRegister
       this
     }
 
     def this(available: ListBuffer[Register]) = //, assembler: Assembler[Register]) =
       this(ListBuffer(), available, ListBuffer(), ListBuffer())
-
-    /* Push the least-recently-used register to the stack, freeing it */
-    //TODO: I think only r0-r7 can be pushed ("low registers" only)(?)
-    private def safePush: AssemblerState = {
-      code = code.addOne(translateStr("", used.head._2, fp, ImmediateInt(-currentOffset)))
-      currentOffset -= 4
-      available = available.addOne(used.head._2)
-      inMemory = inMemory.addOne(used.head._1)
-      used = used.tail
-      this
-    }
-
 
     def addInstruction(instr: String): AssemblerState = {
       code = code.addOne(instr)
@@ -68,13 +78,12 @@ object RegisterAllocator {
       if (inReg.isDefined) return inReg.get._2
 
       /* Free a register */
-      if (available.isEmpty) safePush
+      if (available.isEmpty) storeRegister
 
-      /* Check the stack */
-      val stackLocation: Int = inMemory.indexOf(target)
-      if (stackLocation != (-1)) {
-        code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-1024 + (stackLocation * 4))))
-        inMemory = inMemory.updated(stackLocation, null)
+      /* Check memory */
+      val index: Int = memory.indexOf(target)
+      if (index != (-1)) {
+        code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-1024 + (index * 4))))
       }
 
       logicallyAllocateRegisterTo(target)

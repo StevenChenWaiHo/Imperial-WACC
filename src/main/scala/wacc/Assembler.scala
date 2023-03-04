@@ -298,7 +298,10 @@ class Assembler {
     //Push and pop might not be in right place
     //Algorithm for determining if ldr is needed
     tripleAddressCode match {
-      case Label(name) => assembleLabel(name)
+      case Label(name) => {
+        state.enterLabel
+        assembleLabel(name)
+      }
       case Comments(str) => List("@ " + str)
       case DataSegmentTAC() => List(".data")
       case TextSegmentTAC() => List(".text")
