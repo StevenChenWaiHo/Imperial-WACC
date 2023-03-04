@@ -43,8 +43,17 @@ class HardcodeFunctions extends Assembler {
   }
 
   def translate_errOverflow(): List[String] = {
+    val sLbl = Label(".L._errOverflow")
+    translateTAC(DataSegmentTAC()) ::
+    translateTAC(Comments("Length of " + sLbl.name)) ::
+    translateTAC(StringLengthDefinitionTAC(52, sLbl)) ::
+    translateTAC(StringDefinitionTAC("fatal error: integer overflow or underflow occurred\n", sLbl)) ::
+    translateTAC(TextSegmentTAC()) ++
     translateTAC(Label("_errOverflow")) ::
-    translateBranchLink("", new BranchString("_prints"))
+    translateLdr("", r0, null, LabelString(sLbl.name)) ::
+    translateBranchLink("", new BranchString("_prints")) ::
+    translateMove("", r0, ImmediateInt(255))::
+    translateBranchLink("", new BranchString("exit"))
   }
 
   // ? = r3[r10]
