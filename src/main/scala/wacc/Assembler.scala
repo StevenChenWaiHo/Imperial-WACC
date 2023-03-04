@@ -224,10 +224,12 @@ class Assembler {
   }
 
   def translateBranch(condition: String, operand: String): AssemblerState = {
+    state.enterBranch
     return "b" + condition + " " + operand
   }
 
   def translateBranchLink(condition: String, operand: LHSop): AssemblerState = {
+    state.enterBranch
     return "bl" + condition + " " + operand
   }
 
@@ -299,9 +301,7 @@ class Assembler {
     //Algorithm for determining if ldr is needed
     tripleAddressCode match {
       case Label(name) => {
-        if (!name.contains("wacc")) {
-          state.enterLabel
-        }
+        state.enterBranch
         assembleLabel(name)
       }
       case Comments(str) => List("@ " + str)
