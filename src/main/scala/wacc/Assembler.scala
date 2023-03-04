@@ -688,14 +688,16 @@ class Assembler {
   
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad("_arrLoad"))
+    addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
     // println("ld", translateRegister(arrReg), translateRegister(dstReg))
     translateMove("", r10, translateRegister(arrPos.head)) :: // TODO n-D arrays (again)
-    translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses ? = r3[r10]
+    translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r10]
     translateBranchLink("", new BranchString("_arrLoad"))
   }
   
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore("_arrStore"))
+    addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
     // TODO translate tac of each index
     // val index = arrayPos.head
     // checkIndexTAC(index) ::

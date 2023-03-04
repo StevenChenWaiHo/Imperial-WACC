@@ -47,7 +47,7 @@ class HardcodeFunctions extends Assembler {
     translateBranchLink("", new BranchString("_prints"))
   }
 
-  // ? = r3[r10]
+  // r3 = r3[r10]
   def translate_arrLoad(condition: String): List[String] = {
     translateTAC(Label("_arrLoad")) ++
     (translatePush("", List(lr)) ::
@@ -78,9 +78,15 @@ class HardcodeFunctions extends Assembler {
   }
 
   def translate_boundsCheck(): List[String] = {
-    translateLdr("", r0, r0, new LabelString(".L._boundsCheck_str_0")) ::
+    val sLbl = new Label(".L._boundsCheck_str_0")
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(42, sLbl)) ++
+    translateTAC(StringDefinitionTAC("fatal error: array index %d out of bounds\n", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++
+    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
       translateBranchLink("", new BranchString("printf")) ::
-      translateMove("", r0, new ImmediateInt(255)) ::
+      translateMove("", r0, new ImmediateInt(0)) ::
       translateBranchLink("", new BranchString("fflush")) ::
       translateMove("", r0, new ImmediateInt(255)) ::
       translateBranchLink("", new BranchString("exit"))
