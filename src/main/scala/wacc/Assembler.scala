@@ -62,7 +62,7 @@ object StatelessAssembler {
 }
 
 class Assembler {
-  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
+  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
   val endFuncs = collection.mutable.Map[String, List[String]]()
   var labelCount = 0
 
