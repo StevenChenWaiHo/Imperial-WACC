@@ -314,7 +314,7 @@ class Assembler {
         state.enterFunction
       }
       case EndFuncTAC() => {
-        state.exitFunction
+        state.logicallyExitFunction
         assembleEndFunc()
       }
       case AssignmentTAC(operand, reg) => assembleAssignment(operand, reg)
@@ -642,6 +642,7 @@ class Assembler {
       case CmdT.Exit => {
         translateMove("", r0, translateOperand(operand)) ::
         translateBranchLink("", new BranchString("exit"))
+        state.logicallyExitFunction
     }
 
     case CmdT.Print | CmdT.PrintLn => {
