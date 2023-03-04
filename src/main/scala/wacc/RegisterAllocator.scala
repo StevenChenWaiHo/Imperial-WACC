@@ -18,12 +18,12 @@ object RegisterAllocator {
     var currentOffset = 1024
 
     def enterFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(translateAdd("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      code.addOne(translateSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
       currentOffset = 1024
       this
     }
     def exitFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(translateSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      code.addOne(translateAdd("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
       currentOffset = 0
       this
     }

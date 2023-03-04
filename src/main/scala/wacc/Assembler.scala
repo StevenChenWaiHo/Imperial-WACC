@@ -309,8 +309,8 @@ class Assembler {
         assembleBeginFunc()
       }
       case EndFuncTAC() => {
-        assembleEndFunc()
         state.exitFunction
+        assembleEndFunc()
       }
       case AssignmentTAC(operand, reg) => assembleAssignment(operand, reg)
       case CommandTAC(cmd, operand, opType) => assembleCommand(cmd, operand, opType)
