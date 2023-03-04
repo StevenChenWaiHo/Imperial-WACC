@@ -30,6 +30,10 @@ object StatelessAssembler {
     "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
+  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  }
+
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
@@ -42,10 +46,23 @@ object StatelessAssembler {
     }
     str
   }
+
+  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  }
+
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  }
+
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
+  }
+
 }
 
 class Assembler {
-  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
+  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
   val endFuncs = collection.mutable.Map[String, List[String]]()
   var labelCount = 0
 
@@ -287,8 +304,14 @@ class Assembler {
       case TextSegmentTAC() => List(".text")
       case StringLengthDefinitionTAC(len, lbl) => assembleStringLengthDef(len, lbl)
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
-      case BeginFuncTAC() => assembleBeginFunc()
-      case EndFuncTAC() => assembleEndFunc()
+      case BeginFuncTAC() => {
+        assembleBeginFunc()
+        state.enterFunction
+      }
+      case EndFuncTAC() => {
+        state.exitFunction
+        assembleEndFunc()
+      }
       case AssignmentTAC(operand, reg) => assembleAssignment(operand, reg)
       case CommandTAC(cmd, operand, opType) => assembleCommand(cmd, operand, opType)
       case BinaryOpTAC(operation, op1, op2, res) => assembleBinOp(operation, op1, op2, res)
@@ -560,13 +583,13 @@ class Assembler {
 
   def assembleBeginFunc() = {
     translatePush("", List(fp, lr)) ::
-      translatePush("", List(r8, r10, r12)) ::
+      //translatePush("", List(r8, r10, r12)) ::
       translateMove("", fp, sp)
   }
 
   def assembleEndFunc(): AssemblerState = {
     (translateMove("", r0, new ImmediateInt(0)) ::
-      translatePop("", List(r8, r10, r12)) ::
+      //translatePop("", List(r8, r10, r12)) ::
       translatePop("", List(fp, pc)))
   }
 
