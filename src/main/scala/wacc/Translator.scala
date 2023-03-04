@@ -128,6 +128,8 @@ object Translator {
 
   def delegateASTNode(node: ASTNode): (List[TAC], TRegister) = {
     // Check if ASTNode has already been calculated
+    println(node)
+    println(findNode(node))
     findNode(node) match {
       case Some(reg) => (List(), reg)
       case None => {
@@ -457,7 +459,6 @@ object Translator {
       }
     })
     val returnReg = nextRegister()
-    addNode(Call(ident, args), returnReg)
     (argTacList ++ List(CallTAC(new Label("wacc_" + ident.name), argOutList, returnReg)), returnReg)
   }
 
