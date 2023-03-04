@@ -1,7 +1,7 @@
 package wacc
 
-import wacc.StatelessAssembler.{translateLdr, translatePush}
-import wacc.AssemblerTypes.{ImmediateInt, Register, sp}
+import wacc.StatelessAssembler.{translateAdd, translateLdr, translatePush, translateStr, translateSub}
+import wacc.AssemblerTypes.{ImmediateInt, Register, fp, sp}
 import wacc.TAC._
 
 import scala.collection.AbstractSeq
@@ -14,19 +14,34 @@ object RegisterAllocator {
                        var used: ListBuffer[(TRegister, Register)],
                        var inMemory: ListBuffer[TRegister]) {
     //var assembler: Assembler[Register]) extends StateTracker[Register, TRegister] {
+    val offset = 1024
+    var currentOffset = 1024
+
+    def enterFunction: RegisterAllocator.AssemblerState = {
+      code.addOne(translateAdd("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      currentOffset = 1024
+      this
+    }
+    def exitFunction: RegisterAllocator.AssemblerState = {
+      code.addOne(translateSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      currentOffset = 0
+      this
+    }
 
     def this(available: ListBuffer[Register]) = //, assembler: Assembler[Register]) =
       this(ListBuffer(), available, ListBuffer(), ListBuffer())
 
     /* Push the least-recently-used register to the stack, freeing it */
     //TODO: I think only r0-r7 can be pushed ("low registers" only)(?)
-    private def freeRegister: AssemblerState = {
-      code = code.addOne(translatePush("", List(used.head._2)))
+    private def safePush: AssemblerState = {
+      code = code.addOne(translateStr("", used.head._2, fp, ImmediateInt(-currentOffset)))
+      currentOffset -= 4
       available = available.addOne(used.head._2)
       inMemory = inMemory.addOne(used.head._1)
       used = used.tail
       this
     }
+
 
     def addInstruction(instr: String): AssemblerState = {
       code = code.addOne(instr)
@@ -53,7 +68,7 @@ object RegisterAllocator {
       if (inReg.isDefined) return inReg.get._2
 
       /* Free a register */
-      if (available.isEmpty) freeRegister
+      if (available.isEmpty) safePush
 
       /* Check the stack */
       val stackLocation: Int = inMemory.indexOf(target)

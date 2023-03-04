@@ -29,6 +29,10 @@ object StatelessAssembler {
     "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
+  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  }
+
   def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     var str = condition + " " + destinationRegister.toString + ", "
     operand match {
@@ -41,6 +45,19 @@ object StatelessAssembler {
     }
     str
   }
+
+  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  }
+
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  }
+
+  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
+  }
+
 }
 
 class Assembler {
@@ -274,8 +291,14 @@ class Assembler {
       case TextSegmentTAC() => List(".text")
       case StringLengthDefinitionTAC(len, lbl) => assembleStringLengthDef(len, lbl)
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
-      case BeginFuncTAC() => assembleBeginFunc()
-      case EndFuncTAC() => assembleEndFunc()
+      case BeginFuncTAC() => {
+        state.enterFunction
+        assembleBeginFunc()
+      }
+      case EndFuncTAC() => {
+        assembleEndFunc()
+        state.exitFunction
+      }
       case AssignmentTAC(operand, reg) => assembleAssignment(operand, reg)
       case CommandTAC(cmd, operand, opType) => assembleCommand(cmd, operand, opType)
       case BinaryOpTAC(operation, op1, op2, res) => assembleBinOp(operation, op1, op2, res)
@@ -484,14 +507,13 @@ class Assembler {
 
   def assembleBeginFunc() = {
     translatePush("", List(fp, lr)) ::
-      translatePush("", List(r8, r10, r12)) ::
+      //translatePush("", List(r8, r10, r12)) ::
       translateMove("", fp, sp)
   }
-
-  def assembleEndFunc() = {
-    translateMove("", r0, new ImmediateInt(0)) ::
-      translatePop("", List(r8, r10, r12)) ::
-      translatePop("", List(fp, pc))
+  def assembleEndFunc(): AssemblerState = {
+    (translateMove("", r0, new ImmediateInt(0)) ::
+      //translatePop("", List(r8, r10, r12)) ::
+      translatePop("", List(fp, pc)))
   }
 
   def assembleAssignment(operand: Operand, reg: TRegister) = {
