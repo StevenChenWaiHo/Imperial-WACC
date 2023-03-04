@@ -116,13 +116,13 @@ object TAC {
   */
   case class InitialiseArray(arrLen: Int, dstReg: TRegister) extends TAC
   //delegates each element in an array
-  case class CreateArrayElem(arrayElemType: DeclarationType, elemPos: Int, elemReg: TRegister) extends TAC
+  case class CreateArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister) extends TAC
   //delegates an array with all of its elements
   case class CreateArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
   
   // StoreArrayElem
   // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
-  case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[Expr], srcReg: TRegister) extends TAC
+  case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister) extends TAC
   // LoadArrayElem
   // ldr dstReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
   case class LoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister) extends TAC
