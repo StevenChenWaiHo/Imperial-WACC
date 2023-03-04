@@ -634,10 +634,11 @@ class Assembler {
       translateStr("", r8, r12, new ImmediateInt(-4))
   }
 
-  // Assume r4 not used
-  // r4 is array register
+  // Assume r11 not used
+  // r11 is array register
+  // TODO get unused register to replace r11
   def assembleArray(arrayElemType: DeclarationType, dstReg: TRegister): AssemblerState = {
-    translateMove("", r4, r12)
+    translateMove("", r11, r12)
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, srcReg: TRegister): AssemblerState = {
@@ -646,13 +647,26 @@ class Assembler {
   
   def assembleLoadArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad("_arrLoad"))
-    translateMove("", r3, r4) :: // arrLoad uses ? = r3[r10]
+    translateMove("", r10, translateRegister(arrayPos.head)) :: // TODO n-D arrays (again)
+    translateMove("", r3, r11) :: // arrLoad uses ? = r3[r10]
     translateBranchLink("", new BranchString("_arrLoad"))
   }
   
-  def assembleStoreArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[Expr], srcReg: TRegister): AssemblerState = {
+  def assembleStoreArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore("_arrStore"))
-    translateMove("", r3, r4) :: // arrStore uses r3[r10] = r8
+    // TODO translate tac of each index
+    // val index = arrayPos.head
+    // checkIndexTAC(index) ::
+    translateMove("", r10, translateRegister(arrayPos.head._2)) :: // TODO n-D arrays (again)
+    translateMove("", r8, translateRegister(srcReg)) ::
+    translateMove("", r3, r11) :: // arrStore uses r3[r10] = r8
     translateBranchLink("", new BranchString("_arrStore"))
   }
+
+  // def checkIndexTAC(arrayPos: (List[TAC], TRegister)): AssemblerState = { // TODO translate tac of each index
+  //   arrayPos match {
+  //     case _ if (!arrayPos._1.isEmpty) => translateTAC(arrayPos._1.head)
+  //     case _ => Nil
+  //   }
+  // }
 }

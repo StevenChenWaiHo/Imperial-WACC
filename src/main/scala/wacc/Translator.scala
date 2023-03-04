@@ -375,8 +375,12 @@ object Translator {
     val (rvalueList, rvalueReg) = delegateASTNode(rvalue)
     lvalue match {
       case ArrayElem(name, indices) => {
-        val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
-        (rvalueList ++ lvalueList ++ List(StoreArrayElem(null, lvalueReg, indices, rvalueReg)), lvalueReg)
+        var indexNodes = ListBuffer[(List[TAC], TRegister)]()
+        indices.foreach(i => {
+          indexNodes += delegateASTNode(i)
+        })
+        val lvalueReg = findNode(name).get
+        (rvalueList ++ List(StoreArrayElem(null, lvalueReg, indexNodes.toList, rvalueReg)), lvalueReg)
       }
       case _ => (List(Label("Not translating ArrayElem")), null)
     }
