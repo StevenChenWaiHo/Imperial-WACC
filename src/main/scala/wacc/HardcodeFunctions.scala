@@ -264,4 +264,19 @@ class HardcodeFunctions extends Assembler {
       translatePop("", List(pc))
   }
 
+  def translate_freepair(): List[String] = {
+    List(
+      translatePush("", List(lr)),
+      translateMove("", r8, r0),
+      translateCompare("", r8, ImmediateInt(0)),
+      translateBranchLink("eq", new BranchString("_errNull")),
+      translateLdr("", r0, r8, ImmediateInt(0))
+      translateBranchLink("", new BranchString("free")),
+      translateLdr("", r0, r8, ImmediateInt(4)),
+      translateBranchLink("", new BranchString("free")),
+      translateMove("", r0, r8),
+      translateBranchLink("", new BranchString("free")),
+      translatePop("", List(pc))
+    )
+  }
 }

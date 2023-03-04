@@ -657,7 +657,27 @@ class Assembler {
         ".ltorg"
     }
 
-    case _ => List("Command not implemented")
+    case CmdT.Free => {
+      opType match {
+        case ArrayType(dataType, length) => {
+          translateSub("", Status(), r8, r4, new ImmediateInt(4)) ::
+            translatePush("", List(r8)) ::
+            translatePop("", List(r8)) ::
+
+          translateMove("", r8, r8) ::
+            translateMove("", r0, r8) ::
+            translateBranchLink("", new BranchString("free"))
+
+
+        }
+        case PairType(fstType, sndType) => {
+          translateMove("", r8, r4)::
+            translateMove("", r0, r8) ::
+            translateBranchLink("", "_freepair")
+        }
+
+      }
+    }
     }
     
   }
