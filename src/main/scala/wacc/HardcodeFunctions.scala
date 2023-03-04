@@ -84,12 +84,13 @@ class HardcodeFunctions extends Assembler {
     translateTAC(StringLengthDefinitionTAC(42, sLbl)) ++
     translateTAC(StringDefinitionTAC("fatal error: array index %d out of bounds\n", sLbl)) ++
     translateTAC(TextSegmentTAC()) ++
-    translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
+    translateTAC(Label("_boundsCheck")) ++
+    (translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
       translateBranchLink("", new BranchString("printf")) ::
       translateMove("", r0, new ImmediateInt(0)) ::
       translateBranchLink("", new BranchString("fflush")) ::
       translateMove("", r0, new ImmediateInt(255)) ::
-      translateBranchLink("", new BranchString("exit"))
+      translateBranchLink("", new BranchString("exit")))
   }
 
   def translate_print(pType: String): List[String] = {
