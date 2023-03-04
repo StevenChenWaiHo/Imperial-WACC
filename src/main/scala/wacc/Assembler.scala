@@ -426,7 +426,8 @@ class Assembler {
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): AssemblerState = {
     // save arg registers on the stack
-    var output = translatePush("", List(r0, r1, r2, r3))
+    //var output = translatePush("", List(r0, r1, r2, r3))
+    var output = translateMove("", r0, r0)
     // move all the args in to arg registers
     val regs = List(r0, r1, r2, r3)
     args.slice(0, args.length.min(regs.length)).zip(regs).foreach(elem => {
@@ -444,7 +445,7 @@ class Assembler {
     // move the result into dst before r0 is popped back
     output = output ++ (translateMove("", translateRegister(dstReg), r0))
     // get previous registers from stack
-    output ++ (translatePop("", regs))
+    output //++ (translatePop("", regs))
   }
 
   // GetPairElem
