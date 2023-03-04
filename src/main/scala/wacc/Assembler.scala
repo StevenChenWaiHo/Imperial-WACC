@@ -334,7 +334,7 @@ class Assembler {
       case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => assembleStoreArrayElem(datatype, arrReg, arrPos, srcReg)
       case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
-      case PopParamTAC(datatype, t1, index) => List()
+      case PopParamTAC(datatype, treg, index) => assemblePopParam(datatype, treg, index)
       case PushParamTAC(op) => List()
       case ReadTAC(dataType, readReg) => assembleRead(dataType, readReg)
     }
@@ -426,19 +426,26 @@ class Assembler {
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): AssemblerState = {
     // save arg registers on the stack
-    var output = translatePush("", List(r0, r1, r2, r3))
+    //var output = translatePush("", List(r0, r1, r2, r3))
+    var output = translateMove("", r0, r0)
     // move all the args in to arg registers
     val regs = List(r0, r1, r2, r3)
-    args.slice(0, 4).zip(regs).foreach(elem => {
+    args.slice(0, args.length.min(regs.length)).zip(regs).foreach(elem => {
       elem match {
         case (arg, reg) => output = output ++ translateMove("", reg, translateRegister(arg))
       }
     })
+    // push extra args into memory
+    if (args.length > 4) {
+      args.slice(4, args.length).foreach(reg => {
+          output = output ++ translateStrPre("", translateRegister(reg), sp, ImmediateInt(-4))
+      })
+    }
     output = output ++ (translateBranchLink("", new BranchString(lbl.name)))
     // move the result into dst before r0 is popped back
     output = output ++ (translateMove("", translateRegister(dstReg), r0))
     // get previous registers from stack
-    output ++ (translatePop("", regs))
+    output //++ (translatePop("", regs))
   }
 
   // GetPairElem
@@ -491,6 +498,18 @@ class Assembler {
   def assembleIf(t1: Operand, goto: Label): AssemblerState = {
     translateCompare("", translateOperand(t1), new ImmediateInt(1)) ::
       translateBranch("eq", goto.name)
+  }
+
+  def assemblePopParam(dataType: DeclarationType, treg: TRegister, index: Int): AssemblerState = {
+    if (index < 4) {
+      // Populate from registers in r0-
+      val cRegs = List(r0, r1, r2, r3)
+      val callReg = cRegs.take(index + 1).last
+      translateMove("", translateRegister(treg), callReg)
+    } else {
+      // Populate from stack
+      translateLdr("", translateRegister(treg), fp, ImmediateInt(20 + (4 * (index - 4))))
+    }
   }
 
   def assembleBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister): AssemblerState = {
@@ -654,7 +673,7 @@ class Assembler {
       state.exitFunction
       translateMove("", r0, translateOperand(operand)) ::
         translateMove("", sp, fp) ::
-        translatePop("", List(r8, r10, r12)) ::
+        //translatePop("", List(r8, r10, r12)) ::
         translatePop("", List(fp, pc)) ::
         ".ltorg"
     }
