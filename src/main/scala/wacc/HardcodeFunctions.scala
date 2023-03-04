@@ -58,7 +58,7 @@ class HardcodeFunctions extends Assembler {
       translateCompare("eq", r10, lr) ::
       translateMove("ge", r1, r10) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateLdr(condition, r3, r3, LogicalShiftLeft(r10, Right(2))) ::
+      translateLdr("", r3, r3, LogicalShiftLeft(r10, Right(2))) ::
       translatePop("", List(pc)))
   }
 
@@ -73,7 +73,7 @@ class HardcodeFunctions extends Assembler {
       translateCompare("eq", r10, lr) ::
       translateMove("ge", r1, r10) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateStr(condition, r8, r3, LogicalShiftLeft(r10, Right(2))) ::
+      translateStr("", r8, r3, LogicalShiftLeft(r10, Right(2))) ::
       translatePop("", List(pc)))
   }
 
