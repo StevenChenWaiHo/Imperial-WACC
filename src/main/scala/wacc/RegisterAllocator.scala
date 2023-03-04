@@ -15,11 +15,11 @@ object RegisterAllocator {
                        var inMemory: ListBuffer[TRegister]) {
     //var assembler: Assembler[Register]) extends StateTracker[Register, TRegister] {
     val offset = 1024
-    var currentOffset = 1024
+    var currentOffset = offset
 
     def enterFunction: RegisterAllocator.AssemblerState = {
       code.addOne(translateSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
-      currentOffset = 1024
+      currentOffset = offset
       this
     }
     def exitFunction: RegisterAllocator.AssemblerState = {
@@ -73,7 +73,7 @@ object RegisterAllocator {
       /* Check the stack */
       val stackLocation: Int = inMemory.indexOf(target)
       if (stackLocation != (-1)) {
-        code = code.addOne(translateLdr("", available.head, sp, new ImmediateInt(4 * stackLocation)))
+        code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-currentOffset)))
         inMemory = inMemory.updated(stackLocation, null)
       }
 
