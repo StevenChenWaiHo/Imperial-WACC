@@ -502,7 +502,7 @@ class Assembler {
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HardcodeFunctions().translate_errDivZero())
         addEndFunc("_prints", new HardcodeFunctions().translate_print("_prints"))
-        translateMove("", r4, translateOperand(op1)) ::
+        translateMove("", r0, translateOperand(op1)) ::
           translateMove("", r1, translateOperand(op2)) ::
           translateCompare("", r1, new ImmediateInt(0)) ::
           translateBranchLink("eq", new BranchString("_errDivZero")) ::
@@ -515,7 +515,8 @@ class Assembler {
           translateMove("", r1, translateOperand(op2)) ::
           translateCompare("", r1, new ImmediateInt(0)) ::
           translateBranchLink("eq", new BranchString("_errDivZero")) ::
-          translateBranchLink("", new BranchString("__aeabi_idivmod"))
+          translateBranchLink("", new BranchString("__aeabi_idivmod")) ::
+          translateMove("", r0, r1)
       }
       case BinaryOpType.Eq => {
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
