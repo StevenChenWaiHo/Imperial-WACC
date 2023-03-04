@@ -1,7 +1,7 @@
 package wacc
 
-import wacc.StatelessAssembler.{translateLdr, translatePush}
-import wacc.AssemblerTypes.{ImmediateInt, Register, sp}
+import wacc.StatelessAssembler.{translateAdd, translateLdr, translatePush, translateStr, translateSub}
+import wacc.AssemblerTypes.{ImmediateInt, Register, fp, sp}
 import wacc.TAC._
 
 import scala.collection.AbstractSeq
@@ -12,21 +12,48 @@ object RegisterAllocator {
   class AssemblerState(var code: ListBuffer[String],
                        var available: ListBuffer[Register],
                        var used: ListBuffer[(TRegister, Register)],
-                       var inMemory: ListBuffer[TRegister]) {
+                       var memory: ListBuffer[ListBuffer[TRegister]]) {
     //var assembler: Assembler[Register]) extends StateTracker[Register, TRegister] {
+    val offset = 1024
 
-    def this(available: ListBuffer[Register]) = //, assembler: Assembler[Register]) =
-      this(ListBuffer(), available, ListBuffer(), ListBuffer())
-
-    /* Push the least-recently-used register to the stack, freeing it */
-    //TODO: I think only r0-r7 can be pushed ("low registers" only)(?)
-    private def freeRegister: AssemblerState = {
-      code = code.addOne(translatePush("", List(used.head._2)))
-      available = available.addOne(used.head._2)
-      inMemory = inMemory.addOne(used.head._1)
+    def storeRegister = {
+      val currentScope = memory.head
+      var index = currentScope.indexOf(used.head._1)
+      if(index == -1) {
+        index = currentScope.length
+        currentScope.addOne(used.head._1)
+      }
+      code = code.addOne(translateStr("", used.head._2, fp, ImmediateInt(-offset + (4 * index))))
+      available.addOne(used.head._2)
       used = used.tail
       this
     }
+
+    /** When entering and exiting a function, the scope is completely redefined.
+    * allocate some stack space by moving the stack pointer, and add 'memory(0)' to track it. */
+    def enterFunction: RegisterAllocator.AssemblerState = {
+      code.addOne(translateSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      memory.addOne(ListBuffer[TRegister]())
+      this
+    }
+
+    /** Put the stack pointer back, and revert to the previous scope. */
+    def exitFunction: RegisterAllocator.AssemblerState = {
+      code.addOne(translateAdd("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      memory.remove(0)
+      this
+    }
+
+    /** When passing a label definition, make sure all variables are stored in memory.
+     * A label could be reached from multiple paths, so we can't be sure which tRegister is in which register. */
+    def enterBranch: RegisterAllocator.AssemblerState = {
+      while(used.nonEmpty) {
+        storeRegister
+      }
+      this
+    }
+    def this(available: ListBuffer[Register]) = //, assembler: Assembler[Register]) =
+      this(ListBuffer(), available, ListBuffer(), ListBuffer(ListBuffer()))
 
     def addInstruction(instr: String): AssemblerState = {
       code = code.addOne(instr)
@@ -38,6 +65,8 @@ object RegisterAllocator {
       this
     }
 
+    /** Move a register from 'available' to 'used', declaring that 'target' is stored within it.
+     * Note that this does not modify the code: there's no guarantee that 'target' really is stored there. */
     private def logicallyAllocateRegisterTo(target: TRegister): Register = {
       val reg = available.head
       used = used.addOne((target, reg))
@@ -45,7 +74,7 @@ object RegisterAllocator {
       reg
     }
 
-    /* Get a guaranteed register. If 'target' already exists in memory or in the registers, returns a register
+    /** Get a guaranteed register. If 'target' already exists in memory or in the registers, returns a register
      containing its value; otherwise returns a random unallocated register. */
     def getRegister(target: TRegister): Register = {
       /* Check currently-loaded registers */
@@ -53,13 +82,12 @@ object RegisterAllocator {
       if (inReg.isDefined) return inReg.get._2
 
       /* Free a register */
-      if (available.isEmpty) freeRegister
+      if (available.isEmpty) storeRegister
 
-      /* Check the stack */
-      val stackLocation: Int = inMemory.indexOf(target)
-      if (stackLocation != (-1)) {
-        code = code.addOne(translateLdr("", available.head, sp, new ImmediateInt(4 * stackLocation)))
-        inMemory = inMemory.updated(stackLocation, null)
+      /* Check memory */
+      val index: Int = memory.head.indexOf(target)
+      if (index != (-1)) {
+        code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-offset + (4 * index))))
       }
 
       logicallyAllocateRegisterTo(target)
