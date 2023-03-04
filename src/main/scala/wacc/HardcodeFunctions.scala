@@ -29,11 +29,12 @@ class HardcodeFunctions extends Assembler {
   }
   
   def translate_errDivZero(): List[String] = {
-    val sLbl = Label("fatal error: division or modulo by zero\n")
+    addEndFunc("_prints", translate_print("_prints"))
+    val sLbl = Label(".L._errDivZero_str0")
     translateTAC(DataSegmentTAC()) ++
     translateTAC(Comments("length of " + sLbl.name)) ++
     translateTAC(StringLengthDefinitionTAC(40, sLbl)) ++
-    translateTAC(StringDefinitionTAC(sLbl.name, sLbl)) ++
+    translateTAC(StringDefinitionTAC("fatal error: division or modulo by zero\n", sLbl)) ++
     translateTAC(TextSegmentTAC()) ++
     translateTAC(Label("_errDivZero")) ::
       translateLdr("", r0, null, LabelString(sLbl.name)) ::
