@@ -153,16 +153,13 @@ class Assembler {
     return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
   }
 
+  //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ::
-      translateBranchLink("vs", BranchString("_errOverflow"))
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand) ::
-      translateBranchLink("vs", BranchString("_errOverflow"))
+    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
