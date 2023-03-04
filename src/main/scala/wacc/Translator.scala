@@ -280,17 +280,17 @@ object Translator {
       case ArrayLiteral(elements) => {
         val tacs = ListBuffer[TAC]()
         val tRegs = ListBuffer[TRegister]() //required?
+        val dstReg = nextRegister()
+        addNode(ident, dstReg)
         for (i <- 0 to elements.length - 1) {
           val (elemTacs, reg) = delegateASTNode(elements(i))
           addNode(elements(i), reg)
           tacs ++= elemTacs
-          tacs += CreateArrayElem(dataType, i, reg)
+          tacs += CreateArrayElem(dataType, i, dstReg, reg)
           tRegs += reg        
         }
-        val arrReg = nextRegister()
-        addNode(ident, arrReg)
-        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, arrReg)) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, arrReg),
-         Comments("Array Declaration End")), arrReg)
+        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, dstReg)) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, dstReg),
+         Comments("Array Declaration End")), dstReg)
       }
       case _ => (List(new Label("Array Type not Matched")), null)
     }
@@ -372,8 +372,12 @@ object Translator {
     val (rvalueList, rvalueReg) = delegateASTNode(rvalue)
     lvalue match {
       case ArrayElem(name, indices) => {
-        val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
-        (rvalueList ++ lvalueList ++ List(StoreArrayElem(null, lvalueReg, indices, rvalueReg)), lvalueReg)
+        var indexNodes = ListBuffer[(List[TAC], TRegister)]()
+        indices.foreach(i => {
+          indexNodes += delegateASTNode(i)
+        })
+        val lvalueReg = findNode(name).get
+        (rvalueList ++ List(StoreArrayElem(null, lvalueReg, indexNodes.toList, rvalueReg)), lvalueReg)
       }
       case _ => (List(Label("Not translating ArrayElem")), null)
     }

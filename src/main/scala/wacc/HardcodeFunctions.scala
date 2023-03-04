@@ -47,7 +47,7 @@ class HardcodeFunctions extends Assembler {
     translateBranchLink("", new BranchString("_prints"))
   }
 
-  // ? = r3[r10]
+  // r3 = r3[r10]
   def translate_arrLoad(condition: String): List[String] = {
     translateTAC(Label("_arrLoad")) ++
     (translatePush("", List(lr)) ::
@@ -58,7 +58,7 @@ class HardcodeFunctions extends Assembler {
       translateCompare("eq", r10, lr) ::
       translateMove("ge", r1, r10) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateLdr(condition, r3, r3, LogicalShiftLeft(r10, Right(2))) ::
+      translateLdr("", r3, r3, LogicalShiftLeft(r10, Right(2))) ::
       translatePop("", List(pc)))
   }
 
@@ -73,17 +73,24 @@ class HardcodeFunctions extends Assembler {
       translateCompare("eq", r10, lr) ::
       translateMove("ge", r1, r10) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateStr(condition, r8, r3, LogicalShiftLeft(r10, Right(2))) ::
+      translateStr("", r8, r3, LogicalShiftLeft(r10, Right(2))) ::
       translatePop("", List(pc)))
   }
 
   def translate_boundsCheck(): List[String] = {
-    translateLdr("", r0, r0, new LabelString(".L._boundsCheck_str_0")) ::
+    val sLbl = new Label(".L._boundsCheck_str_0")
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(42, sLbl)) ++
+    translateTAC(StringDefinitionTAC("fatal error: array index %d out of bounds\n", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++
+    translateTAC(Label("_boundsCheck")) ++
+    (translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
       translateBranchLink("", new BranchString("printf")) ::
-      translateMove("", r0, new ImmediateInt(255)) ::
+      translateMove("", r0, new ImmediateInt(0)) ::
       translateBranchLink("", new BranchString("fflush")) ::
       translateMove("", r0, new ImmediateInt(255)) ::
-      translateBranchLink("", new BranchString("exit"))
+      translateBranchLink("", new BranchString("exit")))
   }
 
   def translate_print(pType: String): List[String] = {
