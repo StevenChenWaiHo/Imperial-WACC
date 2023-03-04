@@ -326,7 +326,6 @@ class Assembler {
       case GOTO(label) => assembleGOTO(label)
       case CreatePairElem(pairElemType, pairPos, ptrReg, pairElemReg) => assemblePairElem(pairElemType, pairPos, ptrReg, pairElemReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg) => assemblePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg)
-      case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
       case InitialiseArray(arrLen, dstReg) => assembleArrayInit(arrLen, dstReg)
@@ -402,8 +401,9 @@ class Assembler {
         translateMove("", translateRegister(res), translateOperand(t1))
       }
       case UnaryOpType.Len => {
-        // ldr r8, [r4, #-4]
-        translateLdr("", translateRegister(res), r0, translateOperand(t1))
+        // ldr res, [t1, #-4]
+        // t1 must necessarily be a TRegister
+        translateLdr("", translateRegister(res), translateRegister(t1.asInstanceOf[TRegister]), new ImmediateInt(-4))
       }
     }
   }
@@ -701,7 +701,7 @@ class Assembler {
 
   }
 
-  // Assume r8 and r12 not used
+  // Assume r8 not used
   // TODO n-D arrays
   def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
     // println("ini", translateRegister(dstReg))
