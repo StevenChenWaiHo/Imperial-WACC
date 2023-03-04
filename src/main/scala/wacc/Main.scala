@@ -25,6 +25,8 @@ object Main {
     val inputProgram = file.mkString
     file.close
 
+    println(inputProgram + "\n\n")
+
     /* Compile */
     val ast = program.parse(inputProgram)
     ast match {
@@ -40,7 +42,7 @@ object Main {
       print("Semantic Error: ")
       verified.left.foreach(errList => {
         errList.reverse.foreach(err => {
-          if (err != Nil && err.nonEmpty) println(err)
+          if (err != null && err.nonEmpty) println(err)
         })
       })
       sys.exit(SemanticErrorCode)
