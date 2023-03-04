@@ -25,6 +25,8 @@ object Main {
     val inputProgram = file.mkString
     file.close
 
+    println(inputProgram + "\n\n")
+
     /* Compile */
     val ast = program.parse(inputProgram)
     ast match {
