@@ -321,7 +321,6 @@ class Assembler {
       case GOTO(label) => assembleGOTO(label)
       case CreatePairElem(pairElemType, pairPos, ptrReg, pairElemReg) => assemblePairElem(pairElemType, pairPos, ptrReg, pairElemReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg) => assemblePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg)
-      case UnaryOpTAC(op, t1, res) => assembleUnaryOp(op, t1, res)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
       case InitialiseArray(arrLen, dstReg) => assembleArrayInit(arrLen, dstReg)
