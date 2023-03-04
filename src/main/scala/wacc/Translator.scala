@@ -301,9 +301,7 @@ object Translator {
           case Some(value) => (List(), value)
           case None => {
             val (exp1List, fstReg) = delegateASTNode(exp1)
-            addNode(exp1, fstReg)
             val (exp2List, sndReg) = delegateASTNode(exp2)
-            addNode(exp2, sndReg)
             val pairReg = nextRegister()
             val srcReg = nextRegister()
             val ptrReg = nextRegister()
