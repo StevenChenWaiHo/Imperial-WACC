@@ -454,8 +454,10 @@ class Assembler {
   // GetPairElem
   // Check Null
   // ldr dstReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
+  // push pairReg
   // mov pairReg dstReg
   // ldr(type) dstReg [pairReg, 0]
+  // pop pairReg
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
     // TODO: Check Null
     addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
@@ -471,11 +473,15 @@ class Assembler {
   }
 
   // StorePairElem
+  // push pairReg
   // ldr pairReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
   // str srcReg [pairReg, 0]
+  // pop pairReg
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
-    translateLdr("", translateRegister(pairReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4))
-    translateStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(0))
+    translatePush("", List(translateRegister(pairReg))) ::
+    translateLdr("", translateRegister(pairReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
+    translateStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(0)) ::
+    translatePop("", List(translateRegister(pairReg)))
   }
 
   def assembleProgram(tacList: List[TAC]): String = {
