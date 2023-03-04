@@ -25,7 +25,7 @@ object RegisterAllocator {
       }
       code = code.addOne(translateStr("", used.head._2, fp, ImmediateInt(-offset + (4 * index))))
       available.addOne(used.head._2)
-      used.remove(0)
+      used = used.tail
       this
     }
 
@@ -47,11 +47,13 @@ object RegisterAllocator {
     /** When passing a label definition, make sure all variables are stored in memory.
      * A label could be reached from multiple paths, so we can't be sure which tRegister is in which register. */
     def enterLabel: RegisterAllocator.AssemblerState = {
-      while(used.nonEmpty) storeRegister
+      while(used.nonEmpty) {
+        storeRegister
+      }
       this
     }
     def this(available: ListBuffer[Register]) = //, assembler: Assembler[Register]) =
-      this(ListBuffer(), available, ListBuffer(), ListBuffer())
+      this(ListBuffer(), available, ListBuffer(), ListBuffer(ListBuffer()))
 
     def addInstruction(instr: String): AssemblerState = {
       code = code.addOne(instr)
