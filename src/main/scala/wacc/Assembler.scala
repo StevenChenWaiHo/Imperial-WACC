@@ -664,7 +664,7 @@ class Assembler {
   // Assume r8 and r12 not used
   // TODO n-D arrays
   def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
-    println("ini", translateRegister(dstReg))
+    // println("ini", translateRegister(dstReg))
     translateMove("", r0, new ImmediateInt(4 * (arrLen + 1))) ::
       translateBranchLink("", new BranchString("malloc")) ::
       translateMove("", translateRegister(dstReg), r0) ::
@@ -675,20 +675,20 @@ class Assembler {
 
   // Can be removed
   def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): AssemblerState = {
-    elemsReg.foreach(e => println("asm_e", translateRegister(e)))
-    println("asm", translateRegister(dstReg))
+    // elemsReg.foreach(e => println("asm_e", translateRegister(e)))
+    // println("asm", translateRegister(dstReg))
     Nil
     // translateMove("", translateRegister(dstReg), r12)
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
-    println(elemPos, translateRegister(elemReg))
+    // println(elemPos, translateRegister(elemReg))
     translateStr("", translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(4 * elemPos))
   }
   
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad("_arrLoad"))
-    println("ld", translateRegister(arrReg), translateRegister(dstReg))
+    // println("ld", translateRegister(arrReg), translateRegister(dstReg))
     translateMove("", r10, translateRegister(arrPos.head)) :: // TODO n-D arrays (again)
     translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses ? = r3[r10]
     translateBranchLink("", new BranchString("_arrLoad"))
@@ -699,7 +699,7 @@ class Assembler {
     // TODO translate tac of each index
     // val index = arrayPos.head
     // checkIndexTAC(index) ::
-    println("st", translateRegister(arrReg), translateRegister(srcReg))
+    // println("st", translateRegister(arrReg), translateRegister(srcReg))
     translateMove("", r10, translateRegister(arrPos.head._2)) :: // TODO n-D arrays (again)
     translateMove("", r8, translateRegister(srcReg)) ::
     translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r10] = r8
