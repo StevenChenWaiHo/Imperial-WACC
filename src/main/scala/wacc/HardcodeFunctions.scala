@@ -29,7 +29,6 @@ class HardcodeFunctions extends Assembler {
   }
   
   def translate_errDivZero(): List[String] = {
-    addEndFunc("_prints", translate_print("_prints"))
     val sLbl = Label(".L._errDivZero_str0")
     translateTAC(DataSegmentTAC()) ++
     translateTAC(Comments("length of " + sLbl.name)) ++
