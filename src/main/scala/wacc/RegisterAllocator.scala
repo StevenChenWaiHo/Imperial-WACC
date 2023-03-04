@@ -49,7 +49,6 @@ object RegisterAllocator {
       while(used.nonEmpty) storeRegister
       this
     }
-
     def this(available: ListBuffer[Register]) = //, assembler: Assembler[Register]) =
       this(ListBuffer(), available, ListBuffer(), ListBuffer())
 
@@ -81,7 +80,7 @@ object RegisterAllocator {
       if (available.isEmpty) storeRegister
 
       /* Check memory */
-      val index: Int = memory.indexOf(target)
+      val index: Int = memory.head.indexOf(target)
       if (index != (-1)) {
         code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-1024 + (index * 4))))
       }
