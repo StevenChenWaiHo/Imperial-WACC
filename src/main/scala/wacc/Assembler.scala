@@ -305,8 +305,8 @@ class Assembler {
       case StringLengthDefinitionTAC(len, lbl) => assembleStringLengthDef(len, lbl)
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
       case BeginFuncTAC() => {
-        state.enterFunction
         assembleBeginFunc()
+        state.enterFunction
       }
       case EndFuncTAC() => {
         state.exitFunction
