@@ -73,7 +73,7 @@ object RegisterAllocator {
       /* Check the stack */
       val stackLocation: Int = inMemory.indexOf(target)
       if (stackLocation != (-1)) {
-        code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-currentOffset)))
+        code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-1024 + (stackLocation * 4))))
         inMemory = inMemory.updated(stackLocation, null)
       }
 
