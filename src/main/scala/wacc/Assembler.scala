@@ -429,11 +429,17 @@ class Assembler {
     var output = translatePush("", List(r0, r1, r2, r3))
     // move all the args in to arg registers
     val regs = List(r0, r1, r2, r3)
-    args.slice(0, 4).zip(regs).foreach(elem => {
+    args.slice(0, args.length.min(regs.length)).zip(regs).foreach(elem => {
       elem match {
         case (arg, reg) => output = output ++ translateMove("", reg, translateRegister(arg))
       }
     })
+    // push extra args into memory
+    if (args.length > 4) {
+      args.slice(4, args.length).foreach(reg => {
+          output = output ++ translateStrPre("", translateRegister(reg), sp, ImmediateInt(-4))
+      })
+    }
     output = output ++ (translateBranchLink("", new BranchString(lbl.name)))
     // move the result into dst before r0 is popped back
     output = output ++ (translateMove("", translateRegister(dstReg), r0))
@@ -501,7 +507,7 @@ class Assembler {
       translateMove("", translateRegister(treg), callReg)
     } else {
       // Populate from stack
-      translatePop("", List(translateRegister(treg)))
+      translateLdr("", translateRegister(treg), fp, ImmediateInt(20 + (4 * (index - 4))))
     }
   }
 
