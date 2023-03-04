@@ -507,6 +507,14 @@ class Assembler {
           translateBranchLink("eq", new BranchString("_errDivZero")) ::
           translateBranchLink("", new BranchString("__aeabi_idivmod"))
       }
+      case BinaryOpType.Mod => {
+        addEndFunc("_errDivZero", new HardcodeFunctions().translate_errDivZero())
+        translateMove("", r0, translateOperand(op1)) ::
+          translateMove("", r1, translateOperand(op2)) ::
+          translateCompare("", r1, new ImmediateInt(0)) ::
+          translateBranchLink("eq", new BranchString("_errDivZero")) ::
+          translateBranchLink("", new BranchString("__aeabi_idivmod"))
+      }
       case BinaryOpType.Eq => {
           translateCompare("", translateOperand(op1), translateOperand(op2)) ::
           translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
