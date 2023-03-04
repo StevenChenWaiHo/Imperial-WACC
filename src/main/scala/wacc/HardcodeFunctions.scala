@@ -29,8 +29,17 @@ class HardcodeFunctions extends Assembler {
   }
   
   def translate_errDivZero(): List[String] = {
+    val sLbl = Label("fatal error: division or modulo by zero\n")
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(40, sLbl)) ++
+    translateTAC(StringDefinitionTAC(sLbl.name, sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++
     translateTAC(Label("_errDivZero")) ::
-    translateBranchLink("", new BranchString("_prints"))
+      translateLdr("", r0, null, LabelString(sLbl.name)) ::
+        translateBranchLink("", BranchString("_prints")) ::
+        translateMove("", r0, ImmediateInt(255))
+        translateBranchLink("", BranchString("exit"))
   }
 
   def translate_errOverflow(): List[String] = {
