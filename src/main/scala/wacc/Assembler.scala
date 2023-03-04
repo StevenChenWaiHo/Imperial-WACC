@@ -672,11 +672,11 @@ class Assembler {
       translateStr("", r8, r12, new ImmediateInt(-4))
   }
 
-  // Assume r11 not used
-  // r11 is array register
-  // TODO get unused register to replace r11
+  // Assume r9 not used
+  // r9 is array register
+  // TODO get unused register to replace r9
   def assembleArray(arrayElemType: DeclarationType, dstReg: TRegister): AssemblerState = {
-    translateMove("", r11, r12)
+    translateMove("", r9, r12)
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, srcReg: TRegister): AssemblerState = {
@@ -686,7 +686,7 @@ class Assembler {
   def assembleLoadArrayElem(datatype: DeclarationType, arrayReg: TRegister, arrayPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad("_arrLoad"))
     translateMove("", r10, translateRegister(arrayPos.head)) :: // TODO n-D arrays (again)
-    translateMove("", r3, r11) :: // arrLoad uses ? = r3[r10]
+    translateMove("", r3, r9) :: // arrLoad uses ? = r3[r10]
     translateBranchLink("", new BranchString("_arrLoad"))
   }
   
@@ -697,7 +697,7 @@ class Assembler {
     // checkIndexTAC(index) ::
     translateMove("", r10, translateRegister(arrayPos.head._2)) :: // TODO n-D arrays (again)
     translateMove("", r8, translateRegister(srcReg)) ::
-    translateMove("", r3, r11) :: // arrStore uses r3[r10] = r8
+    translateMove("", r3, r9) :: // arrStore uses r3[r10] = r8
     translateBranchLink("", new BranchString("_arrStore"))
   }
 
