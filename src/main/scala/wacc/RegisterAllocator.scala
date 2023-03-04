@@ -38,7 +38,7 @@ object RegisterAllocator {
     }
 
     /** Put the stack pointer back, and revert to the previous scope. */
-    def logicallyExitFunction: RegisterAllocator.AssemblerState = {
+    def deleteFunctionScope: RegisterAllocator.AssemblerState = {
       memory.remove(0)
       this
     }
