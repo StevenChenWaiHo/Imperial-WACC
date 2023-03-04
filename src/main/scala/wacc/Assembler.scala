@@ -1,5 +1,6 @@
 package wacc
 
+import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
@@ -661,8 +662,12 @@ class Assembler {
             case BaseT.Int_T => "_printi"
             case _ => "_printi"
           }
-          case NestedPair() => "_printp"
-          case PairType(fstType, sndType) => "_printp"
+          case NestedPair() | PairType(_, _) => "_printp"
+          // Character arrays should be printed as strings, but all others should be printed as a pointer
+          case ArrayType(t, _) if !(t is BaseType(Char_T)) => "_printp"
+
+          // TODO: This may not work yet:
+          case ArrayType(t, _) if t is BaseType(Char_T) => "prints"
         }
         addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
         if (cmd == CmdT.PrintLn) {
