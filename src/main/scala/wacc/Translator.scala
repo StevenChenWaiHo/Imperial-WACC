@@ -237,10 +237,7 @@ object Translator {
 
   def translateBinOp(op: BinOp, exp1: Expr, exp2: Expr) = {
     val (tacList1, reg1) = delegateASTNode(exp1)
-    val (tacList2, reg2) =  exp2 match {
-      case IntLiteral(x) => (List[TAC](), IntLiteralTAC(x))
-      case _ => delegateASTNode(exp2)
-    }
+    val (tacList2, reg2) =  delegateASTNode(exp2)
     val nextReg = nextRegister()
     (tacList1 ++ tacList2 ++ List(BinaryOpTAC(op, reg1, reg2, nextReg)),
       nextReg)
