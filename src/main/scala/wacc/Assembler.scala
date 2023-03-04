@@ -726,6 +726,10 @@ class Assembler {
     translateStr("", translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(4 * elemPos))
   }
   
+  // LoadArrayElem
+  // Check Null
+  // mov r10 arrPos
+  // mov r3 arrReg
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad("_arrLoad"))
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
@@ -735,6 +739,10 @@ class Assembler {
     translateBranchLink("", new BranchString("_arrLoad"))
   }
   
+  // StorePairElem
+  // mov r10 arrPos
+  // mov r8 srcReg
+  // mov r3 arrReg
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore("_arrStore"))
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
