@@ -224,10 +224,12 @@ class Assembler {
   }
 
   def translateBranch(condition: String, operand: String): AssemblerState = {
+    state.enterBranch
     return "b" + condition + " " + operand
   }
 
   def translateBranchLink(condition: String, operand: LHSop): AssemblerState = {
+    state.enterBranch
     return "bl" + condition + " " + operand
   }
 
@@ -298,10 +300,7 @@ class Assembler {
     //Push and pop might not be in right place
     //Algorithm for determining if ldr is needed
     tripleAddressCode match {
-      case Label(name) => {
-        state.enterLabel
-        assembleLabel(name)
-      }
+      case Label(name) => assembleLabel(name)
       case Comments(str) => List("@ " + str)
       case DataSegmentTAC() => List(".data")
       case TextSegmentTAC() => List(".text")

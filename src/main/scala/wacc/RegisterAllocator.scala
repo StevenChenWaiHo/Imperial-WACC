@@ -46,7 +46,7 @@ object RegisterAllocator {
 
     /** When passing a label definition, make sure all variables are stored in memory.
      * A label could be reached from multiple paths, so we can't be sure which tRegister is in which register. */
-    def enterLabel: RegisterAllocator.AssemblerState = {
+    def enterBranch: RegisterAllocator.AssemblerState = {
       while(used.nonEmpty) {
         storeRegister
       }
