@@ -278,17 +278,17 @@ object Translator {
       case ArrayLiteral(elements) => {
         val tacs = ListBuffer[TAC]()
         val tRegs = ListBuffer[TRegister]() //required?
+        val dstReg = nextRegister()
+        addNode(ident, dstReg)
         for (i <- 0 to elements.length - 1) {
           val (elemTacs, reg) = delegateASTNode(elements(i))
           addNode(elements(i), reg)
           tacs ++= elemTacs
-          tacs += CreateArrayElem(dataType, i, reg)
+          tacs += CreateArrayElem(dataType, i, dstReg, reg)
           tRegs += reg        
         }
-        val arrReg = nextRegister()
-        addNode(ident, arrReg)
-        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, arrReg)) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, arrReg),
-         Comments("Array Declaration End")), arrReg)
+        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, dstReg)) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, dstReg),
+         Comments("Array Declaration End")), dstReg)
       }
       case _ => (List(new Label("Array Type not Matched")), null)
     }
