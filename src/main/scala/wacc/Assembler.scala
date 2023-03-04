@@ -673,7 +673,7 @@ class Assembler {
       state.exitFunction
       translateMove("", r0, translateOperand(operand)) ::
         translateMove("", sp, fp) ::
-        translatePop("", List(r8, r10, r12)) ::
+        //translatePop("", List(r8, r10, r12)) ::
         translatePop("", List(fp, pc)) ::
         ".ltorg"
     }
