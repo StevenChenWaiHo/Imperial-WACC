@@ -1,6 +1,6 @@
 package wacc
 
-import wacc.StatelessAssembler.{translateAdd, translateLdr, translatePush, translateStr, translateSub}
+import wacc.StatelessAssembler.{assembleAdd, assembleLdr, assemblePush, assembleStr, assembleSub}
 import wacc.AssemblerTypes.{ImmediateInt, Register, fp, sp}
 import wacc.TAC._
 
@@ -23,7 +23,7 @@ object RegisterAllocator {
         index = currentScope.length
         currentScope.addOne(used.head._1)
       }
-      code = code.addOne(translateStr("", used.head._2, fp, ImmediateInt(-offset + (4 * index))))
+      code = code.addOne(assembleStr("", used.head._2, fp, ImmediateInt(-offset + (4 * index))))
       available.addOne(used.head._2)
       used = used.tail
       this
@@ -32,7 +32,7 @@ object RegisterAllocator {
     /** When entering and exiting a function, the scope is completely redefined.
     * allocate some stack space by moving the stack pointer, and add 'memory(0)' to track it. */
     def enterFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(translateSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      code.addOne(assembleSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
       memory.addOne(ListBuffer[TRegister]())
       this
     }
@@ -44,7 +44,7 @@ object RegisterAllocator {
     }
 
     def exitFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(translateAdd("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      code.addOne(assembleAdd("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
       this
     }
 
@@ -91,7 +91,7 @@ object RegisterAllocator {
       /* Check memory */
       val index: Int = memory.head.indexOf(target)
       if (index != (-1)) {
-        code = code.addOne(translateLdr("", available.head, fp, new ImmediateInt(-offset + (4 * index))))
+        code = code.addOne(assembleLdr("", available.head, fp, new ImmediateInt(-offset + (4 * index))))
       }
 
       logicallyAllocateRegisterTo(target)
