@@ -792,10 +792,10 @@ class Assembler {
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
-    val regs = List(translateRegister(arrReg), translateRegister(dstReg))
-    regs ++ arrPos.map(a => translateRegister(a))
+    var regs = List(translateRegister(arrReg), translateRegister(dstReg))
+    regs = regs ++ arrPos.map(a => translateRegister(a))
     // println("ld", translateRegister(arrReg), translateRegister(dstReg))
-    translatePush("", regs) ::
+    translatePush("", regs.sortWith((s, t) => s < t)) ::
     translatePush("", List(r0, r1, r2, r3)) ::
     translateMove("", r0, translateRegister(arrPos.head)) ::
     translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r2 = r3[r0]
@@ -803,7 +803,7 @@ class Assembler {
     translateMove("", translateRegister(dstReg), r2) ::
     // loadArrayElemHelper(translateRegister(arrReg), arrPos, translateRegister(dstReg)) ::
     translatePop("", List(r0, r1, r2, r3)) ::
-    translatePop("", regs.reverse)
+    translatePop("", regs.sortWith((s, t) => s < t))
   }
 
   private def loadArrayElemHelper(arrReg: Register, arrPos: List[TRegister], dstReg: Register): AssemblerState = {  
