@@ -334,8 +334,8 @@ object Translator {
       }
       
       case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
-      // PairLiteral or IdentLiteral
-      case lit: Literal => {
+      // PairLiteral or IdentLiteral or Call Function
+      case lit: RVal => {
         val reg = nextRegister()
         val (srcRegList, srcReg) = delegateASTNode(lit)
         (srcRegList ++ List(AssignmentTAC(srcReg, reg)), reg)
