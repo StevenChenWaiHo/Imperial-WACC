@@ -132,11 +132,6 @@ class Assembler {
     "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand).toString + "!".toString()
   }
 
-  // Get a unique label for branches/loops
-  def generateLabel(): Label = {
-    labelCount += 1
-    new Label(".La" + labelCount.toString(), 0) // This will not define regCount in label's scope
-  }
 
   // Add predefined function to end of assembly code (.e.g _prints)
   def addEndFunc(name: String, code: List[String]): Unit = {
