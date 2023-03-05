@@ -135,7 +135,7 @@ class Assembler {
   // Get a unique label for branches/loops
   def generateLabel(): Label = {
     labelCount += 1
-    new Label(".La" + labelCount.toString())
+    new Label(".La" + labelCount.toString(), 0) // This will not define regCount in label's scope
   }
 
   // Add predefined function to end of assembly code (.e.g _prints)
@@ -295,7 +295,7 @@ class Assembler {
       case IntLiteralTAC(value) => new ImmediateInt(value)
       case CharLiteralTAC(chr) => new ImmediateInt(chr.toInt)
       case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true) + 1)
-      case Label(name) => new LabelString(name)
+      case Label(name, _) => new LabelString(name)
       case PairLiteralTAC() => new ImmediateInt(0)
       case ArrayOp(_) => ImmediateInt(0)
       case a => println("getOperand fail: " + a); null 
@@ -307,7 +307,7 @@ class Assembler {
     println("Translating: " + TAC)
     println(endFuncs.keys)
     tripleAddressCode match {
-      case Label(name) => {
+      case Label(name, _) => {
         state.enterBranch
         assembleLabel(name)
       }
@@ -668,7 +668,7 @@ class Assembler {
 
   def assembleAssignment(operand: Operand, reg: TRegister) = {
     operand match {
-      case Label(name) => assembleLdr("", getRealReg(reg), r0, getOperand(operand))
+      case Label(name, _) => assembleLdr("", getRealReg(reg), r0, getOperand(operand))
       case _ => assembleMove("", getRealReg(reg), getOperand(operand))
     }
 

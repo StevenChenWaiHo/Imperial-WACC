@@ -36,9 +36,10 @@ object Translator {
     typeMaps.remove(typeMaps.length - 1)
     // Remove the registers only used within that context
     val oldLength = regCountStack.pop()
-    regList.remove(oldLength, regList.length - oldLength)
-    // Return scope depth
-    scopes.length
+    val newLength = regList.length
+    regList.remove(oldLength, newLength - oldLength)
+    // Return number of registers in use in previous scope
+    newLength
   }
 
   def findNode(node: ASTNode): Option[TRegister] = {
@@ -121,9 +122,9 @@ object Translator {
     next
   }
 
-  def generateLabel(): Label = {
+  def generateLabel(regCount: Int): Label = {
     labelCount += 1
-    Label(".L" + labelCount.toString())
+    Label(".L" + labelCount.toString(), regCount)
   }
 
   def delegateASTNode(node: ASTNode): (List[TAC], TRegister) = {
@@ -151,7 +152,7 @@ object Translator {
           case WhileLoop(expr, stat) => translateWhileLoop(expr, stat)
           case Call(ident, args) => translateCall(ident, args)
           case Read(lval) => translateRead(lval)
-          case na => (List(new Label("Not Implemented " + na)), null)
+          case na => (List(new Label("Not Implemented " + na, 0)), null)
         }
         // Only add literal assignments/declarations to the scope
         node match {
@@ -171,7 +172,7 @@ object Translator {
       case IntLiteral(x) => new IntLiteralTAC(x)
       case StringLiteral(str) => {
         strings.getOrElse(str, {
-          val lbl = new Label(".L.str" + strings.size.toString)
+          val lbl = new Label(".L.str" + strings.size.toString, 0)
           strings.addOne((str, lbl))
           dataList.addOne(Comments("length of " + lbl.toString()))
           dataList.addOne(StringLengthDefinitionTAC(str.length(), lbl))
@@ -224,18 +225,20 @@ object Translator {
         val dstReg = nextRegister()
         (is.toList ++ List(LoadArrayElem(findType(indices.head).get, arrReg, rs.toList, dstReg)), dstReg)
       }
-      case _ => (List(Label("Not translating ArrayElem")), null)
+      case _ => (List(Label("Not translating ArrayElem", 0)), null)
     }
   }
 
   def translateWhileLoop(expr: Expr, stat: Stat): (List[TAC], TRegister) = {
+    newMap()
     val (expList, expReg) = delegateASTNode(expr)
+    val expRegCount = popMap()
     newMap()
     val (statList, statReg) = delegateASTNode(stat)
-    popMap()
-    val startLabel = generateLabel()
-    val bodyLabel = generateLabel()
-    val endLabel = generateLabel()
+    val regCount = popMap()
+    val startLabel = generateLabel(expRegCount)
+    val bodyLabel = generateLabel(regCount)
+    val endLabel = generateLabel(regList.length)
     (List(startLabel) ++ expList
       ++ List(IfTAC(expReg, bodyLabel), GOTO(endLabel), bodyLabel)
       ++ statList ++ List(GOTO(startLabel), endLabel), statReg)
@@ -264,9 +267,9 @@ object Translator {
     popMap()
     newMap()
     val (trueList, reg2) = delegateASTNode(stat1)
-    popMap()
-    val l1 = generateLabel()
-    val l2 = generateLabel()
+    val s1RegCount = popMap()
+    val l1 = generateLabel(s1RegCount)
+    val l2 = generateLabel(regList.length)
     (condList ++ List(IfTAC(reg1, l1)) ++ falseList ++ List(GOTO(l2), l1) ++ trueList ++ List(l2),
       null)
   }
@@ -298,7 +301,7 @@ object Translator {
         (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, lenReg, dstReg)) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, dstReg),
          Comments("Array Declaration End")), dstReg)
       }
-      case _ => (List(new Label("Array Type not Matched")), null)
+      case _ => (List(new Label("Array Type not Matched", 0)), null)
     }
   }
 
@@ -341,7 +344,7 @@ object Translator {
         (srcRegList ++ List(AssignmentTAC(srcReg, reg)), reg)
       }
 
-      case t => throw new ArithmeticException("Not translating Pair Value"); (List(Label("Not translating Pair Value")), null)
+      case t => throw new ArithmeticException("Not translating Pair Value"); (List(Label("Not translating Pair Value", 0)), null)
     }
   }
 
@@ -383,7 +386,7 @@ object Translator {
         (rvalueList ++ lvalueList ++ 
         List(Comments("Store Pair Elem")) ++ List(StorePairElem(elemType, lvalueReg, elem, rvalueReg)) ++ List(Comments("Finish Storing Pair Elem")), lvalueReg)
       }
-      case _ => (List(Label("Not translating PairElem")), null)
+      case _ => (List(Label("Not translating PairElem", 0)), null)
     }
   }
 
@@ -399,7 +402,7 @@ object Translator {
         (rvalueList ++ 
         List(Comments("Store Array Elem")) ++ List(StoreArrayElem(null, lvalueReg, indexNodes.toList, rvalueReg)) ++ List(Comments("Finish storing Array Elem")), lvalueReg)
       }
-      case _ => (List(Label("Not translating ArrayElem")), null)
+      case _ => (List(Label("Not translating ArrayElem", 0)), null)
     }
   }
 
@@ -423,7 +426,7 @@ object Translator {
     // Save main .data and .text segment
     dataList.toList ++ 
     List[TAC](TextSegmentTAC()) ++
-    List(Label("main"), BeginFuncTAC()) ++ 
+    List(Label("main", 0), BeginFuncTAC()) ++ 
     tacList ++ List(EndFuncTAC()) ++ 
     funcTAClist.toList
   }
@@ -440,8 +443,8 @@ object Translator {
     newMap()
     delegateASTNode(stat) match {
       case (sList, sReg) => {
-        popMap()
-        (List(new Label("newScope")) ++ sList, sReg)
+        val regCount = popMap()
+        (List(new Label("newScope", regCount)) ++ sList, sReg)
       }
     }
   }
@@ -483,12 +486,13 @@ object Translator {
       }
     })
     val returnReg = nextRegister()
-    (argTacList ++ List(CallTAC(new Label("wacc_" + ident.name), argOutList, returnReg)), returnReg)
+    (argTacList ++ List(CallTAC(new Label("wacc_" + ident.name, 0), argOutList, returnReg)), returnReg)
   }
 
   def translateFunction(func: Func): List[TAC] = {
     newMap()
     var paramList = List[TAC]()
+    var regCount = 0
     func match {
       case Func(returnType, ident, types, code) => {
         // PopParam
@@ -503,11 +507,11 @@ object Translator {
         delegateASTNode(code) match {
           case (tacList, outReg) => {
             // Remove the map from scope
-            popMap()
+            regCount = popMap()
             // Clear the register list
             regList.clear()
           }
-            List(new Label("wacc_" + ident.name), BeginFuncTAC()) ++ paramList.reverse ++ tacList
+            List(new Label("wacc_" + ident.name, regCount), BeginFuncTAC()) ++ paramList.reverse ++ tacList
         }
       }
     }

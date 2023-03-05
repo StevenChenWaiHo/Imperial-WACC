@@ -14,13 +14,13 @@ class HelperFunctions extends Assembler {
   implicit private[this] def updateState(str: String): AssemblerState = state.addInstruction(str)
 
   def assemble_errNull(): List[String] = {
-    val sLbl = new Label(".L._errNull_str0")
+    val sLbl = new Label(".L._errNull_str0", 0)
     assembleTAC(DataSegmentTAC()) ++
     assembleTAC(Comments("length of " + sLbl.name)) ++
     assembleTAC(StringLengthDefinitionTAC(45, sLbl)) ++
     assembleTAC(StringDefinitionTAC("fatal error: null pair dereferenced or freed\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
-    assembleTAC(Label("_errNull")) ::
+    assembleTAC(Label("_errNull", 0)) ::
     assembleLdr("", r0, r0, new LabelString(".L._errNull_str0")) ::
     assembleBranchLink("", new BranchString("_prints")) ::
     assembleMove("", r0, new ImmediateInt(255)) ::
@@ -29,7 +29,7 @@ class HelperFunctions extends Assembler {
 
   def assemble_freepair(): List[String] = {
     assembleTAC(TextSegmentTAC()) ::
-    assembleTAC(Label("_freepair")) ::
+    assembleTAC(Label("_freepair", 0)) ::
       assemblePush("", List(lr)) ::
       assembleMove("", r1, r0) ::
       assembleCompare("", r1, ImmediateInt(0)) ::
@@ -51,13 +51,13 @@ class HelperFunctions extends Assembler {
 
   
   def assemble_errDivZero(): List[String] = {
-    val sLbl = Label(".L._errDivZero_str0")
+    val sLbl = Label(".L._errDivZero_str0", 0)
     assembleTAC(DataSegmentTAC()) ++
     assembleTAC(Comments("length of " + sLbl.name)) ++
     assembleTAC(StringLengthDefinitionTAC(40, sLbl)) ++
     assembleTAC(StringDefinitionTAC("fatal error: division or modulo by zero\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
-    assembleTAC(Label("_errDivZero")) ::
+    assembleTAC(Label("_errDivZero", 0)) ::
       assembleLdr("", r0, null, LabelString(sLbl.name)) ::
         assembleBranchLink("", BranchString("_prints")) ::
         assembleMove("", r0, ImmediateInt(255))
@@ -65,13 +65,13 @@ class HelperFunctions extends Assembler {
   }
 
   def assemble_errOverflow(): List[String] = {
-    val sLbl = Label(".L._errOverflow_str0")
+    val sLbl = Label(".L._errOverflow_str0", 0)
     assembleTAC(DataSegmentTAC()) ++
     assembleTAC(Comments("length of " + sLbl.name)) ++
     assembleTAC(StringLengthDefinitionTAC(52, sLbl)) ++
     assembleTAC(StringDefinitionTAC("fatal error: integer overflow or underflow\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
-    assembleTAC(Label("_errOverflow")) ::
+    assembleTAC(Label("_errOverflow", 0)) ::
     assembleLdr("", r0, null, LabelString(sLbl.name)) ::
     assembleBranchLink("", new BranchString("_prints")) ::
     assembleMove("", r0 , new ImmediateInt(255)) ::
@@ -80,7 +80,7 @@ class HelperFunctions extends Assembler {
 
   // r3 = r3[r0]
   def assemble_arrLoad(): List[String] = {
-    assembleTAC(Label("_arrLoad")) ++
+    assembleTAC(Label("_arrLoad", 0)) ++
     (assemblePush("", List(lr)) ::
       assembleCompare("", r0, new ImmediateInt(0)) ::
       assembleMove("", r1, r0) ::
@@ -95,7 +95,7 @@ class HelperFunctions extends Assembler {
 
   // r3[r0] = r2
   def assemble_arrStore(): List[String] = {
-    assembleTAC(Label("_arrStore")) ++
+    assembleTAC(Label("_arrStore", 0)) ++
     (assemblePush("", List(lr)) ::
       assembleCompare("", r0, new ImmediateInt(0)) ::
       assembleMove("", r1, r0) ::
@@ -109,13 +109,13 @@ class HelperFunctions extends Assembler {
   }
 
   def assemble_boundsCheck(): List[String] = {
-    val sLbl = new Label(".L._boundsCheck_str_0")
+    val sLbl = new Label(".L._boundsCheck_str_0", 0)
     assembleTAC(DataSegmentTAC()) ++
     assembleTAC(Comments("length of " + sLbl.name)) ++
     assembleTAC(StringLengthDefinitionTAC(42, sLbl)) ++
     assembleTAC(StringDefinitionTAC("fatal error: array index %d out of bounds\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
-    assembleTAC(Label("_boundsCheck")) ++
+    assembleTAC(Label("_boundsCheck", 0)) ++
     (assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
       assembleBranchLink("", new BranchString("printf")) ::
       assembleMove("", r0, new ImmediateInt(0)) ::
@@ -137,13 +137,13 @@ class HelperFunctions extends Assembler {
   }
 
    def assemble_printp(): List[String] = {
-    val sLbl = new Label(".L._printp_str0")
+    val sLbl = new Label(".L._printp_str0", 0)
     assembleTAC(DataSegmentTAC()) ++
     assembleTAC(Comments("length of " + sLbl.name)) ++
     assembleTAC(StringLengthDefinitionTAC(2, sLbl)) ++
     assembleTAC(StringDefinitionTAC("%p", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
-    assembleTAC(Label("_printp")) ++
+    assembleTAC(Label("_printp", 0)) ++
     (assemblePush("", List(lr)) ::
         assembleMove("", r1, r0) ::
         assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
@@ -154,13 +154,13 @@ class HelperFunctions extends Assembler {
    }
 
   def assemble_prints(): List[String] = {
-    val sLbl = new Label(".L._prints_str0")
+    val sLbl = new Label(".L._prints_str0", 0)
     assembleTAC(DataSegmentTAC()) ++
       assembleTAC(Comments("length of " + sLbl.name)) ++
       assembleTAC(StringLengthDefinitionTAC(4, sLbl)) ++
       assembleTAC(StringDefinitionTAC("%.*s", sLbl)) ++
       assembleTAC(TextSegmentTAC()) ++
-      assembleTAC(Label("_prints")) ++
+      assembleTAC(Label("_prints", 0)) ++
       (assemblePush("", List(lr)) ::
         assembleMove("", r2, r0) ::
         assembleLdr("", r1, r0, ImmediateInt(-4)) ::
@@ -172,13 +172,13 @@ class HelperFunctions extends Assembler {
   }
 
   def assemble_printc(): List[String] = {
-    val sLbl = new Label(".L._printc_str0")
+    val sLbl = new Label(".L._printc_str0", 0)
     assembleTAC(DataSegmentTAC()) ++
       assembleTAC(Comments("length of " + sLbl.name)) ++
       assembleTAC(StringLengthDefinitionTAC(2, sLbl)) ++
       assembleTAC(StringDefinitionTAC("%c", sLbl)) ++
       assembleTAC(TextSegmentTAC()) ++
-      assembleTAC(Label("_printc")) ++
+      assembleTAC(Label("_printc", 0)) ++
       (assemblePush("", List(lr)) ::
         assembleMove("", r1, r0) ::
         assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
@@ -189,13 +189,13 @@ class HelperFunctions extends Assembler {
   }
 
   def assemble_printi(): List[String] = {
-    val sLbl = new Label(".L._printi_str0")
+    val sLbl = new Label(".L._printi_str0", 0)
     assembleTAC(DataSegmentTAC()) ++
       assembleTAC(Comments("length of " + sLbl.name)) ++
       assembleTAC(StringLengthDefinitionTAC(2, sLbl)) ++
       assembleTAC(StringDefinitionTAC("%d", sLbl)) ++
       assembleTAC(TextSegmentTAC()) ++
-      assembleTAC(Label("_printi")) ++
+      assembleTAC(Label("_printi", 0)) ++
       (assemblePush("", List(lr)) ::
         assembleMove("", r1, r0) ::
         assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
@@ -206,13 +206,13 @@ class HelperFunctions extends Assembler {
   }
 
   def assemble_println(): List[String] = {
-    val sLbl = new Label(".L._println_str0")
+    val sLbl = new Label(".L._println_str0", 0)
     assembleTAC(DataSegmentTAC()) ++
       assembleTAC(Comments("length of " + sLbl.name)) ++
       assembleTAC(StringLengthDefinitionTAC(0, sLbl)) ++
       assembleTAC(StringDefinitionTAC("", sLbl)) ++
       assembleTAC(TextSegmentTAC()) ++
-      assembleTAC(Label("_println")) ++
+      assembleTAC(Label("_println", 0)) ++
       (assemblePush("", List(lr)) ::
         assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
         assembleBranchLink("", new BranchString("puts")) ::
@@ -222,9 +222,9 @@ class HelperFunctions extends Assembler {
   }
 
   def assemble_printb(): List[String] = {
-    val fLbl = new Label(".L._printb_str0")
-    val tLbl = new Label(".L._printb_str1")
-    val sLbl = new Label(".L._printb_str2")
+    val fLbl = new Label(".L._printb_str0", 0)
+    val tLbl = new Label(".L._printb_str1", 0)
+    val sLbl = new Label(".L._printb_str2", 0)
 
     assembleTAC(DataSegmentTAC()) ++
       assembleTAC(Comments("length of " + fLbl.name)) ++
@@ -237,15 +237,15 @@ class HelperFunctions extends Assembler {
       assembleTAC(StringLengthDefinitionTAC(4, sLbl)) ++
       assembleTAC(StringDefinitionTAC("%.*s", sLbl)) ++
       assembleTAC(TextSegmentTAC()) ++
-      assembleTAC(Label("_printb")) ++
+      assembleTAC(Label("_printb", 0)) ++
       (assemblePush("", List(lr)) ::
         assembleCompare("", r0, new ImmediateInt(0)) ::
         assembleBranch("ne", ".L_printb0") ::
         assembleLdr("", r2, r0, new LabelString(fLbl.name)) ::
         assembleBranch("", ".L_printb1") ::
-        assembleTAC(Label(".L_printb0"))) ++
+        assembleTAC(Label(".L_printb0", 0))) ++
       (assembleLdr("", r2, r0, new LabelString(tLbl.name)) ::
-        assembleTAC(Label(".L_printb1"))) ++
+        assembleTAC(Label(".L_printb1", 0))) ++
       (assembleLdr("", r1, r2, ImmediateInt(-4)) ::
         assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
         assembleBranchLink("", new BranchString("printf")) ::
@@ -263,14 +263,14 @@ class HelperFunctions extends Assembler {
   }
 
   def assemble_readi(): List[String] = {
-    val lbl = new Label(".L._readi_str0")
+    val lbl = new Label(".L._readi_str0", 0)
     List(
       DataSegmentTAC(),
       Comments("length of " + lbl.name),
       StringLengthDefinitionTAC(2, lbl),
       StringDefinitionTAC("%d", lbl),
       TextSegmentTAC(),
-      Label("_readi")).map(tac => assembleTAC(tac))
+      Label("_readi", 0)).map(tac => assembleTAC(tac))
 
       assemblePush("", List(lr))
       assembleStrPre("", r0, sp, new ImmediateInt(-4))
@@ -283,14 +283,14 @@ class HelperFunctions extends Assembler {
   }
 
   def assemble_readc(): List[String] = {
-    val lbl = new Label(".L._readc_str0")
+    val lbl = new Label(".L._readc_str0", 0)
     List(
       DataSegmentTAC(),
       Comments("length of " + lbl.name),
       StringLengthDefinitionTAC(3, lbl),
       StringDefinitionTAC(" %c", lbl),
       TextSegmentTAC(),
-      Label("_readc")).map(tac => assembleTAC(tac))
+      Label("_readc", 0)).map(tac => assembleTAC(tac))
 
       assemblePush("", List(lr))
       assembleStrPre("b", r0, sp, new ImmediateInt(-1))
