@@ -80,7 +80,7 @@ class HardcodeFunctions extends Assembler {
   }
 
   // r3 = r3[r10]
-  def translate_arrLoad(condition: String): List[String] = {
+  def translate_arrLoad(): List[String] = {
     translateTAC(Label("_arrLoad")) ++
     (translatePush("", List(lr)) ::
       translateCompare("", r10, new ImmediateInt(0)) ::
@@ -95,7 +95,7 @@ class HardcodeFunctions extends Assembler {
   }
 
   // r3[r10] = r8
-  def translate_arrStore(condition: String): List[String] = {
+  def translate_arrStore(): List[String] = {
     translateTAC(Label("_arrStore")) ++
     (translatePush("", List(lr)) ::
       translateCompare("", r10, new ImmediateInt(0)) ::

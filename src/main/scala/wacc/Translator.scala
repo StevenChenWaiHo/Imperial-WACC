@@ -194,13 +194,18 @@ object Translator {
 
   def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
     val (pairRegList, pairReg) = delegateASTNode(lvalue)
-    val (fstType, sndType) = findType(lvalue) match {
-      case Some(PairType(fstType, sndType)) => (fstType, sndType)
-      case None => (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
+    val elemType = lvalue match {
+      case ArrayElem(name, indices) => findType(name).get // TODO null
+      case _ => {
+        val (fstType, sndType) = findType(lvalue) match {
+          case Some(PairType(fstType, sndType)) => (fstType, sndType)
+          case None => (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
+        }
+        if (elem == PairElemT.Fst) fstType else sndType
+      }
     }
     // Should not add this register to Map as it might update
     val dstReg = nextRegister()
-    val elemType = if (elem == PairElemT.Fst) fstType else sndType
     (List(Comments("Getting Pair Elem")) ++ pairRegList ++ List(GetPairElem(elemType, pairReg, elem, dstReg)) ++ List(Comments("Got Pair Elem")), dstReg)
   }
 
@@ -363,11 +368,16 @@ object Translator {
     lvalue match {
       case PairElement(elem, lvalue) => {
         val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
-        val (fstType, sndType) = findType(lvalue) match {
-          case Some(PairType(fstType, sndType)) => (fstType, sndType)
-          case None => (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
+        val elemType = lvalue match {
+          case ArrayElem(name, indices) => findType(name).get // TODO null
+          case _ => {
+            val (fstType, sndType) = findType(lvalue) match {
+              case Some(PairType(fstType, sndType)) => (fstType, sndType)
+              case None => (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
+            }
+            if (elem == PairElemT.Fst) fstType else sndType
+          }
         }
-        val elemType = if (elem == PairElemT.Fst) fstType else sndType
         (rvalueList ++ lvalueList ++ 
         List(Comments("Store Pair Elem")) ++ List(StorePairElem(elemType, lvalueReg, elem, rvalueReg)) ++ List(Comments("Finish Storing Pair Elem")), lvalueReg)
       }

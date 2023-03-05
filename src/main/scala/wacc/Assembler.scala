@@ -754,12 +754,14 @@ class Assembler {
   // TODO n-D arrays
   def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
     // println("ini", translateRegister(dstReg))
-    translateMove("", r0, new ImmediateInt(4 * (arrLen + 1))) ::
-      translateBranchLink("", new BranchString("malloc")) ::
+    translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
       translateMove("", translateRegister(dstReg), r0) ::
       translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(4)) ::
+      translatePush("", List(r8)) ::
       translateMove("", r8, new ImmediateInt(arrLen)) ::
-      translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-4))
+      translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
+      translatePush("", List(r8)) ::
+      translateBranchLink("", new BranchString("malloc"))
   }
 
   // Can be removed
@@ -772,29 +774,56 @@ class Assembler {
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
     // println(elemPos, translateRegister(elemReg))
-    translateStr("", translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(4 * elemPos))
+    translateBranchLink("", new BranchString("malloc")) ::
+      translateStr(getInstructionType(arrayElemType), translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
   }
   
+  // LoadArrayElem
+  // Check Null?
+  // mov r10 arrPos
+  // mov r3 arrReg
+  // bl _arrLoad
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
-    addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad("_arrLoad"))
+    addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
     // println("ld", translateRegister(arrReg), translateRegister(dstReg))
-    translateMove("", r10, translateRegister(arrPos.head)) :: // TODO n-D arrays (again)
-    translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r10]
-    translateBranchLink("", new BranchString("_arrLoad"))
+    arrPos match {
+      case _ if (arrPos.isEmpty) => Nil
+      case _ => {
+        translatePush("", List(r10)) ::
+        translateMove("", r10, translateRegister(arrPos.head)) ::
+        translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r10]
+        translateBranchLink("", new BranchString("_arrLoad")) ::
+        assembleLoadArrayElem(datatype, arrReg, arrPos.drop(1), dstReg) ::
+        translatePop("", List(r10))
+      }
+    }
   }
   
+  // StorePairElem
+  // mov r10 arrPos
+  // mov r8 srcReg
+  // mov r3 arrReg
+  // bl _arrStore
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
-    addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore("_arrStore"))
+    addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
     // TODO translate tac of each index
     // val index = arrayPos.head
     // checkIndexTAC(index) ::
     // println("st", translateRegister(arrReg), translateRegister(srcReg))
-    translateMove("", r10, translateRegister(arrPos.head._2)) :: // TODO n-D arrays (again)
-    translateMove("", r8, translateRegister(srcReg)) ::
-    translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r10] = r8
-    translateBranchLink("", new BranchString("_arrStore"))
+    arrPos match {
+      case _ if (arrPos.isEmpty) => Nil
+      case _ => {
+        translatePush("", List(r10, r8)) ::
+        translateMove("", r10, translateRegister(arrPos.head._2)) ::
+        translateMove("", r8, translateRegister(srcReg)) ::
+        translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r10] = r8
+        translateBranchLink("", new BranchString("_arrStore")) ::
+        assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg) ::
+        translatePop("", List(r10, r8))
+      }
+    }
   }
 
   // def checkIndexTAC(arrayPos: (List[TAC], TRegister)): AssemblerState = { // TODO translate tac of each index
