@@ -167,8 +167,15 @@ class Assembler {
     translateBranchLink("vs", new BranchString("_errOverflow"))
   }
 
-  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
+  def translateSubAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  }
+
+  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    translateSubAssist("", Status(), destinationRegister, sourceRegister, operand) :: 
+    translateBranchLink("vs", new BranchString("_errOverflow"))
   }
 
   def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
