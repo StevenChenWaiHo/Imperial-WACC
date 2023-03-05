@@ -48,7 +48,7 @@ object TAC {
   case class StringLengthDefinitionTAC(len: Int, lbl: Label) extends TAC {
      override def toString(): String = "\t.word " + len.toString
   }
-  case class GOTO(label: Label) extends TAC {
+  case class GOTO(label: Label, regsInUse: Int) extends TAC {
     override def toString(): String = "goto: " + label.name
   }
 

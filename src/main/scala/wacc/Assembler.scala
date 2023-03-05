@@ -324,7 +324,7 @@ class Assembler {
       case CommandTAC(cmd, operand, opType) => assembleCommand(cmd, operand, opType)
       case BinaryOpTAC(operation, op1, op2, res) => assembleBinOp(operation, op1, op2, res)
       case IfTAC(t1, goto) => assembleIf(t1, goto)
-      case GOTO(label) => assembleGOTO(label)
+      case GOTO(label, _) => assembleGOTO(label)
       case CreatePairElem(pairElemType, pairPos, ptrReg, pairElemReg) => assemblePairElem(pairElemType, pairPos, ptrReg, pairElemReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg) => assemblePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)

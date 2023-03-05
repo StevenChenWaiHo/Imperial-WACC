@@ -240,8 +240,8 @@ object Translator {
     val bodyLabel = generateLabel(regCount)
     val endLabel = generateLabel(regList.length)
     (List(startLabel) ++ expList
-      ++ List(IfTAC(expReg, bodyLabel), GOTO(endLabel), bodyLabel)
-      ++ statList ++ List(GOTO(startLabel), endLabel), statReg)
+      ++ List(IfTAC(expReg, bodyLabel), GOTO(endLabel, endLabel.regInUse), bodyLabel)
+      ++ statList ++ List(GOTO(startLabel, startLabel.regInUse), endLabel), statReg)
   }
 
 
@@ -270,7 +270,7 @@ object Translator {
     val s1RegCount = popMap()
     val l1 = generateLabel(s1RegCount)
     val l2 = generateLabel(regList.length)
-    (condList ++ List(IfTAC(reg1, l1)) ++ falseList ++ List(GOTO(l2), l1) ++ trueList ++ List(l2),
+    (condList ++ List(IfTAC(reg1, l1)) ++ falseList ++ List(GOTO(l2, l2.regInUse), l1) ++ trueList ++ List(l2),
       null)
   }
 
