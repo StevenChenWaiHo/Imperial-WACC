@@ -70,7 +70,7 @@ class Assembler {
   var labelCount = 0
   val argRegs = StatelessAssembler.argRegs
 
-  def translateRegister(t: TRegister) = state.getRegister(t)
+  def getRealReg(t: TRegister) = state.getRegister(t)
 
   implicit private[this] def updateState(str: String): AssemblerState = {
     state.addInstruction(str)
@@ -243,7 +243,7 @@ class Assembler {
 
   val OperandToLiteral = Map[TAC.Operand, Either[String, Either[Register, Int]]]()
 
-  def translateOperand2(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
+  def getOperand2(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
     if (!(!OperandToLiteral.contains(operand))) {
       return OperandToLiteral(operand)
     } else {
@@ -288,16 +288,16 @@ class Assembler {
   }
 
   // Get correct operand type from TAC
-  def translateOperand(op: Operand): LHSop = {
+  def getOperand(op: Operand): LHSop = {
     op match {
-      case reg: TRegister => translateRegister(reg)
+      case reg: TRegister => getRealReg(reg)
       case IntLiteralTAC(value) => new ImmediateInt(value)
       case CharLiteralTAC(chr) => new ImmediateInt(chr.toInt)
       case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true) + 1)
       case Label(name) => new LabelString(name)
       case PairLiteralTAC() => new ImmediateInt(0)
       case ArrayOp(_) => ImmediateInt(0)
-      case a => println("translateOperand fail: " + a); null 
+      case a => println("getOperand fail: " + a); null 
     }
   }
 
@@ -373,16 +373,16 @@ class Assembler {
 
   def assemblePair(fstType: DeclarationType, sndType: DeclarationType, fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister): AssemblerState = {
     // r12: pointer to pair r8: pointer to pairElem
-    assemblePop("", List(translateRegister(fstReg))) ::
-      assemblePop("", List(translateRegister(sndReg))) ::
+    assemblePop("", List(getRealReg(fstReg))) ::
+      assemblePop("", List(getRealReg(sndReg))) ::
       assemblePush("", List(r0)) :: 
       assembleMove("", r0, new ImmediateInt(2 * POINTER_BYTE_SIZE)) ::
       assembleBranchLink("", new BranchString("malloc")) ::
-      assembleMove("", translateRegister(ptrReg), r0) ::
+      assembleMove("", getRealReg(ptrReg), r0) ::
       assemblePop("", List(r0)) :: 
-      assembleStr("", translateRegister(fstReg), translateRegister(ptrReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
-      assembleStr("", translateRegister(sndReg), translateRegister(ptrReg), new ImmediateInt(0)) ::
-      assembleMove("", translateRegister(dstReg), translateRegister(ptrReg))
+      assembleStr("", getRealReg(fstReg), getRealReg(ptrReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
+      assembleStr("", getRealReg(sndReg), getRealReg(ptrReg), new ImmediateInt(0)) ::
+      assembleMove("", getRealReg(dstReg), getRealReg(ptrReg))
   }
   // Push r0
   // mov r0 #(size)
@@ -398,30 +398,30 @@ class Assembler {
     assemblePush("", List(r0)) :: 
     assembleMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
       assembleBranchLink("", new BranchString("malloc")) ::
-      assemblePush("", List(translateRegister(ptrReg))) :: // TODO: Remove?
-      assembleMove("", translateRegister(ptrReg), r0) ::
+      assemblePush("", List(getRealReg(ptrReg))) :: // TODO: Remove?
+      assembleMove("", getRealReg(ptrReg), r0) ::
       assemblePop("", List(r0)) :: 
-      assembleStr(getInstructionType(pairElemType), translateRegister(pairElem), translateRegister(ptrReg), new ImmediateInt(0)) ::
-      assembleMove("", translateRegister(pairElem), translateRegister(ptrReg)) ::
-      assemblePop("", List(translateRegister(ptrReg))) :: // TODO: Remove?
-      assemblePush("", List(translateRegister(pairElem)))
+      assembleStr(getInstructionType(pairElemType), getRealReg(pairElem), getRealReg(ptrReg), new ImmediateInt(0)) ::
+      assembleMove("", getRealReg(pairElem), getRealReg(ptrReg)) ::
+      assemblePop("", List(getRealReg(ptrReg))) :: // TODO: Remove?
+      assemblePush("", List(getRealReg(pairElem)))
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
     op match {
       case UnaryOpType.Neg => {
-        assembleRsb("", Status(), translateRegister(res), translateOperand(t1), new ImmediateInt(0))
+        assembleRsb("", Status(), getRealReg(res), getOperand(t1), new ImmediateInt(0))
       }
       case UnaryOpType.Not => {
-        assembleCompare("", translateOperand(t1), new ImmediateInt(1)) ::
-          assembleMove("ne", translateRegister(res), new ImmediateInt(1)) ::
-          assembleMove("eq", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", getOperand(t1), new ImmediateInt(1)) ::
+          assembleMove("ne", getRealReg(res), new ImmediateInt(1)) ::
+          assembleMove("eq", getRealReg(res), new ImmediateInt(0))
       }
       case UnaryOpType.Chr | UnaryOpType.Ord => {
-        assembleMove("", translateRegister(res), translateOperand(t1))
+        assembleMove("", getRealReg(res), getOperand(t1))
       }
       case UnaryOpType.Len => {
-        assembleLdr("", translateRegister(res), translateRegister(t1.asInstanceOf[TRegister]), new ImmediateInt(-4))
+        assembleLdr("", getRealReg(res), getRealReg(t1.asInstanceOf[TRegister]), new ImmediateInt(-4))
       }
     }
   }
@@ -443,7 +443,7 @@ class Assembler {
     addEndFunc("_prints", new HardcodeFunctions().assemble_prints())//.assemble_errOverflow())
     addEndFunc(bl, new HardcodeFunctions().assemble_read(bl))
     assembleBranchLink("", new BranchString(bl))
-    assembleMove("", translateRegister(readReg), r0)
+    assembleMove("", getRealReg(readReg), r0)
   }
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): AssemblerState = {
@@ -452,12 +452,12 @@ class Assembler {
     var output = assembleMove("", r0, r0)
     // move all the args in to arg registers
     args.slice(0, args.length.min(argRegs.length)).zip(argRegs).foreach {
-      case (arg, reg) => output = output ++ assembleMove("", reg, translateRegister(arg))
+      case (arg, reg) => output = output ++ assembleMove("", reg, getRealReg(arg))
     }
     // push extra args into memory
     if (args.length > argRegs.length) {
       args.slice(4, args.length).reverse.foreach(reg => {
-        output = output ++ assembleStrPre("", translateRegister(reg), sp, ImmediateInt(-4))
+        output = output ++ assembleStrPre("", getRealReg(reg), sp, ImmediateInt(-4))
       })
     }
     output = output ++ (assembleBranchLink("", new BranchString(lbl.name)))
@@ -467,7 +467,7 @@ class Assembler {
       output = output ++ assembleSub("", None(), sp, sp, ImmediateInt(4 * (argRegs.length - args.length)))
 
     // move the result into dst before r0 is popped back
-    output = output ++ (assembleMove("", translateRegister(dstReg), r0))
+    output = output ++ (assembleMove("", getRealReg(dstReg), r0))
     // get previous registers from stack
     output //++ (assemblePop("", regs))
   }
@@ -483,13 +483,13 @@ class Assembler {
     addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
     addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
 
-    assembleCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
+    assembleCompare("", getRealReg(pairReg), new ImmediateInt(0)) ::
       assembleBranchLink("eq", new BranchString("_errNull")) ::
-      assembleLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
-      assemblePush("", List(translateRegister(pairReg))) ::
-      assembleMove("", translateRegister(pairReg), translateRegister(dstReg)) ::
-      assembleLdr(getLdrInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(0)) ::
-      assemblePop("", List(translateRegister(pairReg)))
+      assembleLdr("", getRealReg(dstReg), getRealReg(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
+      assemblePush("", List(getRealReg(pairReg))) ::
+      assembleMove("", getRealReg(pairReg), getRealReg(dstReg)) ::
+      assembleLdr(getLdrInstructionType(datatype), getRealReg(dstReg), getRealReg(pairReg), new ImmediateInt(0)) ::
+      assemblePop("", List(getRealReg(pairReg)))
   }
 
   // StorePairElem
@@ -502,12 +502,12 @@ class Assembler {
     addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
     addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
 
-    assembleCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
+    assembleCompare("", getRealReg(pairReg), new ImmediateInt(0)) ::
     assembleBranchLink("eq", new BranchString("_errNull")) ::
-    assemblePush("", List(translateRegister(pairReg))) ::
-    assembleLdr("", translateRegister(pairReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
-    assembleStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(0)) ::
-    assemblePop("", List(translateRegister(pairReg)))
+    assemblePush("", List(getRealReg(pairReg))) ::
+    assembleLdr("", getRealReg(pairReg), getRealReg(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
+    assembleStr(getInstructionType(datatype), getRealReg(srcReg), getRealReg(pairReg), new ImmediateInt(0)) ::
+    assemblePop("", List(getRealReg(pairReg)))
   }
 
   def assembleProgram(tacList: List[TAC]): String = {
@@ -529,7 +529,7 @@ class Assembler {
   }
 
   def assembleIf(t1: Operand, goto: Label): AssemblerState = {
-    assembleCompare("", translateOperand(t1), new ImmediateInt(1)) ::
+    assembleCompare("", getOperand(t1), new ImmediateInt(1)) ::
       assembleBranch("eq", goto.name)
   }
 
@@ -540,86 +540,86 @@ class Assembler {
     if (index < cRegs.length) {
       // Populate from registers in r0-
       val callReg = cRegs.take(index + 1).last
-      assembleMove("", translateRegister(treg), callReg)
+      assembleMove("", getRealReg(treg), callReg)
     } else {
       // Populate from stack
-      assembleLdr("", translateRegister(treg), fp, ImmediateInt(funcStackFrameSize + (4 * (index - cRegs.size))))
+      assembleLdr("", getRealReg(treg), fp, ImmediateInt(funcStackFrameSize + (4 * (index - cRegs.size))))
     }
   }
 
   def assembleBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister): AssemblerState = {
     operation match {
       case BinaryOpType.Add => {
-        assembleAdd("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        assembleAdd("", Status(), getRealReg(res), getOperand(op1), getOperand(op2))
       }
       case BinaryOpType.Sub => {
-        assembleSub("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        assembleSub("", Status(), getRealReg(res), getOperand(op1), getOperand(op2))
       }
       case BinaryOpType.Mul => {
-        assembleSmull("", Status(), translateRegister(res), translateOperand(op2), translateOperand(op1), translateOperand(op2))
+        assembleSmull("", Status(), getRealReg(res), getOperand(op2), getOperand(op1), getOperand(op2))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HardcodeFunctions().assemble_errDivZero())
         addEndFunc("_prints", new HardcodeFunctions().assemble_print("_prints"))
-        assembleMove("", r0, translateOperand(op1)) ::
-          assembleMove("", r1, translateOperand(op2)) ::
+        assembleMove("", r0, getOperand(op1)) ::
+          assembleMove("", r1, getOperand(op2)) ::
           assembleCompare("", r1, new ImmediateInt(0)) ::
           assembleBranchLink("eq", new BranchString("_errDivZero")) ::
           assembleBranchLink("", new BranchString("__aeabi_idivmod")) ::
-          assembleMove("", translateRegister(res), r0)
+          assembleMove("", getRealReg(res), r0)
       }
       case BinaryOpType.Mod => {
         addEndFunc("_errDivZero", new HardcodeFunctions().assemble_errDivZero())
         addEndFunc("_prints", new HardcodeFunctions().assemble_print("_prints"))
-        assembleMove("", r0, translateOperand(op1)) ::
-          assembleMove("", r1, translateOperand(op2)) ::
+        assembleMove("", r0, getOperand(op1)) ::
+          assembleMove("", r1, getOperand(op2)) ::
           assembleCompare("", r1, new ImmediateInt(0)) ::
           assembleBranchLink("eq", new BranchString("_errDivZero")) ::
           assembleBranchLink("", new BranchString("__aeabi_idivmod")) ::
-          assembleMove("", translateRegister(res), r1)
+          assembleMove("", getRealReg(res), r1)
       }
       case BinaryOpType.Eq => {
-        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
-          assembleMove("eq", translateRegister(res), new ImmediateInt(1)) ::
-          assembleMove("ne", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", getOperand(op1), getOperand(op2)) ::
+          assembleMove("eq", getRealReg(res), new ImmediateInt(1)) ::
+          assembleMove("ne", getRealReg(res), new ImmediateInt(0))
       }
       case BinaryOpType.Neq => {
-        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
-          assembleMove("ne", translateRegister(res), new ImmediateInt(1)) ::
-          assembleMove("eq", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", getOperand(op1), getOperand(op2)) ::
+          assembleMove("ne", getRealReg(res), new ImmediateInt(1)) ::
+          assembleMove("eq", getRealReg(res), new ImmediateInt(0))
       }
       case BinaryOpType.Lt => {
-        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
-          assembleMove("lt", translateRegister(res), new ImmediateInt(1)) ::
-          assembleMove("ge", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", getOperand(op1), getOperand(op2)) ::
+          assembleMove("lt", getRealReg(res), new ImmediateInt(1)) ::
+          assembleMove("ge", getRealReg(res), new ImmediateInt(0))
       }
       case BinaryOpType.Gt => {
-        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
-          assembleMove("gt", translateRegister(res), new ImmediateInt(1)) ::
-          assembleMove("le", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", getOperand(op1), getOperand(op2)) ::
+          assembleMove("gt", getRealReg(res), new ImmediateInt(1)) ::
+          assembleMove("le", getRealReg(res), new ImmediateInt(0))
       }
       case BinaryOpType.Lte => {
-        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
-          assembleMove("le", translateRegister(res), new ImmediateInt(1)) ::
-          assembleMove("gt", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", getOperand(op1), getOperand(op2)) ::
+          assembleMove("le", getRealReg(res), new ImmediateInt(1)) ::
+          assembleMove("gt", getRealReg(res), new ImmediateInt(0))
       }
       case BinaryOpType.Gte => {
-        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
-          assembleMove("ge", translateRegister(res), new ImmediateInt(1)) ::
-          assembleMove("lt", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", getOperand(op1), getOperand(op2)) ::
+          assembleMove("ge", getRealReg(res), new ImmediateInt(1)) ::
+          assembleMove("lt", getRealReg(res), new ImmediateInt(0))
       }
       case BinaryOpType.And => {
-        assembleCompare("", translateOperand(op1), new ImmediateInt(1)) ::
-          assembleCompare("eq", translateOperand(op2), new ImmediateInt(1)) ::
-          assembleMove("ne", translateRegister(res), new ImmediateInt(0)) ::
-          assembleMove("eq", translateRegister(res), new ImmediateInt(1))
+        assembleCompare("", getOperand(op1), new ImmediateInt(1)) ::
+          assembleCompare("eq", getOperand(op2), new ImmediateInt(1)) ::
+          assembleMove("ne", getRealReg(res), new ImmediateInt(0)) ::
+          assembleMove("eq", getRealReg(res), new ImmediateInt(1))
       }
       case BinaryOpType.Or => {
-        assembleCompare("", translateOperand(op1), new ImmediateInt(1)) ::
-          assembleMove("eq", translateRegister(res), ImmediateInt(1)) ::
-          assembleCompare("ne", translateOperand(op2), new ImmediateInt(1)) ::
-          assembleMove("ne", translateRegister(res), ImmediateInt(0)) ::
-          assembleMove("eq", translateRegister(res), ImmediateInt(1))
+        assembleCompare("", getOperand(op1), new ImmediateInt(1)) ::
+          assembleMove("eq", getRealReg(res), ImmediateInt(1)) ::
+          assembleCompare("ne", getOperand(op2), new ImmediateInt(1)) ::
+          assembleMove("ne", getRealReg(res), ImmediateInt(0)) ::
+          assembleMove("eq", getRealReg(res), ImmediateInt(1))
       }
     }
   }
@@ -667,8 +667,8 @@ class Assembler {
 
   def assembleAssignment(operand: Operand, reg: TRegister) = {
     operand match {
-      case Label(name) => assembleLdr("", translateRegister(reg), r0, translateOperand(operand))
-      case _ => assembleMove("", translateRegister(reg), translateOperand(operand))
+      case Label(name) => assembleLdr("", getRealReg(reg), r0, getOperand(operand))
+      case _ => assembleMove("", getRealReg(reg), getOperand(operand))
     }
 
   }
@@ -676,7 +676,7 @@ class Assembler {
   def assembleCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType): AssemblerState = {
     cmd match {
       case CmdT.Exit => {
-        assembleMove("", r0, translateOperand(operand)) ::
+        assembleMove("", r0, getOperand(operand)) ::
           assembleBranchLink("", new BranchString("exit"))
         state.deleteFunctionScope
       }
@@ -699,19 +699,19 @@ class Assembler {
         addEndFunc(bl, new HardcodeFunctions().assemble_print(bl))
         if (cmd == CmdT.PrintLn) {
           addEndFunc("_println", new HardcodeFunctions().assemble_print("_println"))
-          assembleMove("", r0, translateOperand(operand)) ::
+          assembleMove("", r0, getOperand(operand)) ::
             assembleBranchLink("", new BranchString(bl)) ::
             assembleBranchLink("", new BranchString("_println"))
         }
         else {
-          assembleMove("", r0, translateOperand(operand)) ::
+          assembleMove("", r0, getOperand(operand)) ::
             assembleBranchLink("", new BranchString(bl))
         }
       }
 
       case CmdT.Ret => {
         state.exitFunction
-        assembleMove("", r0, translateOperand(operand)) ::
+        assembleMove("", r0, getOperand(operand)) ::
           assembleMove("", sp, fp) ::
           //assemblePop("", List(r8, r10, r12)) ::
           assemblePop("", List(fp, pc)) ::
@@ -735,7 +735,7 @@ class Assembler {
           addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
           addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
 
-            assembleMove("", r0, translateOperand(operand)) ::
+            assembleMove("", r0, getOperand(operand)) ::
             assembleBranchLink("", new BranchString("_freepair"))
         }
 
@@ -751,18 +751,18 @@ class Assembler {
     assemblePush("", List(r0)) ::
       assembleMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
       assembleBranchLink("", new BranchString("malloc")) ::
-      assembleMove("", translateRegister(dstReg), r0) ::
+      assembleMove("", getRealReg(dstReg), r0) ::
       assemblePop("", List(r0)) ::
-      assembleAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
-      assembleMove("", translateRegister(lenReg), new ImmediateInt(arrLen)) ::
-      assembleStr("", translateRegister(lenReg), translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE))
+      assembleAdd("", Status(), getRealReg(dstReg), getRealReg(dstReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
+      assembleMove("", getRealReg(lenReg), new ImmediateInt(arrLen)) ::
+      assembleStr("", getRealReg(lenReg), getRealReg(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE))
   }
 
   def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): AssemblerState = {
-    // elemsReg.foreach(e => println("asm_e", translateRegister(e)))
-    // println("asm", translateRegister(dstReg))
+    // elemsReg.foreach(e => println("asm_e", getRealReg(e)))
+    // println("asm", getRealReg(dstReg))
     Nil
-    // assembleMove("", translateRegister(dstReg), r12)
+    // assembleMove("", getRealReg(dstReg), r12)
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
@@ -770,7 +770,7 @@ class Assembler {
       assembleMove("", r0, new ImmediateInt(getTypeSize(arrayElemType))) ::
       assembleBranchLink("", new BranchString("malloc")) ::
       assemblePop("", List(r0)) ::
-      assembleStr(getInstructionType(arrayElemType), translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
+      assembleStr(getInstructionType(arrayElemType), getRealReg(elemReg), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
   }
   
   // LoadArrayElem
@@ -788,8 +788,8 @@ class Assembler {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
         assemblePush("", List(r0, r3)) ::
-        assembleMove("", r0, translateRegister(arrPos.head)) ::
-        assembleMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r0]
+        assembleMove("", r0, getRealReg(arrPos.head)) ::
+        assembleMove("", r3, getRealReg(arrReg)) :: // arrLoad uses r3 = r3[r0]
         assembleBranchLink("", new BranchString("_arrLoad")) ::
         assemblePop("", List(r0, r3)) ::
         assembleLoadArrayElem(datatype, arrReg, arrPos.drop(1), dstReg)
@@ -815,9 +815,9 @@ class Assembler {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
         assemblePush("", List(r0, r2, r3)) ::
-        assembleMove("", r0, translateRegister(arrPos.head._2)) ::
-        assembleMove("", r2, translateRegister(srcReg)) ::
-        assembleMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r0] = r2
+        assembleMove("", r0, getRealReg(arrPos.head._2)) ::
+        assembleMove("", r2, getRealReg(srcReg)) ::
+        assembleMove("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
         assembleBranchLink("", new BranchString("_arrStore")) ::
         assemblePop("", List(r0, r2, r3)) ::
         assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg)
