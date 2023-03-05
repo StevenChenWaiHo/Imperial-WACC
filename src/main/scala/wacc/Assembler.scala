@@ -390,22 +390,24 @@ class Assembler {
   // bl malloc
   // push ptrReg (remove?)
   // mov ptrReg r0
-  // Pop r0
   // str pairElemReg, [ptrReg, #0]
-  // mov fstReg ptrReg
+  // mov r0 pairElemReg
+  // mov pairElemReg ptrReg
   // pop ptrReg (remove?)
+  // Pop r0
   // push pairElemReg
+  // mov pairElemReg r0
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): AssemblerState = {
-    assemblePush("", List(r0)) :: 
-    assembleMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
-      assembleBranchLink("", new BranchString("malloc")) ::
-      assemblePush("", List(getRealReg(ptrReg))) :: // TODO: Remove?
-      assembleMove("", getRealReg(ptrReg), r0) ::
-      assemblePop("", List(r0)) :: 
-      assembleStr(getInstructionType(pairElemType), getRealReg(pairElem), getRealReg(ptrReg), new ImmediateInt(0)) ::
-      assembleMove("", getRealReg(pairElem), getRealReg(ptrReg)) ::
-      assemblePop("", List(getRealReg(ptrReg))) :: // TODO: Remove?
-      assemblePush("", List(getRealReg(pairElem)))
+    translateMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
+      translateBranchLink("", new BranchString("malloc")) ::
+      translatePush("", List(translateRegister(ptrReg))) :: // TODO: Remove?
+      translateMove("", translateRegister(ptrReg), r0) ::
+      translateStr(getInstructionType(pairElemType), translateRegister(pairElem), translateRegister(ptrReg), new ImmediateInt(0)) ::
+        translateMove("", r0, translateRegister(pairElem)) ::
+      translateMove("", translateRegister(pairElem), translateRegister(ptrReg)) ::
+      translatePop("", List(translateRegister(ptrReg))) :: // TODO: Remove?
+      translatePush("", List(translateRegister(pairElem))) ::
+      translateMove("", translateRegister(pairElem), r0)
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
