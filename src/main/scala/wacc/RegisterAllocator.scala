@@ -99,7 +99,6 @@ object RegisterAllocator {
 
     override def toString: String = code.toString
 
-    // TODO: inefficient, and should probably be an implicit in Assembler since it doesn't generalize well.
     def ::(prev: AssemblerState): AssemblerState = this
     def ++(next: AssemblerState): AssemblerState = this :: next
   }

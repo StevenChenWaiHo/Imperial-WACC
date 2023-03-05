@@ -72,10 +72,6 @@ class Assembler {
 
   def translateRegister(t: TRegister) = state.getRegister(t)
 
-  /** The state needs to be able to add instructions to the code at the points when translateRegister is called.
-   * It therefore needs to be kept up-to-date. These implicit methods ensure that it can be updated without modifying
-   * too much of the code.
-   * This isn't the nicest, but hopefully it shouldn't break things. */
   implicit private[this] def updateState(str: String): AssemblerState = {
     state.addInstruction(str)
   }
@@ -83,6 +79,8 @@ class Assembler {
   implicit private[this] def updateState(strs: List[String]): AssemblerState = {
     state.addInstructions(strs)
   }
+
+  // Assembly translation functions
 
   def pushPopAssist(condition: String, registers: List[Register]): String = {
     var str = condition + " {"
@@ -157,7 +155,6 @@ class Assembler {
     return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand + "\nblvs _errOverflow"
   }
 
-  //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     return "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
     
@@ -243,7 +240,6 @@ class Assembler {
     return "bl" + condition + " " + operand
   }
 
-  //TODO: implement other commands
   val OperandToLiteral = Map[TAC.Operand, Either[String, Either[Register, Int]]]()
 
   def translateOperand2(operand: TAC.Operand): Either[String, Either[Register, Int]] = {
@@ -293,6 +289,7 @@ class Assembler {
     }
   }
 
+  // Get correct operand type from TAC
   def translateOperand(op: Operand): LHSop = {
     op match {
       case reg: TRegister => translateRegister(reg)
@@ -301,14 +298,12 @@ class Assembler {
       case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true) + 1)
       case Label(name) => new LabelString(name)
       case PairLiteralTAC() => new ImmediateInt(0)
-      case a => println("translateOperand fail: " + a); null // TODO: this should not match
+      case a => println("translateOperand fail: " + a); null 
     }
   }
 
+  // Convert TAC into List[ARM Code]
   def translateTAC(tripleAddressCode: TAC): AssemblerState = {
-    //Need to figure out how registers work
-    //Push and pop might not be in right place
-    //Algorithm for determining if ldr is needed
     tripleAddressCode match {
       case Label(name) => {
         state.enterBranch
@@ -518,8 +513,6 @@ class Assembler {
 
   def assembleProgram(tacList: List[TAC]): String = {
     tacList.map(translateTAC)
-    //TODO: It's possible some lines shouldn't have a new line after them. It's better if the translateX functions
-    // Added a new line at the end of their return value instead.
     state.code.addAll(endFuncsToList())
     state.code.mkString("\n")
   }
@@ -691,7 +684,6 @@ class Assembler {
 
       case CmdT.Print | CmdT.PrintLn => {
         val bl = opType match {
-          case ArrayType(dataType, length) => "_prints"
           case BaseType(baseType) => baseType match {
             case BaseT.String_T => "_prints"
             case BaseT.Char_T => "_printc"
@@ -703,7 +695,6 @@ class Assembler {
           // Character arrays should be printed as strings, but all others should be printed as a pointer
           case ArrayType(t, _) if !(t is BaseType(Char_T)) => "_printp"
 
-          // TODO: This may not work yet:
           case ArrayType(t, _) if t is BaseType(Char_T) => "prints"
         }
         addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
@@ -840,7 +831,7 @@ class Assembler {
     }
   }
 
-  // def checkIndexTAC(arrayPos: (List[TAC], TRegister)): AssemblerState = { // TODO translate tac of each index
+  // def checkIndexTAC(arrayPos: (List[TAC], TRegister)): AssemblerState = { 
   //   arrayPos match {
   //     case _ if (!arrayPos._1.isEmpty) => translateTAC(arrayPos._1.head)
   //     case _ => Nil
