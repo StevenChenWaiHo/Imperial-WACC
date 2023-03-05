@@ -296,12 +296,15 @@ class Assembler {
       case BoolLiteralTAC(b) => new ImmediateInt(b.compare(true) + 1)
       case Label(name) => new LabelString(name)
       case PairLiteralTAC() => new ImmediateInt(0)
+      case ArrayOp(_) => ImmediateInt(0)
       case a => println("translateOperand fail: " + a); null 
     }
   }
 
   // Convert TAC into List[ARM Code]
   def translateTAC(tripleAddressCode: TAC): AssemblerState = {
+    println("Translating: " + TAC)
+    println(endFuncs.keys)
     tripleAddressCode match {
       case Label(name) => {
         state.enterBranch
@@ -437,7 +440,7 @@ class Assembler {
       case _ => "_readi"
     }
     addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())//.translate_errOverflow())
     addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
     translateBranchLink("", new BranchString(bl))
     translateMove("", translateRegister(readReg), r0)
@@ -691,7 +694,7 @@ class Assembler {
           // Character arrays should be printed as strings, but all others should be printed as a pointer
           case ArrayType(t, _) if !(t is BaseType(Char_T)) => "_printp"
 
-          case ArrayType(t, _) if t is BaseType(Char_T) => "prints"
+          case ArrayType(t, _) if t is BaseType(Char_T) => "_prints"
         }
         addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
         if (cmd == CmdT.PrintLn) {

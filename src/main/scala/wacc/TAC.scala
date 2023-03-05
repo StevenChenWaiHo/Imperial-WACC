@@ -153,7 +153,7 @@ object TAC {
     case class CharLiteralTAC(c: Char) extends LiteralTAC {
       override def toString(): String = "\'" + c + "\'"
     }
-  class ArrayOp(elems: List[Operand]) extends Operand {
+  case class ArrayOp(elems: List[Operand]) extends Operand {
     override def toString(): String = elems.toString()
   }
   case class ArrayElemTAC(arr: Operand, indices: List[Operand]) extends Operand {
