@@ -810,12 +810,12 @@ class Assembler {
 
   // StoreArrayElem
   // push r0, r2, r3
-  // mov r0 arrPos
+  // mov r0 arrPos 
   // mov r2 srcReg
   // mov r3 arrReg
   // bl _arrStore
   // RECURSE StoreArrayElem
-  // pop r0, r2, r3
+  // pop r0, r2, r3 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
