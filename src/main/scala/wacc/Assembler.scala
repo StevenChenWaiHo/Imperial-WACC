@@ -811,13 +811,13 @@ class Assembler {
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
-        translatePush("", List(r10, r8)) ::
+        translatePush("", List(r8, r10)) ::
         translateMove("", r10, translateRegister(arrPos.head._2)) ::
         translateMove("", r8, translateRegister(srcReg)) ::
         translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r10] = r8
         translateBranchLink("", new BranchString("_arrStore")) ::
         assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg) ::
-        translatePop("", List(r10, r8))
+        translatePop("", List(r8, r10))
       }
     }
   }
