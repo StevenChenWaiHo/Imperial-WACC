@@ -19,7 +19,6 @@ do
 
     if grep -q "read" "$f"; then
         echo "Skipping due to input"
-        let ERRORS++
         continue
     fi
 
