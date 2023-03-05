@@ -774,7 +774,10 @@ class Assembler {
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
     // println(elemPos, translateRegister(elemReg))
-    translateBranchLink("", new BranchString("malloc")) ::
+    translatePush("", List(r0)) ::
+      translateMove("", r0, new ImmediateInt(getTypeSize(arrayElemType))) ::
+      translateBranchLink("", new BranchString("malloc")) ::
+      translatePop("", List(r0)) ::
       translateStr(getInstructionType(arrayElemType), translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
   }
   
