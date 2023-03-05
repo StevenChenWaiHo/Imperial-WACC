@@ -193,12 +193,7 @@ object Translator {
   }
 
   def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
-    // TODO: Remove?
-    val (pairRegList, pairReg) = lvalue match {
-      case PairElement(elem2, lvalue2) => translatePairElem(elem, lvalue)
-      case _ => delegateASTNode(lvalue)
-    }
-    // TODO: Remove?
+    val (pairRegList, pairReg) = delegateASTNode(lvalue)
     val (fstType, sndType) = findType(lvalue) match {
       case Some(PairType(fstType, sndType)) => (fstType, sndType)
       case None => (BaseType(BaseT.Any_T), BaseType(BaseT.Any_T))
