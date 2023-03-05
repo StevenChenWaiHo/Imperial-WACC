@@ -337,7 +337,7 @@ class Assembler {
       case CreatePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg) => assemblePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg)
       case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
-      case InitialiseArray(arrLen, dstReg) => assembleArrayInit(arrLen, dstReg)
+      case InitialiseArray(arrLen, lenReg, dstReg) => assembleArrayInit(arrLen, lenReg, dstReg)
       case CreateArrayElem(arrayElemType, elemPos, arrReg, elemReg) => assembleArrayElem(arrayElemType, elemPos, arrReg, elemReg)
       case CreateArray(arrayElemType, elemsReg, dstReg) => assembleArray(arrayElemType, elemsReg, dstReg)
       case LoadArrayElem(datatype, arrReg, arrPos, dstReg) => assembleLoadArrayElem(datatype, arrReg, arrPos, dstReg)
@@ -752,9 +752,7 @@ class Assembler {
 
   }
 
-  // Assume r8 not used
-  // TODO n-D arrays
-  def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
+  def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): AssemblerState = {
     // println("ini", translateRegister(dstReg))
     translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
       translateBranchLink("", new BranchString("malloc")) ::
@@ -782,9 +780,12 @@ class Assembler {
   
   // LoadArrayElem
   // Check Null?
+  // push r10
   // mov r10 arrPos
   // mov r3 arrReg
   // bl _arrLoad
+  // RECURSE LoadArrayElem
+  // pop r10
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
@@ -802,11 +803,14 @@ class Assembler {
     }
   }
   
-  // StorePairElem
+  // StoreArrayElem
+  // push r8, r10
   // mov r10 arrPos
   // mov r8 srcReg
   // mov r3 arrReg
   // bl _arrStore
+  // RECURSE StoreArrayElem
+  // pop r8, r10
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
@@ -817,13 +821,13 @@ class Assembler {
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
-        translatePush("", List(r10, r8)) ::
+        translatePush("", List(r8, r10)) ::
         translateMove("", r10, translateRegister(arrPos.head._2)) ::
         translateMove("", r8, translateRegister(srcReg)) ::
         translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r10] = r8
         translateBranchLink("", new BranchString("_arrStore")) ::
         assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg) ::
-        translatePop("", List(r10, r8))
+        translatePop("", List(r8, r10))
       }
     }
   }
