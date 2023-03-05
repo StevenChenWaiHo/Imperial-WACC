@@ -79,33 +79,33 @@ class HardcodeFunctions extends Assembler {
     translateBranchLink("", new BranchString("exit"))
   }
 
-  // r3 = r3[r10]
+  // r3 = r3[r0]
   def translate_arrLoad(): List[String] = {
     translateTAC(Label("_arrLoad")) ++
     (translatePush("", List(lr)) ::
-      translateCompare("", r10, new ImmediateInt(0)) ::
-      translateMove("", r1, r10) ::
+      translateCompare("", r0, new ImmediateInt(0)) ::
+      translateMove("", r1, r0) ::
       translateBranchLink("lt", new BranchString("_boundsCheck")) ::
       translateLdr("", lr, r3, new ImmediateInt(-4)) ::
-      translateCompare("eq", r10, lr) ::
-      translateMove("ge", r1, r10) ::
+      translateCompare("eq", r0, lr) ::
+      translateMove("ge", r1, r0) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateLdr("", r3, r3, LogicalShiftLeft(r10, Right(2))) ::
+      translateLdr("", r3, r3, LogicalShiftLeft(r0, Right(2))) ::
       translatePop("", List(pc)))
   }
 
-  // r3[r10] = r8
+  // r3[r0] = r2
   def translate_arrStore(): List[String] = {
     translateTAC(Label("_arrStore")) ++
     (translatePush("", List(lr)) ::
-      translateCompare("", r10, new ImmediateInt(0)) ::
-      translateMove("", r1, r10) ::
+      translateCompare("", r0, new ImmediateInt(0)) ::
+      translateMove("", r1, r0) ::
       translateBranchLink("lt", new BranchString("_boundsCheck")) ::
       translateLdr("", lr, r3, new ImmediateInt(-4)) ::
-      translateCompare("eq", r10, lr) ::
-      translateMove("ge", r1, r10) ::
+      translateCompare("eq", r0, lr) ::
+      translateMove("ge", r1, r0) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateStr("", r8, r3, LogicalShiftLeft(r10, Right(2))) ::
+      translateStr("", r2, r3, LogicalShiftLeft(r0, Right(2))) ::
       translatePop("", List(pc)))
   }
 
