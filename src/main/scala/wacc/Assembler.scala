@@ -182,8 +182,8 @@ class Assembler {
 
     var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
       "," + " " + operand +
-      "\n cmp " + destinationLow + ", " + destinationHigh + ", asr #31" +
-      "\n bne _errOverflow"
+      "\ncmp " + destinationHigh + ", " + destinationLow + ", asr #31" +
+      "\nbne _errOverflow"
     return str
   }
 
@@ -431,7 +431,7 @@ class Assembler {
     val bl = datatype match {
       case BaseType(baseType) => {
         baseType match {
-          case BaseT.Int_T => "_readi"
+          case BaseT.Int_T =>"_readi"
           case BaseT.Char_T => "_readc"
           case BaseT.String_T => "_reads"
           case BaseT.Bool_T => "_readb"
@@ -440,6 +440,8 @@ class Assembler {
       }
       case _ => "_readi"
     }
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_errOverflow())
     addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
     translateBranchLink("", new BranchString(bl))
     translateMove("", translateRegister(readReg), r0)
@@ -753,11 +755,13 @@ class Assembler {
   def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): AssemblerState = {
     // println("ini", translateRegister(dstReg))
     translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
+      translateBranchLink("", new BranchString("malloc")) ::
       translateMove("", translateRegister(dstReg), r0) ::
       translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(4)) ::
-      translateMove("", translateRegister(lenReg), new ImmediateInt(arrLen)) ::
-      translateStr("", translateRegister(lenReg), translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
-      translateBranchLink("", new BranchString("malloc"))
+      translatePush("", List(r8)) ::
+      translateMove("", r8, new ImmediateInt(arrLen)) ::
+      translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
+      translatePop("", List(r8))
   }
 
   // Can be removed
