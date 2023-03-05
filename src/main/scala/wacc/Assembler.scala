@@ -733,7 +733,7 @@ class Assembler {
   // mov r3 arrReg
   // bl _arrLoad
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
-    addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad("_arrLoad"))
+    addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
     // println("ld", translateRegister(arrReg), translateRegister(dstReg))
     arrPos match {
@@ -753,7 +753,7 @@ class Assembler {
   // mov r3 arrReg
   // bl _arrStore
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
-    addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore("_arrStore"))
+    addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
     // TODO translate tac of each index
     // val index = arrayPos.head
