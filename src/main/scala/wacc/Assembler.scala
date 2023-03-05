@@ -131,11 +131,13 @@ class Assembler {
     "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand).toString + "!".toString()
   }
 
+  // Get a unique label for branches/loops
   def generateLabel(): Label = {
     labelCount += 1
     new Label(".La" + labelCount.toString())
   }
 
+  // Add predefined function to end of assembly code (.e.g _prints)
   def addEndFunc(name: String, code: List[String]): Unit = {
     if (!endFuncs.contains(name)) {
       endFuncs.addOne(name, "" :: code)
@@ -147,7 +149,6 @@ class Assembler {
       case (name, code) => code
     }).flatten
   }
-
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
@@ -256,9 +257,6 @@ class Assembler {
             OperandToLiteral.updated(operand, Left(c.toString))
             return Left(c.toString)
           }
-          //case IntLiteralTAC(int) => {
-          //OperandToLiteral.updated(operand, Right(Right(int)))
-          //}
           case IdentLiteralTAC(ident) => {
             OperandToLiteral.updated(operand, Left(ident))
             return Left(ident)
@@ -420,8 +418,6 @@ class Assembler {
         translateMove("", translateRegister(res), translateOperand(t1))
       }
       case UnaryOpType.Len => {
-        // ldr res, [t1, #-4]
-        // t1 must necessarily be a TRegister
         translateLdr("", translateRegister(res), translateRegister(t1.asInstanceOf[TRegister]), new ImmediateInt(-4))
       }
     }
@@ -749,7 +745,6 @@ class Assembler {
   }
 
   def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): AssemblerState = {
-    // println("ini", translateRegister(dstReg))
     translatePush("", List(r0)) ::
       translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
       translateBranchLink("", new BranchString("malloc")) ::
@@ -760,7 +755,6 @@ class Assembler {
       translateStr("", translateRegister(lenReg), translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE))
   }
 
-  // Can be removed
   def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): AssemblerState = {
     // elemsReg.foreach(e => println("asm_e", translateRegister(e)))
     // println("asm", translateRegister(dstReg))
@@ -769,7 +763,6 @@ class Assembler {
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
-    // println(elemPos, translateRegister(elemReg))
     translatePush("", List(r0)) ::
       translateMove("", r0, new ImmediateInt(getTypeSize(arrayElemType))) ::
       translateBranchLink("", new BranchString("malloc")) ::
@@ -788,7 +781,6 @@ class Assembler {
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
-    // println("ld", translateRegister(arrReg), translateRegister(dstReg))
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
@@ -816,7 +808,6 @@ class Assembler {
     // TODO translate tac of each index
     // val index = arrayPos.head
     // checkIndexTAC(index) ::
-    // println("st", translateRegister(arrReg), translateRegister(srcReg))
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
