@@ -396,7 +396,7 @@ object Translator {
         })
         val lvalueReg = findNode(name).get
         (rvalueList ++ 
-        List(Comments("Store Pair Elem")) ++ List(StoreArrayElem(null, lvalueReg, indexNodes.toList, rvalueReg)) ++ List(Comments("Finish storing Pair Elem")), lvalueReg)
+        List(Comments("Store Array Elem")) ++ List(StoreArrayElem(null, lvalueReg, indexNodes.toList, rvalueReg)) ++ List(Comments("Finish storing Array Elem")), lvalueReg)
       }
       case _ => (List(Label("Not translating ArrayElem")), null)
     }
