@@ -750,17 +750,13 @@ class Assembler {
 
   }
 
-  // Assume r8 not used
-  // TODO n-D arrays
-  def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
+  def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): AssemblerState = {
     // println("ini", translateRegister(dstReg))
     translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
       translateMove("", translateRegister(dstReg), r0) ::
       translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(4)) ::
-      translatePush("", List(r8)) ::
-      translateMove("", r8, new ImmediateInt(arrLen)) ::
-      translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
-      translatePush("", List(r8)) ::
+      translateMove("", translateRegister(lenReg), new ImmediateInt(arrLen)) ::
+      translateStr("", translateRegister(lenReg), translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
       translateBranchLink("", new BranchString("malloc"))
   }
 
