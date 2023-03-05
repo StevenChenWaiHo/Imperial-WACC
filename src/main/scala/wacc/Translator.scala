@@ -334,12 +334,13 @@ object Translator {
       }
       
       case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
-      // PairLiteral or IdentLiteral or Call Function
-      case lit: RVal => {
+      // PairLiteral or IdentLiteral
+      case lit@(_: Literal | _: Call) => {
         val reg = nextRegister()
         val (srcRegList, srcReg) = delegateASTNode(lit)
         (srcRegList ++ List(AssignmentTAC(srcReg, reg)), reg)
       }
+
       case t => throw new ArithmeticException("Not translating Pair Value"); (List(Label("Not translating Pair Value")), null)
     }
   }
