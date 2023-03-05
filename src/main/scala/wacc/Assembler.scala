@@ -759,14 +759,14 @@ class Assembler {
 
   def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): AssemblerState = {
     // println("ini", translateRegister(dstReg))
-    translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
+    translatePush("", List(r0)) ::
+      translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
       translateBranchLink("", new BranchString("malloc")) ::
       translateMove("", translateRegister(dstReg), r0) ::
-      translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(4)) ::
-      translatePush("", List(r8)) ::
-      translateMove("", r8, new ImmediateInt(arrLen)) ::
-      translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
-      translatePop("", List(r8))
+      translatePop("", List(r0)) ::
+      translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
+      translateMove("", translateRegister(lenReg), new ImmediateInt(arrLen)) ::
+      translateStr("", translateRegister(lenReg), translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE))
   }
 
   // Can be removed
@@ -779,18 +779,21 @@ class Assembler {
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
     // println(elemPos, translateRegister(elemReg))
-    translateBranchLink("", new BranchString("malloc")) ::
+    translatePush("", List(r0)) ::
+      translateMove("", r0, new ImmediateInt(getTypeSize(arrayElemType))) ::
+      translateBranchLink("", new BranchString("malloc")) ::
+      translatePop("", List(r0)) ::
       translateStr(getInstructionType(arrayElemType), translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
   }
   
   // LoadArrayElem
   // Check Null?
-  // push r10
-  // mov r10 arrPos
+  // push r0
+  // mov r0 arrPos
   // mov r3 arrReg
   // bl _arrLoad
   // RECURSE LoadArrayElem
-  // pop r10
+  // pop r0
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
@@ -798,24 +801,24 @@ class Assembler {
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
-        translatePush("", List(r10)) ::
-        translateMove("", r10, translateRegister(arrPos.head)) ::
-        translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r10]
+        translatePush("", List(r0, r3)) ::
+        translateMove("", r0, translateRegister(arrPos.head)) ::
+        translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r0]
         translateBranchLink("", new BranchString("_arrLoad")) ::
-        assembleLoadArrayElem(datatype, arrReg, arrPos.drop(1), dstReg) ::
-        translatePop("", List(r10))
+        translatePop("", List(r0, r3)) ::
+        assembleLoadArrayElem(datatype, arrReg, arrPos.drop(1), dstReg)
       }
     }
   }
   
   // StoreArrayElem
-  // push r8, r10
-  // mov r10 arrPos
-  // mov r8 srcReg
+  // push r0, r2, r3
+  // mov r0 arrPos
+  // mov r2 srcReg
   // mov r3 arrReg
   // bl _arrStore
   // RECURSE StoreArrayElem
-  // pop r8, r10
+  // pop r0, r2, r3
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
@@ -826,13 +829,13 @@ class Assembler {
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
-        translatePush("", List(r8, r10)) ::
-        translateMove("", r10, translateRegister(arrPos.head._2)) ::
-        translateMove("", r8, translateRegister(srcReg)) ::
-        translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r10] = r8
+        translatePush("", List(r0, r2, r3)) ::
+        translateMove("", r0, translateRegister(arrPos.head._2)) ::
+        translateMove("", r2, translateRegister(srcReg)) ::
+        translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r0] = r2
         translateBranchLink("", new BranchString("_arrStore")) ::
-        assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg) ::
-        translatePop("", List(r8, r10))
+        translatePop("", List(r0, r2, r3)) ::
+        assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg)
       }
     }
   }
