@@ -705,12 +705,12 @@ class Assembler {
   // TODO n-D arrays
   def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
     // println("ini", translateRegister(dstReg))
-    translateMove("", r0, new ImmediateInt(4 * (arrLen + 1))) ::
-      translateBranchLink("", new BranchString("malloc")) ::
+    translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
       translateMove("", translateRegister(dstReg), r0) ::
       translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(4)) ::
       translateMove("", r8, new ImmediateInt(arrLen)) ::
-      translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-4))
+      translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
+      translateBranchLink("", new BranchString("malloc"))
   }
 
   // Can be removed
@@ -723,7 +723,8 @@ class Assembler {
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
     // println(elemPos, translateRegister(elemReg))
-    translateStr("", translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(4 * elemPos))
+    translateBranchLink("", new BranchString("malloc")) ::
+      translateStr(getInstructionType(arrayElemType), translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
   }
   
   // LoadArrayElem
