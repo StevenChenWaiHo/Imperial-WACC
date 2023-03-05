@@ -428,17 +428,19 @@ class Assembler {
   }
 
   def assembleRead(datatype: DeclarationType, readReg: TRegister): AssemblerState = {
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow()); 
+    addEndFunc("_prints", new HardcodeFunctions().translate_errOverflow()); 
     val bl = datatype match {
       case BaseType(baseType) => {
         baseType match {
-          case BaseT.Int_T => addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow()); "_readi"
+          case BaseT.Int_T =>"_readi"
           case BaseT.Char_T => "_readc"
           case BaseT.String_T => "_reads"
           case BaseT.Bool_T => "_readb"
-          case _ => addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow());  "_readi"
+          case _ => "_readi"
         }
       }
-      case _ => addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow()); "_readi"
+      case _ => "_readi"
     }
     addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
     translateBranchLink("", new BranchString(bl))
