@@ -708,8 +708,10 @@ class Assembler {
     translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
       translateMove("", translateRegister(dstReg), r0) ::
       translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(4)) ::
+      translatePush("", List(r8)) ::
       translateMove("", r8, new ImmediateInt(arrLen)) ::
       translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
+      translatePush("", List(r8)) ::
       translateBranchLink("", new BranchString("malloc"))
   }
 
@@ -739,10 +741,12 @@ class Assembler {
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
-        translateMove("", r10, translateRegister(arrPos.head)) :: // TODO n-D arrays (again)
+        translatePush("", List(r10)) ::
+        translateMove("", r10, translateRegister(arrPos.head)) ::
         translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r10]
         translateBranchLink("", new BranchString("_arrLoad")) ::
-        assembleLoadArrayElem(datatype, arrReg, arrPos.drop(1), dstReg)
+        assembleLoadArrayElem(datatype, arrReg, arrPos.drop(1), dstReg) ::
+        translatePop("", List(r10))
       }
     }
   }
@@ -762,11 +766,13 @@ class Assembler {
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
+        translatePush("", List(r10, r8)) ::
         translateMove("", r10, translateRegister(arrPos.head._2)) ::
         translateMove("", r8, translateRegister(srcReg)) ::
         translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r10] = r8
-        translateBranchLink("", new BranchString("_arrStore"))
-        assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg)
+        translateBranchLink("", new BranchString("_arrStore")) ::
+        assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg) ::
+        translatePop("", List(r10, r8))
       }
     }
   }
