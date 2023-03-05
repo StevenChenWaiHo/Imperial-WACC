@@ -13,257 +13,256 @@ class HardcodeFunctions extends Assembler {
 
   implicit private[this] def updateState(str: String): AssemblerState = state.addInstruction(str)
 
-  def translate_errNull(): List[String] = {
-    // TODO: Magic Number
+  def assemble_errNull(): List[String] = {
     val sLbl = new Label(".L._errNull_str0")
-    translateTAC(DataSegmentTAC()) ++
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(45, sLbl)) ++
-    translateTAC(StringDefinitionTAC("fatal error: null pair dereferenced or freed\n", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++
-    translateTAC(Label("_errNull")) ::
-    translateLdr("", r0, r0, new LabelString(".L._errNull_str0")) ::
-    translateBranchLink("", new BranchString("_prints")) ::
-    translateMove("", r0, new ImmediateInt(255)) ::
-    translateBranchLink("", new BranchString("exit"))
+    assembleTAC(DataSegmentTAC()) ++
+    assembleTAC(Comments("length of " + sLbl.name)) ++
+    assembleTAC(StringLengthDefinitionTAC(45, sLbl)) ++
+    assembleTAC(StringDefinitionTAC("fatal error: null pair dereferenced or freed\n", sLbl)) ++
+    assembleTAC(TextSegmentTAC()) ++
+    assembleTAC(Label("_errNull")) ::
+    assembleLdr("", r0, r0, new LabelString(".L._errNull_str0")) ::
+    assembleBranchLink("", new BranchString("_prints")) ::
+    assembleMove("", r0, new ImmediateInt(255)) ::
+    assembleBranchLink("", new BranchString("exit"))
   }
 
-  def translate_freepair(): List[String] = {
-    translateTAC(TextSegmentTAC()) ::
-    translateTAC(Label("_freepair")) ::
-      translatePush("", List(lr)) ::
-      translateMove("", r1, r0) ::
-      translateCompare("", r1, ImmediateInt(0)) ::
-      translateBranchLink("eq", new BranchString("_errNull")) ::
-      translateLdr("", r0, r1, ImmediateInt(0)) ::
-      translatePush("", List(r1)) ::
-      translateBranchLink("", new BranchString("free")) ::
-      translatePop("", List(r1)) ::
-      translateLdr("", r0, r1, ImmediateInt(4)) ::
-      translatePush("", List(r1)) ::
-      translateBranchLink("", new BranchString("free")) ::
-      translatePop("", List(r1)) ::
-      translateMove("", r0, r1) ::
-      translatePush("", List(r1)) ::
-      translateBranchLink("", new BranchString("free")) ::
-      translatePop("", List(r1)) ::
-      translatePop("", List(pc))
+  def assemble_freepair(): List[String] = {
+    assembleTAC(TextSegmentTAC()) ::
+    assembleTAC(Label("_freepair")) ::
+      assemblePush("", List(lr)) ::
+      assembleMove("", r1, r0) ::
+      assembleCompare("", r1, ImmediateInt(0)) ::
+      assembleBranchLink("eq", new BranchString("_errNull")) ::
+      assembleLdr("", r0, r1, ImmediateInt(0)) ::
+      assemblePush("", List(r1)) ::
+      assembleBranchLink("", new BranchString("free")) ::
+      assemblePop("", List(r1)) ::
+      assembleLdr("", r0, r1, ImmediateInt(4)) ::
+      assemblePush("", List(r1)) ::
+      assembleBranchLink("", new BranchString("free")) ::
+      assemblePop("", List(r1)) ::
+      assembleMove("", r0, r1) ::
+      assemblePush("", List(r1)) ::
+      assembleBranchLink("", new BranchString("free")) ::
+      assemblePop("", List(r1)) ::
+      assemblePop("", List(pc))
   }
 
   
-  def translate_errDivZero(): List[String] = {
+  def assemble_errDivZero(): List[String] = {
     val sLbl = Label(".L._errDivZero_str0")
-    translateTAC(DataSegmentTAC()) ++
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(40, sLbl)) ++
-    translateTAC(StringDefinitionTAC("fatal error: division or modulo by zero\n", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++
-    translateTAC(Label("_errDivZero")) ::
-      translateLdr("", r0, null, LabelString(sLbl.name)) ::
-        translateBranchLink("", BranchString("_prints")) ::
-        translateMove("", r0, ImmediateInt(255))
-        translateBranchLink("", BranchString("exit"))
+    assembleTAC(DataSegmentTAC()) ++
+    assembleTAC(Comments("length of " + sLbl.name)) ++
+    assembleTAC(StringLengthDefinitionTAC(40, sLbl)) ++
+    assembleTAC(StringDefinitionTAC("fatal error: division or modulo by zero\n", sLbl)) ++
+    assembleTAC(TextSegmentTAC()) ++
+    assembleTAC(Label("_errDivZero")) ::
+      assembleLdr("", r0, null, LabelString(sLbl.name)) ::
+        assembleBranchLink("", BranchString("_prints")) ::
+        assembleMove("", r0, ImmediateInt(255))
+        assembleBranchLink("", BranchString("exit"))
   }
 
-  def translate_errOverflow(): List[String] = {
+  def assemble_errOverflow(): List[String] = {
     val sLbl = Label(".L._errOverflow_str0")
-    translateTAC(DataSegmentTAC()) ++
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(52, sLbl)) ++
-    translateTAC(StringDefinitionTAC("fatal error: integer overflow or underflow\n", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++
-    translateTAC(Label("_errOverflow")) ::
-    translateLdr("", r0, null, LabelString(sLbl.name)) ::
-    translateBranchLink("", new BranchString("_prints")) ::
-    translateMove("", r0 , new ImmediateInt(255)) ::
-    translateBranchLink("", new BranchString("exit"))
+    assembleTAC(DataSegmentTAC()) ++
+    assembleTAC(Comments("length of " + sLbl.name)) ++
+    assembleTAC(StringLengthDefinitionTAC(52, sLbl)) ++
+    assembleTAC(StringDefinitionTAC("fatal error: integer overflow or underflow\n", sLbl)) ++
+    assembleTAC(TextSegmentTAC()) ++
+    assembleTAC(Label("_errOverflow")) ::
+    assembleLdr("", r0, null, LabelString(sLbl.name)) ::
+    assembleBranchLink("", new BranchString("_prints")) ::
+    assembleMove("", r0 , new ImmediateInt(255)) ::
+    assembleBranchLink("", new BranchString("exit"))
   }
 
   // r3 = r3[r0]
-  def translate_arrLoad(): List[String] = {
-    translateTAC(Label("_arrLoad")) ++
-    (translatePush("", List(lr)) ::
-      translateCompare("", r0, new ImmediateInt(0)) ::
-      translateMove("", r1, r0) ::
-      translateBranchLink("lt", new BranchString("_boundsCheck")) ::
-      translateLdr("", lr, r3, new ImmediateInt(-4)) ::
-      translateCompare("eq", r0, lr) ::
-      translateMove("ge", r1, r0) ::
-      translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateLdr("", r3, r3, LogicalShiftLeft(r0, Right(2))) ::
-      translatePop("", List(pc)))
+  def assemble_arrLoad(): List[String] = {
+    assembleTAC(Label("_arrLoad")) ++
+    (assemblePush("", List(lr)) ::
+      assembleCompare("", r0, new ImmediateInt(0)) ::
+      assembleMove("", r1, r0) ::
+      assembleBranchLink("lt", new BranchString("_boundsCheck")) ::
+      assembleLdr("", lr, r3, new ImmediateInt(-4)) ::
+      assembleCompare("eq", r0, lr) ::
+      assembleMove("ge", r1, r0) ::
+      assembleBranchLink("ge", new BranchString("_boundsCheck")) ::
+      assembleLdr("", r3, r3, LogicalShiftLeft(r0, Right(2))) ::
+      assemblePop("", List(pc)))
   }
 
   // r3[r0] = r2
-  def translate_arrStore(): List[String] = {
-    translateTAC(Label("_arrStore")) ++
-    (translatePush("", List(lr)) ::
-      translateCompare("", r0, new ImmediateInt(0)) ::
-      translateMove("", r1, r0) ::
-      translateBranchLink("lt", new BranchString("_boundsCheck")) ::
-      translateLdr("", lr, r3, new ImmediateInt(-4)) ::
-      translateCompare("eq", r0, lr) ::
-      translateMove("ge", r1, r0) ::
-      translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateStr("", r2, r3, LogicalShiftLeft(r0, Right(2))) ::
-      translatePop("", List(pc)))
+  def assemble_arrStore(): List[String] = {
+    assembleTAC(Label("_arrStore")) ++
+    (assemblePush("", List(lr)) ::
+      assembleCompare("", r0, new ImmediateInt(0)) ::
+      assembleMove("", r1, r0) ::
+      assembleBranchLink("lt", new BranchString("_boundsCheck")) ::
+      assembleLdr("", lr, r3, new ImmediateInt(-4)) ::
+      assembleCompare("eq", r0, lr) ::
+      assembleMove("ge", r1, r0) ::
+      assembleBranchLink("ge", new BranchString("_boundsCheck")) ::
+      assembleStr("", r2, r3, LogicalShiftLeft(r0, Right(2))) ::
+      assemblePop("", List(pc)))
   }
 
-  def translate_boundsCheck(): List[String] = {
+  def assemble_boundsCheck(): List[String] = {
     val sLbl = new Label(".L._boundsCheck_str_0")
-    translateTAC(DataSegmentTAC()) ++
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(42, sLbl)) ++
-    translateTAC(StringDefinitionTAC("fatal error: array index %d out of bounds\n", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++
-    translateTAC(Label("_boundsCheck")) ++
-    (translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-      translateBranchLink("", new BranchString("printf")) ::
-      translateMove("", r0, new ImmediateInt(0)) ::
-      translateBranchLink("", new BranchString("fflush")) ::
-      translateMove("", r0, new ImmediateInt(255)) ::
-      translateBranchLink("", new BranchString("exit")))
+    assembleTAC(DataSegmentTAC()) ++
+    assembleTAC(Comments("length of " + sLbl.name)) ++
+    assembleTAC(StringLengthDefinitionTAC(42, sLbl)) ++
+    assembleTAC(StringDefinitionTAC("fatal error: array index %d out of bounds\n", sLbl)) ++
+    assembleTAC(TextSegmentTAC()) ++
+    assembleTAC(Label("_boundsCheck")) ++
+    (assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
+      assembleBranchLink("", new BranchString("printf")) ::
+      assembleMove("", r0, new ImmediateInt(0)) ::
+      assembleBranchLink("", new BranchString("fflush")) ::
+      assembleMove("", r0, new ImmediateInt(255)) ::
+      assembleBranchLink("", new BranchString("exit")))
   }
 
-  def translate_print(pType: String): List[String] = {
+  def assemble_print(pType: String): List[String] = {
     pType match {
-      case "_prints" => translate_prints()
-      case "_printi" => translate_printi()
-      case "_printc" => translate_printc()
-      case "_printb" => translate_printb()
-      case "_printp" => translate_printp()
-      case "_println" => translate_println()
-      case _ => translate_prints()
+      case "_prints" => assemble_prints()
+      case "_printi" => assemble_printi()
+      case "_printc" => assemble_printc()
+      case "_printb" => assemble_printb()
+      case "_printp" => assemble_printp()
+      case "_println" => assemble_println()
+      case _ => assemble_prints()
     }
   }
 
-   def translate_printp(): List[String] = {
+   def assemble_printp(): List[String] = {
     val sLbl = new Label(".L._printp_str0")
-    translateTAC(DataSegmentTAC()) ++
-    translateTAC(Comments("length of " + sLbl.name)) ++
-    translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
-    translateTAC(StringDefinitionTAC("%p", sLbl)) ++
-    translateTAC(TextSegmentTAC()) ++
-    translateTAC(Label("_printp")) ++
-    (translatePush("", List(lr)) ::
-        translateMove("", r1, r0) ::
-        translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-        translateBranchLink("", new BranchString("printf")) ::
-        translateMove("", r0, new ImmediateInt(0)) ::
-        translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)))
+    assembleTAC(DataSegmentTAC()) ++
+    assembleTAC(Comments("length of " + sLbl.name)) ++
+    assembleTAC(StringLengthDefinitionTAC(2, sLbl)) ++
+    assembleTAC(StringDefinitionTAC("%p", sLbl)) ++
+    assembleTAC(TextSegmentTAC()) ++
+    assembleTAC(Label("_printp")) ++
+    (assemblePush("", List(lr)) ::
+        assembleMove("", r1, r0) ::
+        assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
+        assembleBranchLink("", new BranchString("printf")) ::
+        assembleMove("", r0, new ImmediateInt(0)) ::
+        assembleBranchLink("", new BranchString("fflush")) ::
+        assemblePop("", List(pc)))
    }
 
-  def translate_prints(): List[String] = {
+  def assemble_prints(): List[String] = {
     val sLbl = new Label(".L._prints_str0")
-    translateTAC(DataSegmentTAC()) ++
-      translateTAC(Comments("length of " + sLbl.name)) ++
-      translateTAC(StringLengthDefinitionTAC(4, sLbl)) ++
-      translateTAC(StringDefinitionTAC("%.*s", sLbl)) ++
-      translateTAC(TextSegmentTAC()) ++
-      translateTAC(Label("_prints")) ++
-      (translatePush("", List(lr)) ::
-        translateMove("", r2, r0) ::
-        translateLdr("", r1, r0, ImmediateInt(-4)) ::
-        translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-        translateBranchLink("", new BranchString("printf")) ::
-        translateMove("", r0, new ImmediateInt(0)) ::
-        translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)))
+    assembleTAC(DataSegmentTAC()) ++
+      assembleTAC(Comments("length of " + sLbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(4, sLbl)) ++
+      assembleTAC(StringDefinitionTAC("%.*s", sLbl)) ++
+      assembleTAC(TextSegmentTAC()) ++
+      assembleTAC(Label("_prints")) ++
+      (assemblePush("", List(lr)) ::
+        assembleMove("", r2, r0) ::
+        assembleLdr("", r1, r0, ImmediateInt(-4)) ::
+        assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
+        assembleBranchLink("", new BranchString("printf")) ::
+        assembleMove("", r0, new ImmediateInt(0)) ::
+        assembleBranchLink("", new BranchString("fflush")) ::
+        assemblePop("", List(pc)))
   }
 
-  def translate_printc(): List[String] = {
+  def assemble_printc(): List[String] = {
     val sLbl = new Label(".L._printc_str0")
-    translateTAC(DataSegmentTAC()) ++
-      translateTAC(Comments("length of " + sLbl.name)) ++
-      translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
-      translateTAC(StringDefinitionTAC("%c", sLbl)) ++
-      translateTAC(TextSegmentTAC()) ++
-      translateTAC(Label("_printc")) ++
-      (translatePush("", List(lr)) ::
-        translateMove("", r1, r0) ::
-        translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-        translateBranchLink("", new BranchString("printf")) ::
-        translateMove("", r0, new ImmediateInt(0)) ::
-        translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)))
+    assembleTAC(DataSegmentTAC()) ++
+      assembleTAC(Comments("length of " + sLbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(2, sLbl)) ++
+      assembleTAC(StringDefinitionTAC("%c", sLbl)) ++
+      assembleTAC(TextSegmentTAC()) ++
+      assembleTAC(Label("_printc")) ++
+      (assemblePush("", List(lr)) ::
+        assembleMove("", r1, r0) ::
+        assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
+        assembleBranchLink("", new BranchString("printf")) ::
+        assembleMove("", r0, new ImmediateInt(0)) ::
+        assembleBranchLink("", new BranchString("fflush")) ::
+        assemblePop("", List(pc)))
   }
 
-  def translate_printi(): List[String] = {
+  def assemble_printi(): List[String] = {
     val sLbl = new Label(".L._printi_str0")
-    translateTAC(DataSegmentTAC()) ++
-      translateTAC(Comments("length of " + sLbl.name)) ++
-      translateTAC(StringLengthDefinitionTAC(2, sLbl)) ++
-      translateTAC(StringDefinitionTAC("%d", sLbl)) ++
-      translateTAC(TextSegmentTAC()) ++
-      translateTAC(Label("_printi")) ++
-      (translatePush("", List(lr)) ::
-        translateMove("", r1, r0) ::
-        translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-        translateBranchLink("", new BranchString("printf")) ::
-        translateMove("", r0, new ImmediateInt(0)) ::
-        translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)))
+    assembleTAC(DataSegmentTAC()) ++
+      assembleTAC(Comments("length of " + sLbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(2, sLbl)) ++
+      assembleTAC(StringDefinitionTAC("%d", sLbl)) ++
+      assembleTAC(TextSegmentTAC()) ++
+      assembleTAC(Label("_printi")) ++
+      (assemblePush("", List(lr)) ::
+        assembleMove("", r1, r0) ::
+        assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
+        assembleBranchLink("", new BranchString("printf")) ::
+        assembleMove("", r0, new ImmediateInt(0)) ::
+        assembleBranchLink("", new BranchString("fflush")) ::
+        assemblePop("", List(pc)))
   }
 
-  def translate_println(): List[String] = {
+  def assemble_println(): List[String] = {
     val sLbl = new Label(".L._println_str0")
-    translateTAC(DataSegmentTAC()) ++
-      translateTAC(Comments("length of " + sLbl.name)) ++
-      translateTAC(StringLengthDefinitionTAC(0, sLbl)) ++
-      translateTAC(StringDefinitionTAC("", sLbl)) ++
-      translateTAC(TextSegmentTAC()) ++
-      translateTAC(Label("_println")) ++
-      (translatePush("", List(lr)) ::
-        translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-        translateBranchLink("", new BranchString("puts")) ::
-        translateMove("", r0, new ImmediateInt(0)) ::
-        translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)))
+    assembleTAC(DataSegmentTAC()) ++
+      assembleTAC(Comments("length of " + sLbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(0, sLbl)) ++
+      assembleTAC(StringDefinitionTAC("", sLbl)) ++
+      assembleTAC(TextSegmentTAC()) ++
+      assembleTAC(Label("_println")) ++
+      (assemblePush("", List(lr)) ::
+        assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
+        assembleBranchLink("", new BranchString("puts")) ::
+        assembleMove("", r0, new ImmediateInt(0)) ::
+        assembleBranchLink("", new BranchString("fflush")) ::
+        assemblePop("", List(pc)))
   }
 
-  def translate_printb(): List[String] = {
+  def assemble_printb(): List[String] = {
     val fLbl = new Label(".L._printb_str0")
     val tLbl = new Label(".L._printb_str1")
     val sLbl = new Label(".L._printb_str2")
 
-    translateTAC(DataSegmentTAC()) ++
-      translateTAC(Comments("length of " + fLbl.name)) ++
-      translateTAC(StringLengthDefinitionTAC(5, fLbl)) ++
-      translateTAC(StringDefinitionTAC("false", fLbl)) ++
-      translateTAC(Comments("length of " + tLbl.name)) ++
-      translateTAC(StringLengthDefinitionTAC(4, tLbl)) ++
-      translateTAC(StringDefinitionTAC("true", tLbl)) ++
-      translateTAC(Comments("length of " + sLbl.name)) ++
-      translateTAC(StringLengthDefinitionTAC(4, sLbl)) ++
-      translateTAC(StringDefinitionTAC("%.*s", sLbl)) ++
-      translateTAC(TextSegmentTAC()) ++
-      translateTAC(Label("_printb")) ++
-      (translatePush("", List(lr)) ::
-        translateCompare("", r0, new ImmediateInt(0)) ::
-        translateBranch("ne", ".L_printb0") ::
-        translateLdr("", r2, r0, new LabelString(fLbl.name)) ::
-        translateBranch("", ".L_printb1") ::
-        translateTAC(Label(".L_printb0"))) ++
-      (translateLdr("", r2, r0, new LabelString(tLbl.name)) ::
-        translateTAC(Label(".L_printb1"))) ++
-      (translateLdr("", r1, r2, ImmediateInt(-4)) ::
-        translateLdr("", r0, r0, new LabelString(sLbl.name)) ::
-        translateBranchLink("", new BranchString("printf")) ::
-        translateMove("", r0, new ImmediateInt(0)) ::
-        translateBranchLink("", new BranchString("fflush")) ::
-        translatePop("", List(pc)))
+    assembleTAC(DataSegmentTAC()) ++
+      assembleTAC(Comments("length of " + fLbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(5, fLbl)) ++
+      assembleTAC(StringDefinitionTAC("false", fLbl)) ++
+      assembleTAC(Comments("length of " + tLbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(4, tLbl)) ++
+      assembleTAC(StringDefinitionTAC("true", tLbl)) ++
+      assembleTAC(Comments("length of " + sLbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(4, sLbl)) ++
+      assembleTAC(StringDefinitionTAC("%.*s", sLbl)) ++
+      assembleTAC(TextSegmentTAC()) ++
+      assembleTAC(Label("_printb")) ++
+      (assemblePush("", List(lr)) ::
+        assembleCompare("", r0, new ImmediateInt(0)) ::
+        assembleBranch("ne", ".L_printb0") ::
+        assembleLdr("", r2, r0, new LabelString(fLbl.name)) ::
+        assembleBranch("", ".L_printb1") ::
+        assembleTAC(Label(".L_printb0"))) ++
+      (assembleLdr("", r2, r0, new LabelString(tLbl.name)) ::
+        assembleTAC(Label(".L_printb1"))) ++
+      (assembleLdr("", r1, r2, ImmediateInt(-4)) ::
+        assembleLdr("", r0, r0, new LabelString(sLbl.name)) ::
+        assembleBranchLink("", new BranchString("printf")) ::
+        assembleMove("", r0, new ImmediateInt(0)) ::
+        assembleBranchLink("", new BranchString("fflush")) ::
+        assemblePop("", List(pc)))
   }
 
-  def translate_read(rType: String): List[String] = {
+  def assemble_read(rType: String): List[String] = {
     rType match {
-      case "_readi" => translate_readi()
-      case "_readc" => translate_readc()
-      case _ => translate_readi()
+      case "_readi" => assemble_readi()
+      case "_readc" => assemble_readc()
+      case _ => assemble_readi()
     }
   }
 
-  def translate_readi(): List[String] = {
+  def assemble_readi(): List[String] = {
     val lbl = new Label(".L._readi_str0")
     List(
       DataSegmentTAC(),
@@ -271,19 +270,19 @@ class HardcodeFunctions extends Assembler {
       StringLengthDefinitionTAC(2, lbl),
       StringDefinitionTAC("%d", lbl),
       TextSegmentTAC(),
-      Label("_readi")).map(tac => translateTAC(tac))
+      Label("_readi")).map(tac => assembleTAC(tac))
 
-      translatePush("", List(lr))
-      translateStrPre("", r0, sp, new ImmediateInt(-4))
-      translateMove("", r1, sp)
-      translateLdr("", r0, null, new LabelString(lbl.name))
-      translateBranchLink("", new BranchString("scanf"))
-      translateLdr("", r0, sp, new ImmediateInt(0))
-      translateAdd("", None(), sp, sp, new ImmediateInt(4))
-      translatePop("", List(pc))
+      assemblePush("", List(lr))
+      assembleStrPre("", r0, sp, new ImmediateInt(-4))
+      assembleMove("", r1, sp)
+      assembleLdr("", r0, null, new LabelString(lbl.name))
+      assembleBranchLink("", new BranchString("scanf"))
+      assembleLdr("", r0, sp, new ImmediateInt(0))
+      assembleAdd("", None(), sp, sp, new ImmediateInt(4))
+      assemblePop("", List(pc))
   }
 
-  def translate_readc(): List[String] = {
+  def assemble_readc(): List[String] = {
     val lbl = new Label(".L._readc_str0")
     List(
       DataSegmentTAC(),
@@ -291,16 +290,16 @@ class HardcodeFunctions extends Assembler {
       StringLengthDefinitionTAC(3, lbl),
       StringDefinitionTAC(" %c", lbl),
       TextSegmentTAC(),
-      Label("_readc")).map(tac => translateTAC(tac))
+      Label("_readc")).map(tac => assembleTAC(tac))
 
-      translatePush("", List(lr))
-      translateStrPre("b", r0, sp, new ImmediateInt(-1))
-      translateMove("", r1, sp)
-      translateLdr("", r0, null, new LabelString(lbl.name))
-      translateBranchLink("", new BranchString("scanf"))
-      translateLdr("sb", r0, sp, new ImmediateInt(0))
-      translateAdd("", None(), sp, sp, new ImmediateInt(1))
-      translatePop("", List(pc))
+      assemblePush("", List(lr))
+      assembleStrPre("b", r0, sp, new ImmediateInt(-1))
+      assembleMove("", r1, sp)
+      assembleLdr("", r0, null, new LabelString(lbl.name))
+      assembleBranchLink("", new BranchString("scanf"))
+      assembleLdr("sb", r0, sp, new ImmediateInt(0))
+      assembleAdd("", None(), sp, sp, new ImmediateInt(1))
+      assemblePop("", List(pc))
   }
 
 }

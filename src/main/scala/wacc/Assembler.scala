@@ -23,16 +23,16 @@ object StatelessAssembler {
     str + "}"
   }
 
-  def translatePush(condition: String, registers: List[Register]): String = {
+  def assemblePush(condition: String, registers: List[Register]): String = {
     "push" + pushPopAssist(condition, registers)
   }
 
-  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+  def assembleLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     //Incomplete
     "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
+  def assembleStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
@@ -49,12 +49,12 @@ object StatelessAssembler {
     str
   }
 
-  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+  def assembleAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
     
   }
 
-  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
+  def assembleSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
@@ -95,11 +95,11 @@ class Assembler {
     return str
   }
 
-  def translatePush(condition: String, registers: List[Register]): AssemblerState = {
+  def assemblePush(condition: String, registers: List[Register]): AssemblerState = {
     return "push" + pushPopAssist(condition, registers)
   }
 
-  def translatePop(condition: String, registers: List[Register]): AssemblerState = {
+  def assemblePop(condition: String, registers: List[Register]): AssemblerState = {
     return "pop" + pushPopAssist(condition, registers)
   }
 
@@ -119,15 +119,15 @@ class Assembler {
     return str
   }
 
-  def translateLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
+  def assembleLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
     return "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def translateStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
+  def assembleStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
     return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
   }
 
-  def translateStrPre(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
+  def assembleStrPre(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): AssemblerState = {
     "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand).toString + "!".toString()
   }
 
@@ -151,32 +151,32 @@ class Assembler {
   }
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    addEndFunc("_errOverflow", new HardcodeFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
     return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand + "\nblvs _errOverflow"
   }
 
-  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
+  def assembleAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     return "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
     
   }
 
-  def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
+  def assembleSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
+  def assembleRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     return "rsb" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
-  def translateMul(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, sourceRegisterTwo: LHSop): AssemblerState = {
+  def assembleMul(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, sourceRegisterTwo: LHSop): AssemblerState = {
     return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, sourceRegisterTwo)
   }
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
                     sourceRegister: LHSop, operand: LHSop): String = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    addEndFunc("_errOverflow", new HardcodeFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
 
     var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
       "," + " " + operand +
@@ -185,31 +185,31 @@ class Assembler {
     return str
   }
 
-  def translateMla(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
+  def assembleMla(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "mla" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateUmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
+  def assembleUmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "umull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateUmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
+  def assembleUmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "umlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateSmull(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand1: LHSop, operand2: LHSop): AssemblerState = {
+  def assembleSmull(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand1: LHSop, operand2: LHSop): AssemblerState = {
     return "smull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateSmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
+  def assembleSmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
     return "smlal" + fourMulAssist(condition, None(), destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateCompare(condition: String, register1: LHSop, operand: LHSop): AssemblerState = {
+  def assembleCompare(condition: String, register1: LHSop, operand: LHSop): AssemblerState = {
     return "cmp" + condition + " " + register1.toString + ", " + operand.toString
   }
 
-  def translateCompareNeg(condition: String, register1: Register, operand: LHSop): AssemblerState = {
+  def assembleCompareNeg(condition: String, register1: Register, operand: LHSop): AssemblerState = {
     return "cmn" + condition + " " + register1.toString + ", " + operand.toString
   }
 
@@ -224,19 +224,19 @@ class Assembler {
     false
   }
 
-  def translateMove(condition: String, dst: Register, operand: LHSop): AssemblerState = {
+  def assembleMove(condition: String, dst: Register, operand: LHSop): AssemblerState = {
     operand match {
       case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
       case _ => "mov" + condition + " " + dst.toString + ", " + operand.toString()
     }
   }
 
-  def translateBranch(condition: String, operand: String): AssemblerState = {
+  def assembleBranch(condition: String, operand: String): AssemblerState = {
     state.enterBranch
     return "b" + condition + " " + operand
   }
 
-  def translateBranchLink(condition: String, operand: LHSop): AssemblerState = {
+  def assembleBranchLink(condition: String, operand: LHSop): AssemblerState = {
     state.enterBranch
     return "bl" + condition + " " + operand
   }
@@ -302,7 +302,7 @@ class Assembler {
   }
 
   // Convert TAC into List[ARM Code]
-  def translateTAC(tripleAddressCode: TAC): AssemblerState = {
+  def assembleTAC(tripleAddressCode: TAC): AssemblerState = {
     println("Translating: " + TAC)
     println(endFuncs.keys)
     tripleAddressCode match {
@@ -373,16 +373,16 @@ class Assembler {
 
   def assemblePair(fstType: DeclarationType, sndType: DeclarationType, fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister): AssemblerState = {
     // r12: pointer to pair r8: pointer to pairElem
-    translatePop("", List(translateRegister(fstReg))) ::
-      translatePop("", List(translateRegister(sndReg))) ::
-      translatePush("", List(r0)) :: 
-      translateMove("", r0, new ImmediateInt(2 * POINTER_BYTE_SIZE)) ::
-      translateBranchLink("", new BranchString("malloc")) ::
-      translateMove("", translateRegister(ptrReg), r0) ::
-      translatePop("", List(r0)) :: 
-      translateStr("", translateRegister(fstReg), translateRegister(ptrReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
-      translateStr("", translateRegister(sndReg), translateRegister(ptrReg), new ImmediateInt(0)) ::
-      translateMove("", translateRegister(dstReg), translateRegister(ptrReg))
+    assemblePop("", List(translateRegister(fstReg))) ::
+      assemblePop("", List(translateRegister(sndReg))) ::
+      assemblePush("", List(r0)) :: 
+      assembleMove("", r0, new ImmediateInt(2 * POINTER_BYTE_SIZE)) ::
+      assembleBranchLink("", new BranchString("malloc")) ::
+      assembleMove("", translateRegister(ptrReg), r0) ::
+      assemblePop("", List(r0)) :: 
+      assembleStr("", translateRegister(fstReg), translateRegister(ptrReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
+      assembleStr("", translateRegister(sndReg), translateRegister(ptrReg), new ImmediateInt(0)) ::
+      assembleMove("", translateRegister(dstReg), translateRegister(ptrReg))
   }
   // Push r0
   // mov r0 #(size)
@@ -395,33 +395,33 @@ class Assembler {
   // pop ptrReg (remove?)
   // push pairElemReg
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): AssemblerState = {
-    translatePush("", List(r0)) :: 
-    translateMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
-      translateBranchLink("", new BranchString("malloc")) ::
-      translatePush("", List(translateRegister(ptrReg))) :: // TODO: Remove?
-      translateMove("", translateRegister(ptrReg), r0) ::
-      translatePop("", List(r0)) :: 
-      translateStr(getInstructionType(pairElemType), translateRegister(pairElem), translateRegister(ptrReg), new ImmediateInt(0)) ::
-      translateMove("", translateRegister(pairElem), translateRegister(ptrReg)) ::
-      translatePop("", List(translateRegister(ptrReg))) :: // TODO: Remove?
-      translatePush("", List(translateRegister(pairElem)))
+    assemblePush("", List(r0)) :: 
+    assembleMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
+      assembleBranchLink("", new BranchString("malloc")) ::
+      assemblePush("", List(translateRegister(ptrReg))) :: // TODO: Remove?
+      assembleMove("", translateRegister(ptrReg), r0) ::
+      assemblePop("", List(r0)) :: 
+      assembleStr(getInstructionType(pairElemType), translateRegister(pairElem), translateRegister(ptrReg), new ImmediateInt(0)) ::
+      assembleMove("", translateRegister(pairElem), translateRegister(ptrReg)) ::
+      assemblePop("", List(translateRegister(ptrReg))) :: // TODO: Remove?
+      assemblePush("", List(translateRegister(pairElem)))
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
     op match {
       case UnaryOpType.Neg => {
-        translateRsb("", Status(), translateRegister(res), translateOperand(t1), new ImmediateInt(0))
+        assembleRsb("", Status(), translateRegister(res), translateOperand(t1), new ImmediateInt(0))
       }
       case UnaryOpType.Not => {
-        translateCompare("", translateOperand(t1), new ImmediateInt(1)) ::
-          translateMove("ne", translateRegister(res), new ImmediateInt(1)) ::
-          translateMove("eq", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", translateOperand(t1), new ImmediateInt(1)) ::
+          assembleMove("ne", translateRegister(res), new ImmediateInt(1)) ::
+          assembleMove("eq", translateRegister(res), new ImmediateInt(0))
       }
       case UnaryOpType.Chr | UnaryOpType.Ord => {
-        translateMove("", translateRegister(res), translateOperand(t1))
+        assembleMove("", translateRegister(res), translateOperand(t1))
       }
       case UnaryOpType.Len => {
-        translateLdr("", translateRegister(res), translateRegister(t1.asInstanceOf[TRegister]), new ImmediateInt(-4))
+        assembleLdr("", translateRegister(res), translateRegister(t1.asInstanceOf[TRegister]), new ImmediateInt(-4))
       }
     }
   }
@@ -439,37 +439,37 @@ class Assembler {
       }
       case _ => "_readi"
     }
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().translate_prints())//.translate_errOverflow())
-    addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
-    translateBranchLink("", new BranchString(bl))
-    translateMove("", translateRegister(readReg), r0)
+    addEndFunc("_errOverflow", new HardcodeFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())//.assemble_errOverflow())
+    addEndFunc(bl, new HardcodeFunctions().assemble_read(bl))
+    assembleBranchLink("", new BranchString(bl))
+    assembleMove("", translateRegister(readReg), r0)
   }
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): AssemblerState = {
     // save arg registers on the stack
-    //var output = translatePush("", List(r0, r1, r2, r3))
-    var output = translateMove("", r0, r0)
+    //var output = assemblePush("", List(r0, r1, r2, r3))
+    var output = assembleMove("", r0, r0)
     // move all the args in to arg registers
     args.slice(0, args.length.min(argRegs.length)).zip(argRegs).foreach {
-      case (arg, reg) => output = output ++ translateMove("", reg, translateRegister(arg))
+      case (arg, reg) => output = output ++ assembleMove("", reg, translateRegister(arg))
     }
     // push extra args into memory
     if (args.length > argRegs.length) {
       args.slice(4, args.length).reverse.foreach(reg => {
-        output = output ++ translateStrPre("", translateRegister(reg), sp, ImmediateInt(-4))
+        output = output ++ assembleStrPre("", translateRegister(reg), sp, ImmediateInt(-4))
       })
     }
-    output = output ++ (translateBranchLink("", new BranchString(lbl.name)))
+    output = output ++ (assembleBranchLink("", new BranchString(lbl.name)))
 
     /* Decrement the stack pointer for each argument pushed to the stack */
     if (args.length > argRegs.length)
-      output = output ++ translateSub("", None(), sp, sp, ImmediateInt(4 * (argRegs.length - args.length)))
+      output = output ++ assembleSub("", None(), sp, sp, ImmediateInt(4 * (argRegs.length - args.length)))
 
     // move the result into dst before r0 is popped back
-    output = output ++ (translateMove("", translateRegister(dstReg), r0))
+    output = output ++ (assembleMove("", translateRegister(dstReg), r0))
     // get previous registers from stack
-    output //++ (translatePop("", regs))
+    output //++ (assemblePop("", regs))
   }
 
   // GetPairElem
@@ -480,16 +480,16 @@ class Assembler {
   // ldr(type) dstReg [pairReg, 0]
   // pop pairReg
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
-    addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
-    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
+    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
 
-    translateCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
-      translateBranchLink("eq", new BranchString("_errNull")) ::
-      translateLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
-      translatePush("", List(translateRegister(pairReg))) ::
-      translateMove("", translateRegister(pairReg), translateRegister(dstReg)) ::
-      translateLdr(getLdrInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(0)) ::
-      translatePop("", List(translateRegister(pairReg)))
+    assembleCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
+      assembleBranchLink("eq", new BranchString("_errNull")) ::
+      assembleLdr("", translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
+      assemblePush("", List(translateRegister(pairReg))) ::
+      assembleMove("", translateRegister(pairReg), translateRegister(dstReg)) ::
+      assembleLdr(getLdrInstructionType(datatype), translateRegister(dstReg), translateRegister(pairReg), new ImmediateInt(0)) ::
+      assemblePop("", List(translateRegister(pairReg)))
   }
 
   // StorePairElem
@@ -499,19 +499,19 @@ class Assembler {
   // str srcReg [pairReg, 0]
   // pop pairReg
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
-    addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
-    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
+    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
 
-    translateCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
-    translateBranchLink("eq", new BranchString("_errNull")) ::
-    translatePush("", List(translateRegister(pairReg))) ::
-    translateLdr("", translateRegister(pairReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
-    translateStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(0)) ::
-    translatePop("", List(translateRegister(pairReg)))
+    assembleCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
+    assembleBranchLink("eq", new BranchString("_errNull")) ::
+    assemblePush("", List(translateRegister(pairReg))) ::
+    assembleLdr("", translateRegister(pairReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
+    assembleStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(0)) ::
+    assemblePop("", List(translateRegister(pairReg)))
   }
 
   def assembleProgram(tacList: List[TAC]): String = {
-    tacList.map(translateTAC)
+    tacList.map(assembleTAC)
     state.code.addAll(endFuncsToList())
     state.code.mkString("\n")
   }
@@ -525,12 +525,12 @@ class Assembler {
   }
 
   def assembleGOTO(label: Label): AssemblerState = {
-    translateBranch("", label.name)
+    assembleBranch("", label.name)
   }
 
   def assembleIf(t1: Operand, goto: Label): AssemblerState = {
-    translateCompare("", translateOperand(t1), new ImmediateInt(1)) ::
-      translateBranch("eq", goto.name)
+    assembleCompare("", translateOperand(t1), new ImmediateInt(1)) ::
+      assembleBranch("eq", goto.name)
   }
 
   def assemblePopParam(dataType: DeclarationType, treg: TRegister, index: Int): AssemblerState = {
@@ -540,86 +540,86 @@ class Assembler {
     if (index < cRegs.length) {
       // Populate from registers in r0-
       val callReg = cRegs.take(index + 1).last
-      translateMove("", translateRegister(treg), callReg)
+      assembleMove("", translateRegister(treg), callReg)
     } else {
       // Populate from stack
-      translateLdr("", translateRegister(treg), fp, ImmediateInt(funcStackFrameSize + (4 * (index - cRegs.size))))
+      assembleLdr("", translateRegister(treg), fp, ImmediateInt(funcStackFrameSize + (4 * (index - cRegs.size))))
     }
   }
 
   def assembleBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister): AssemblerState = {
     operation match {
       case BinaryOpType.Add => {
-        translateAdd("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        assembleAdd("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Sub => {
-        translateSub("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        assembleSub("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Mul => {
-        translateSmull("", Status(), translateRegister(res), translateOperand(op2), translateOperand(op1), translateOperand(op2))
+        assembleSmull("", Status(), translateRegister(res), translateOperand(op2), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Div => {
-        addEndFunc("_errDivZero", new HardcodeFunctions().translate_errDivZero())
-        addEndFunc("_prints", new HardcodeFunctions().translate_print("_prints"))
-        translateMove("", r0, translateOperand(op1)) ::
-          translateMove("", r1, translateOperand(op2)) ::
-          translateCompare("", r1, new ImmediateInt(0)) ::
-          translateBranchLink("eq", new BranchString("_errDivZero")) ::
-          translateBranchLink("", new BranchString("__aeabi_idivmod")) ::
-          translateMove("", translateRegister(res), r0)
+        addEndFunc("_errDivZero", new HardcodeFunctions().assemble_errDivZero())
+        addEndFunc("_prints", new HardcodeFunctions().assemble_print("_prints"))
+        assembleMove("", r0, translateOperand(op1)) ::
+          assembleMove("", r1, translateOperand(op2)) ::
+          assembleCompare("", r1, new ImmediateInt(0)) ::
+          assembleBranchLink("eq", new BranchString("_errDivZero")) ::
+          assembleBranchLink("", new BranchString("__aeabi_idivmod")) ::
+          assembleMove("", translateRegister(res), r0)
       }
       case BinaryOpType.Mod => {
-        addEndFunc("_errDivZero", new HardcodeFunctions().translate_errDivZero())
-        addEndFunc("_prints", new HardcodeFunctions().translate_print("_prints"))
-        translateMove("", r0, translateOperand(op1)) ::
-          translateMove("", r1, translateOperand(op2)) ::
-          translateCompare("", r1, new ImmediateInt(0)) ::
-          translateBranchLink("eq", new BranchString("_errDivZero")) ::
-          translateBranchLink("", new BranchString("__aeabi_idivmod")) ::
-          translateMove("", translateRegister(res), r1)
+        addEndFunc("_errDivZero", new HardcodeFunctions().assemble_errDivZero())
+        addEndFunc("_prints", new HardcodeFunctions().assemble_print("_prints"))
+        assembleMove("", r0, translateOperand(op1)) ::
+          assembleMove("", r1, translateOperand(op2)) ::
+          assembleCompare("", r1, new ImmediateInt(0)) ::
+          assembleBranchLink("eq", new BranchString("_errDivZero")) ::
+          assembleBranchLink("", new BranchString("__aeabi_idivmod")) ::
+          assembleMove("", translateRegister(res), r1)
       }
       case BinaryOpType.Eq => {
-        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("eq", translateRegister(res), new ImmediateInt(1)) ::
-          translateMove("ne", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
+          assembleMove("eq", translateRegister(res), new ImmediateInt(1)) ::
+          assembleMove("ne", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Neq => {
-        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("ne", translateRegister(res), new ImmediateInt(1)) ::
-          translateMove("eq", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
+          assembleMove("ne", translateRegister(res), new ImmediateInt(1)) ::
+          assembleMove("eq", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Lt => {
-        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("lt", translateRegister(res), new ImmediateInt(1)) ::
-          translateMove("ge", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
+          assembleMove("lt", translateRegister(res), new ImmediateInt(1)) ::
+          assembleMove("ge", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Gt => {
-        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("gt", translateRegister(res), new ImmediateInt(1)) ::
-          translateMove("le", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
+          assembleMove("gt", translateRegister(res), new ImmediateInt(1)) ::
+          assembleMove("le", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Lte => {
-        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("le", translateRegister(res), new ImmediateInt(1)) ::
-          translateMove("gt", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
+          assembleMove("le", translateRegister(res), new ImmediateInt(1)) ::
+          assembleMove("gt", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.Gte => {
-        translateCompare("", translateOperand(op1), translateOperand(op2)) ::
-          translateMove("ge", translateRegister(res), new ImmediateInt(1)) ::
-          translateMove("lt", translateRegister(res), new ImmediateInt(0))
+        assembleCompare("", translateOperand(op1), translateOperand(op2)) ::
+          assembleMove("ge", translateRegister(res), new ImmediateInt(1)) ::
+          assembleMove("lt", translateRegister(res), new ImmediateInt(0))
       }
       case BinaryOpType.And => {
-        translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
-          translateCompare("eq", translateOperand(op2), new ImmediateInt(1)) ::
-          translateMove("ne", translateRegister(res), new ImmediateInt(0)) ::
-          translateMove("eq", translateRegister(res), new ImmediateInt(1))
+        assembleCompare("", translateOperand(op1), new ImmediateInt(1)) ::
+          assembleCompare("eq", translateOperand(op2), new ImmediateInt(1)) ::
+          assembleMove("ne", translateRegister(res), new ImmediateInt(0)) ::
+          assembleMove("eq", translateRegister(res), new ImmediateInt(1))
       }
       case BinaryOpType.Or => {
-        translateCompare("", translateOperand(op1), new ImmediateInt(1)) ::
-          translateMove("eq", translateRegister(res), ImmediateInt(1)) ::
-          translateCompare("ne", translateOperand(op2), new ImmediateInt(1)) ::
-          translateMove("ne", translateRegister(res), ImmediateInt(0)) ::
-          translateMove("eq", translateRegister(res), ImmediateInt(1))
+        assembleCompare("", translateOperand(op1), new ImmediateInt(1)) ::
+          assembleMove("eq", translateRegister(res), ImmediateInt(1)) ::
+          assembleCompare("ne", translateOperand(op2), new ImmediateInt(1)) ::
+          assembleMove("ne", translateRegister(res), ImmediateInt(0)) ::
+          assembleMove("eq", translateRegister(res), ImmediateInt(1))
       }
     }
   }
@@ -649,26 +649,26 @@ class Assembler {
   }
 
   def assembleStringDef(str: String, lbl: Label): AssemblerState = {
-    translateTAC(lbl) ++
+    assembleTAC(lbl) ++
       List(".asciz " + escape(str))
   }
 
   def assembleBeginFunc() = {
-    translatePush("", List(fp, lr)) ::
-      //translatePush("", List(r8, r10, r12)) ::
-      translateMove("", fp, sp)
+    assemblePush("", List(fp, lr)) ::
+      //assemblePush("", List(r8, r10, r12)) ::
+      assembleMove("", fp, sp)
   }
 
   def assembleEndFunc(): AssemblerState = {
-    (translateMove("", r0, new ImmediateInt(0)) ::
-      //translatePop("", List(r8, r10, r12)) ::
-      translatePop("", List(fp, pc)))
+    (assembleMove("", r0, new ImmediateInt(0)) ::
+      //assemblePop("", List(r8, r10, r12)) ::
+      assemblePop("", List(fp, pc)))
   }
 
   def assembleAssignment(operand: Operand, reg: TRegister) = {
     operand match {
-      case Label(name) => translateLdr("", translateRegister(reg), r0, translateOperand(operand))
-      case _ => translateMove("", translateRegister(reg), translateOperand(operand))
+      case Label(name) => assembleLdr("", translateRegister(reg), r0, translateOperand(operand))
+      case _ => assembleMove("", translateRegister(reg), translateOperand(operand))
     }
 
   }
@@ -676,8 +676,8 @@ class Assembler {
   def assembleCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType): AssemblerState = {
     cmd match {
       case CmdT.Exit => {
-        translateMove("", r0, translateOperand(operand)) ::
-          translateBranchLink("", new BranchString("exit"))
+        assembleMove("", r0, translateOperand(operand)) ::
+          assembleBranchLink("", new BranchString("exit"))
         state.deleteFunctionScope
       }
 
@@ -696,47 +696,47 @@ class Assembler {
 
           case ArrayType(t, _) if t is BaseType(Char_T) => "_prints"
         }
-        addEndFunc(bl, new HardcodeFunctions().translate_print(bl))
+        addEndFunc(bl, new HardcodeFunctions().assemble_print(bl))
         if (cmd == CmdT.PrintLn) {
-          addEndFunc("_println", new HardcodeFunctions().translate_print("_println"))
-          translateMove("", r0, translateOperand(operand)) ::
-            translateBranchLink("", new BranchString(bl)) ::
-            translateBranchLink("", new BranchString("_println"))
+          addEndFunc("_println", new HardcodeFunctions().assemble_print("_println"))
+          assembleMove("", r0, translateOperand(operand)) ::
+            assembleBranchLink("", new BranchString(bl)) ::
+            assembleBranchLink("", new BranchString("_println"))
         }
         else {
-          translateMove("", r0, translateOperand(operand)) ::
-            translateBranchLink("", new BranchString(bl))
+          assembleMove("", r0, translateOperand(operand)) ::
+            assembleBranchLink("", new BranchString(bl))
         }
       }
 
       case CmdT.Ret => {
         state.exitFunction
-        translateMove("", r0, translateOperand(operand)) ::
-          translateMove("", sp, fp) ::
-          //translatePop("", List(r8, r10, r12)) ::
-          translatePop("", List(fp, pc)) ::
+        assembleMove("", r0, translateOperand(operand)) ::
+          assembleMove("", sp, fp) ::
+          //assemblePop("", List(r8, r10, r12)) ::
+          assemblePop("", List(fp, pc)) ::
           ".ltorg"
       }
 
       case CmdT.Free => {
       opType match {
         case ArrayType(dataType, length) => {
-          translateSub("", Status(), r8, r4, new ImmediateInt(4)) ::
-            translatePush("", List(r8)) ::
-            translatePop("", List(r8)) ::
-          translateMove("", r8, r8) ::
-            translateMove("", r0, r8) ::
-            translateBranchLink("", new BranchString("free"))
+          assembleSub("", Status(), r8, r4, new ImmediateInt(4)) ::
+            assemblePush("", List(r8)) ::
+            assemblePop("", List(r8)) ::
+          assembleMove("", r8, r8) ::
+            assembleMove("", r0, r8) ::
+            assembleBranchLink("", new BranchString("free"))
 
 
         }
         case PairType(fstType, sndType) => {
-          addEndFunc("_freepair", new HardcodeFunctions().translate_freepair())
-          addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
-          addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+          addEndFunc("_freepair", new HardcodeFunctions().assemble_freepair())
+          addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
+          addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
 
-            translateMove("", r0, translateOperand(operand)) ::
-            translateBranchLink("", new BranchString("_freepair"))
+            assembleMove("", r0, translateOperand(operand)) ::
+            assembleBranchLink("", new BranchString("_freepair"))
         }
 
       }
@@ -748,29 +748,29 @@ class Assembler {
   }
 
   def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): AssemblerState = {
-    translatePush("", List(r0)) ::
-      translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
-      translateBranchLink("", new BranchString("malloc")) ::
-      translateMove("", translateRegister(dstReg), r0) ::
-      translatePop("", List(r0)) ::
-      translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
-      translateMove("", translateRegister(lenReg), new ImmediateInt(arrLen)) ::
-      translateStr("", translateRegister(lenReg), translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE))
+    assemblePush("", List(r0)) ::
+      assembleMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
+      assembleBranchLink("", new BranchString("malloc")) ::
+      assembleMove("", translateRegister(dstReg), r0) ::
+      assemblePop("", List(r0)) ::
+      assembleAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
+      assembleMove("", translateRegister(lenReg), new ImmediateInt(arrLen)) ::
+      assembleStr("", translateRegister(lenReg), translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE))
   }
 
   def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): AssemblerState = {
     // elemsReg.foreach(e => println("asm_e", translateRegister(e)))
     // println("asm", translateRegister(dstReg))
     Nil
-    // translateMove("", translateRegister(dstReg), r12)
+    // assembleMove("", translateRegister(dstReg), r12)
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
-    translatePush("", List(r0)) ::
-      translateMove("", r0, new ImmediateInt(getTypeSize(arrayElemType))) ::
-      translateBranchLink("", new BranchString("malloc")) ::
-      translatePop("", List(r0)) ::
-      translateStr(getInstructionType(arrayElemType), translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
+    assemblePush("", List(r0)) ::
+      assembleMove("", r0, new ImmediateInt(getTypeSize(arrayElemType))) ::
+      assembleBranchLink("", new BranchString("malloc")) ::
+      assemblePop("", List(r0)) ::
+      assembleStr(getInstructionType(arrayElemType), translateRegister(elemReg), translateRegister(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
   }
   
   // LoadArrayElem
@@ -782,16 +782,16 @@ class Assembler {
   // RECURSE LoadArrayElem
   // pop r0
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
-    addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad())
-    addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
+    addEndFunc("_arrLoad", new HardcodeFunctions().assemble_arrLoad())
+    addEndFunc("_boundsCheck", new HardcodeFunctions().assemble_boundsCheck())
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
-        translatePush("", List(r0, r3)) ::
-        translateMove("", r0, translateRegister(arrPos.head)) ::
-        translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r0]
-        translateBranchLink("", new BranchString("_arrLoad")) ::
-        translatePop("", List(r0, r3)) ::
+        assemblePush("", List(r0, r3)) ::
+        assembleMove("", r0, translateRegister(arrPos.head)) ::
+        assembleMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r3 = r3[r0]
+        assembleBranchLink("", new BranchString("_arrLoad")) ::
+        assemblePop("", List(r0, r3)) ::
         assembleLoadArrayElem(datatype, arrReg, arrPos.drop(1), dstReg)
       }
     }
@@ -806,20 +806,20 @@ class Assembler {
   // RECURSE StoreArrayElem
   // pop r0, r2, r3
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
-    addEndFunc("_arrStore", new HardcodeFunctions().translate_arrStore())
-    addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
-    // TODO translate tac of each index
+    addEndFunc("_arrStore", new HardcodeFunctions().assemble_arrStore())
+    addEndFunc("_boundsCheck", new HardcodeFunctions().assemble_boundsCheck())
+    // TODO assemble tac of each index
     // val index = arrayPos.head
     // checkIndexTAC(index) ::
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
-        translatePush("", List(r0, r2, r3)) ::
-        translateMove("", r0, translateRegister(arrPos.head._2)) ::
-        translateMove("", r2, translateRegister(srcReg)) ::
-        translateMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r0] = r2
-        translateBranchLink("", new BranchString("_arrStore")) ::
-        translatePop("", List(r0, r2, r3)) ::
+        assemblePush("", List(r0, r2, r3)) ::
+        assembleMove("", r0, translateRegister(arrPos.head._2)) ::
+        assembleMove("", r2, translateRegister(srcReg)) ::
+        assembleMove("", r3, translateRegister(arrReg)) :: // arrStore uses r3[r0] = r2
+        assembleBranchLink("", new BranchString("_arrStore")) ::
+        assemblePop("", List(r0, r2, r3)) ::
         assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg)
       }
     }
@@ -827,7 +827,7 @@ class Assembler {
 
   // def checkIndexTAC(arrayPos: (List[TAC], TRegister)): AssemblerState = { 
   //   arrayPos match {
-  //     case _ if (!arrayPos._1.isEmpty) => translateTAC(arrayPos._1.head)
+  //     case _ if (!arrayPos._1.isEmpty) => assembleTAC(arrayPos._1.head)
   //     case _ => Nil
   //   }
   // }
