@@ -79,7 +79,7 @@ class HardcodeFunctions extends Assembler {
     translateBranchLink("", new BranchString("exit"))
   }
 
-  // r3 = r3[r0]
+  // r2 = r3[r0]
   def translate_arrLoad(): List[String] = {
     translateTAC(Label("_arrLoad")) ++
     (translatePush("", List(lr)) ::
@@ -90,7 +90,7 @@ class HardcodeFunctions extends Assembler {
       translateCompare("eq", r0, lr) ::
       translateMove("ge", r1, r0) ::
       translateBranchLink("ge", new BranchString("_boundsCheck")) ::
-      translateLdr("", r3, r3, LogicalShiftLeft(r0, Right(2))) ::
+      translateLdr("", r2, r3, LogicalShiftLeft(r0, Right(2))) ::
       translatePop("", List(pc)))
   }
 

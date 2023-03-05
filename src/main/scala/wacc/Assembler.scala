@@ -792,22 +792,42 @@ class Assembler {
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HardcodeFunctions().translate_arrLoad())
     addEndFunc("_boundsCheck", new HardcodeFunctions().translate_boundsCheck())
+    val regs = List(translateRegister(arrReg), translateRegister(dstReg))
+    regs ++ arrPos.map(a => translateRegister(a))
     // println("ld", translateRegister(arrReg), translateRegister(dstReg))
-    translatePush("", List(r0, r3)) ::
-    loadArrayElemHelper(translateRegister(arrReg), arrPos) ::
-    translatePop("", List(r0, r3))
+    translatePush("", regs) ::
+    translatePush("", List(r0, r1, r2, r3)) ::
+    translateMove("", r0, translateRegister(arrPos.head)) ::
+    translateMove("", r3, translateRegister(arrReg)) :: // arrLoad uses r2 = r3[r0]
+    translateBranchLink("", new BranchString("_arrLoad")) ::
+    translateMove("", translateRegister(dstReg), r2) ::
+    // loadArrayElemHelper(translateRegister(arrReg), arrPos, translateRegister(dstReg)) ::
+    translatePop("", List(r0, r1, r2, r3)) ::
+    translatePop("", regs.reverse)
   }
 
-  private def loadArrayElemHelper(arrReg: Register, arrPos: List[TRegister]): AssemblerState = {  
+  private def loadArrayElemHelper(arrReg: Register, arrPos: List[TRegister], dstReg: Register): AssemblerState = {  
+    var state = Nil
+    for (a <- arrPos) {
+      state ::
+        (translateMove("", r0, translateRegister(a)) ::
+        translateMove("", r3, arrReg) :: // arrLoad uses r2 = r3[r0]
+        translateBranchLink("", new BranchString("_arrLoad")) ::
+        translateMove("", dstReg, r2))
+    }
+    state
+  }
+
+  private def loadArrayElemHelperRec(arrReg: Register, arrPos: List[TRegister], dstReg: Register): AssemblerState = {  
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {  
         translateMove("", r0, translateRegister(arrPos.head)) ::
         translateMove("", r3, arrReg) :: // arrLoad uses r3 = r3[r0]
         translateBranchLink("", new BranchString("_arrLoad")) ::
-        // translateMove("", r0, r3) ::
+        translateMove("", dstReg, r3) ::
         // translateBranchLink("", new BranchString("malloc")) ::
-        loadArrayElemHelper(r3, arrPos.drop(1)) // r3 here should have the result from arrLoad (it doesnt)
+        loadArrayElemHelper(dstReg, arrPos.drop(1), dstReg) // r3 here should have the result from arrLoad (it doesnt)
       }
     }
   }
