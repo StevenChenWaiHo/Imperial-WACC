@@ -209,6 +209,12 @@ object Translator {
     (List(Comments("Getting Pair Elem")) ++ pairRegList ++ List(GetPairElem(elemType, pairReg, elem, dstReg)) ++ List(Comments("Got Pair Elem")), dstReg)
   }
 
+  // def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
+  //   val (arrRegList, arrReg) = delegateASTNode(IdentLiteral(name))
+  //   val dstReg = nextRegister()
+  //   (arrRegList ++ List(GetArrayElem(null, arrReg, indices, dstReg)), dstReg)
+  // }
+
   def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
     delegateASTNode(IdentLiteral(name)) match {
       // Hopefully find the identifier in the map already

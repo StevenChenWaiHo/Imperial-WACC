@@ -822,18 +822,31 @@ class Assembler {
     // TODO assemble tac of each index
     // val index = arrayPos.head
     // checkIndexTAC(index) ::
-    arrPos match {
-      case _ if (arrPos.isEmpty) => Nil
-      case _ => {
-        assemblePush("", List(r0, r2, r3)) ::
-        assembleMove("", r0, getRealReg(arrPos.head._2)) ::
-        assembleMove("", r2, getRealReg(srcReg)) ::
-        assembleMove("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
-        assembleBranchLink("", new BranchString("_arrStore")) ::
-        assemblePop("", List(r0, r2, r3)) ::
-        assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg)
-      }
-    }
+    
+    var regs = List(getRealReg(arrReg), getRealReg(srcReg))
+    regs = regs ++ arrPos.map(a => getRealReg(a._2))
+    assemblePush("", regs.sortWith((s, t) => s < t)) ::
+    assemblePush("", List(r0, r1, r2, r3))
+    arrPos.foreach(a => {
+      assembleMove("", r0, getRealReg(a._2)) ::
+      assembleMove("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
+      assembleBranchLink("", new BranchString("_arrStore"))
+    })
+    assemblePop("", List(r0, r1, r2, r3)) ::
+    assemblePop("", regs.sortWith((s, t) => s < t))
+
+    // arrPos match {
+    //   case _ if (arrPos.isEmpty) => Nil
+    //   case _ => {
+    //     assemblePush("", List(r0, r2, r3)) ::
+    //     assembleMove("", r0, getRealReg(arrPos.head._2)) ::
+    //     assembleMove("", r2, getRealReg(srcReg)) ::
+    //     assembleMove("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
+    //     assembleBranchLink("", new BranchString("_arrStore")) ::
+    //     assemblePop("", List(r0, r2, r3)) ::
+    //     assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg)
+    //   }
+    // }
   }
 
   // def checkIndexTAC(arrayPos: (List[TAC], TRegister)): AssemblerState = { 
