@@ -50,11 +50,12 @@ object StatelessAssembler {
   }
 
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    "adds" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    return "subs" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
@@ -155,8 +156,15 @@ class Assembler {
   }
 
   //Incomplete, no condition
-  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
+  def translateAddAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
     "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+  }
+
+  def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    translateAddAssist("", Status(), destinationRegister, sourceRegister, operand) :: 
+    translateBranchLink("vs", new BranchString("_errOverflow"))
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
