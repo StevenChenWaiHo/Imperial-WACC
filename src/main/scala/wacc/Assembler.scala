@@ -379,11 +379,11 @@ class Assembler {
     // r12: pointer to pair r8: pointer to pairElem
     translatePop("", List(translateRegister(fstReg))) ::
       translatePop("", List(translateRegister(sndReg))) ::
-      translatePush("", List(translateRegister(r0))) :: 
+      translatePush("", List(r0)) :: 
       translateMove("", r0, new ImmediateInt(2 * POINTER_BYTE_SIZE)) ::
       translateBranchLink("", new BranchString("malloc")) ::
       translateMove("", translateRegister(ptrReg), r0) ::
-      translatePop("", List(translateRegister(r0))) :: 
+      translatePop("", List(r0)) :: 
       translateStr("", translateRegister(fstReg), translateRegister(ptrReg), new ImmediateInt(POINTER_BYTE_SIZE)) ::
       translateStr("", translateRegister(sndReg), translateRegister(ptrReg), new ImmediateInt(0)) ::
       translateMove("", translateRegister(dstReg), translateRegister(ptrReg))
@@ -399,12 +399,12 @@ class Assembler {
   // pop ptrReg (remove?)
   // push pairElemReg
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): AssemblerState = {
-    translatePush("", List(translateRegister(r0))) :: 
+    translatePush("", List(r0)) :: 
     translateMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
       translateBranchLink("", new BranchString("malloc")) ::
       translatePush("", List(translateRegister(ptrReg))) :: // TODO: Remove?
       translateMove("", translateRegister(ptrReg), r0) ::
-      translatePop("", List(translateRegister(r0))) :: 
+      translatePop("", List(r0)) :: 
       translateStr(getInstructionType(pairElemType), translateRegister(pairElem), translateRegister(ptrReg), new ImmediateInt(0)) ::
       translateMove("", translateRegister(pairElem), translateRegister(ptrReg)) ::
       translatePop("", List(translateRegister(ptrReg))) :: // TODO: Remove?
