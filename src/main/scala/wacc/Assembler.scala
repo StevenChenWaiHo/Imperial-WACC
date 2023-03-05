@@ -182,8 +182,8 @@ class Assembler {
 
     var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
       "," + " " + operand +
-      "\n cmp " + destinationLow + ", " + destinationHigh + ", asr #31" +
-      "\n bne _errOverflow"
+      "\ncmp " + destinationHigh + ", " + destinationLow + ", asr #31" +
+      "\nbne _errOverflow"
     return str
   }
 
@@ -431,14 +431,14 @@ class Assembler {
     val bl = datatype match {
       case BaseType(baseType) => {
         baseType match {
-          case BaseT.Int_T => "_readi"
+          case BaseT.Int_T => addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow()); "_readi"
           case BaseT.Char_T => "_readc"
           case BaseT.String_T => "_reads"
           case BaseT.Bool_T => "_readb"
-          case _ => "_readi"
+          case _ => addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow());  "_readi"
         }
       }
-      case _ => "_readi"
+      case _ => addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow()); "_readi"
     }
     addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
     translateBranchLink("", new BranchString(bl))
@@ -755,13 +755,13 @@ class Assembler {
   def assembleArrayInit(arrLen: Int, dstReg: TRegister): AssemblerState = {
     // println("ini", translateRegister(dstReg))
     translateMove("", r0, new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1))) ::
+      translateBranchLink("", new BranchString("malloc")) ::
       translateMove("", translateRegister(dstReg), r0) ::
       translateAdd("", Status(), translateRegister(dstReg), translateRegister(dstReg), new ImmediateInt(4)) ::
       translatePush("", List(r8)) ::
       translateMove("", r8, new ImmediateInt(arrLen)) ::
       translateStr("", r8, translateRegister(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE)) ::
-      translatePush("", List(r8)) ::
-      translateBranchLink("", new BranchString("malloc"))
+      translatePop("", List(r8))
   }
 
   // Can be removed
