@@ -152,30 +152,19 @@ class Assembler {
 
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand + "\nblvs _errOverflow"
   }
 
   //Incomplete, no condition
-  def translateAddAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
-  }
-
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
-    translateAddAssist("", Status(), destinationRegister, sourceRegister, operand) :: 
-    translateBranchLink("vs", new BranchString("_errOverflow"))
-  }
-
-  def translateSubAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    return "adds" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
-    translateSubAssist("", Status(), destinationRegister, sourceRegister, operand) :: 
-    translateBranchLink("vs", new BranchString("_errOverflow"))
+    return "subs" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
@@ -186,10 +175,15 @@ class Assembler {
     return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, sourceRegisterTwo)
   }
 
-  def fourMulAssist(condition: String, setflag: Suffi, destinationLow: Register, destinationHigh: Register,
-                    sourceRegister: Register, operand: Register): String = {
+  def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
+                    sourceRegister: LHSop, operand: LHSop): String = {
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+
     var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
-      "," + " " + operand
+      "," + " " + operand +
+      "\n cmp " + destinationLow + ", " + destinationHigh + ", asr #31" +
+      "\n bne _errOverflow"
     return str
   }
 
@@ -205,7 +199,7 @@ class Assembler {
     return "umlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateSmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
+  def translateSmull(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand1: LHSop, operand2: LHSop): AssemblerState = {
     return "smull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
@@ -557,13 +551,13 @@ class Assembler {
   def assembleBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister): AssemblerState = {
     operation match {
       case BinaryOpType.Add => {
-        translateAdd("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateAdd("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Sub => {
-        translateSub("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateSub("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Mul => {
-        translateMul("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateSmull("", None(), translateRegister(res), translateOperand(op2), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HardcodeFunctions().translate_errDivZero())
