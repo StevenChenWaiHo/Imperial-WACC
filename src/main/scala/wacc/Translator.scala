@@ -288,14 +288,18 @@ object Translator {
         val lenReg = nextRegister()
         val dstReg = nextRegister()
         addNode(ident, dstReg)
+        val elemType = dataType match {
+          case ArrayType(dType, length) => dType
+          case _ => dataType
+        }
         for (i <- 0 to elements.length - 1) {
           val (elemTacs, reg) = delegateASTNode(elements(i))
           addNode(elements(i), reg)
           tacs ++= elemTacs
-          tacs += CreateArrayElem(dataType, i, dstReg, reg)
-          tRegs += reg        
+          tRegs += reg
+          tacs += CreateArrayElem(elemType, i, dstReg, reg)
         }
-        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, lenReg, dstReg)) ++ tacs.toList ++ List(CreateArray(dataType, tRegs.toList, dstReg),
+        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, lenReg, dstReg)) ++ tacs.toList ++ List(CreateArray(elemType, tRegs.toList, dstReg),
          Comments("Array Declaration End")), dstReg)
       }
       case _ => (List(new Label("Array Type not Matched")), null)

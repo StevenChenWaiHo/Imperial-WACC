@@ -78,7 +78,7 @@ class HelperFunctions extends Assembler {
     assembleBranchLink("", new BranchString("exit"))
   }
 
-  // r3 = r3[r0]
+  // r2 = r3[r0]
   def assemble_arrLoad(): List[String] = {
     assembleTAC(Label("_arrLoad")) ++
     (assemblePush("", List(lr)) ::
@@ -89,7 +89,7 @@ class HelperFunctions extends Assembler {
       assembleCompare("eq", r0, lr) ::
       assembleMove("ge", r1, r0) ::
       assembleBranchLink("ge", new BranchString("_boundsCheck")) ::
-      assembleLdr("", r3, r3, LogicalShiftLeft(r0, Right(2))) ::
+      assembleLdr("", r2, r3, LogicalShiftLeft(r0, Right(2))) ::
       assemblePop("", List(pc)))
   }
 

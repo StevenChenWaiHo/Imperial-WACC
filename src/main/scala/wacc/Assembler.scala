@@ -787,19 +787,19 @@ class Assembler {
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
-    arrPos match {
-      case _ if (arrPos.isEmpty) => Nil
-      case _ => {
-        assemblePush("", List(r0, r3)) ::
-        assembleMove("", r0, getRealReg(arrPos.head)) ::
-        assembleMove("", r3, getRealReg(arrReg)) :: // arrLoad uses r3 = r3[r0]
-        assembleBranchLink("", new BranchString("_arrLoad")) ::
-        assemblePop("", List(r0, r3)) ::
-        assembleLoadArrayElem(datatype, arrReg, arrPos.drop(1), dstReg)
-      }
-    }
+    var regs = List(getRealReg(arrReg), getRealReg(dstReg))
+    regs = regs ++ arrPos.map(a => getRealReg(a))
+    assemblePush("", regs.sortWith((s, t) => s < t)) ::
+    assemblePush("", List(r0, r1, r2, r3)) ::
+    assembleMove("", r0, getRealReg(arrPos.head)) ::
+    assembleMove("", r3, getRealReg(arrReg)) :: // arrLoad uses r2 = r3[r0]
+    assembleBranchLink("", new BranchString("_arrLoad")) ::
+    assembleMove("", getRealReg(dstReg), r2) ::
+    // loadArrayElemHelper(assembleRegister(arrReg), arrPos, assembleRegister(dstReg)) ::
+    assemblePop("", List(r0, r1, r2, r3)) ::
+    assemblePop("", regs.sortWith((s, t) => s < t))
   }
-  
+
   // StoreArrayElem
   // push r0, r2, r3
   // mov r0 arrPos
