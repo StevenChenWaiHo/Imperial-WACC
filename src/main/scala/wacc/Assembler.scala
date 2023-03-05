@@ -51,6 +51,7 @@ object StatelessAssembler {
 
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
     "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
@@ -151,12 +152,15 @@ class Assembler {
 
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand + "\nblvs _errOverflow"
   }
 
   //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    return "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
@@ -171,10 +175,15 @@ class Assembler {
     return "mul" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, sourceRegisterTwo)
   }
 
-  def fourMulAssist(condition: String, setflag: Suffi, destinationLow: Register, destinationHigh: Register,
-                    sourceRegister: Register, operand: Register): String = {
+  def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
+                    sourceRegister: LHSop, operand: LHSop): String = {
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+
     var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
-      "," + " " + operand
+      "," + " " + operand +
+      "\n cmp " + destinationLow + ", " + destinationHigh + ", asr #31" +
+      "\n bne _errOverflow"
     return str
   }
 
@@ -190,12 +199,12 @@ class Assembler {
     return "umlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
-  def translateSmull(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
+  def translateSmull(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand1: LHSop, operand2: LHSop): AssemblerState = {
     return "smull" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
   }
 
   def translateSmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
-    return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
+    return "smlal" + fourMulAssist(condition, None(), destinationRegister, sourceRegister, operand1, operand2)
   }
 
   def translateCompare(condition: String, register1: LHSop, operand: LHSop): AssemblerState = {
@@ -378,12 +387,22 @@ class Assembler {
       translateMove("", translateRegister(dstReg), translateRegister(ptrReg))
   }
 
+  // mov r0 #(size)
+  // bl malloc
+  // push ptrReg (remove?)
+  // mov ptrReg r0
+  // str pairElemReg, [ptrReg, #0]
+  // mov fstReg ptrReg
+  // pop ptrReg (remove?)
+  // push pairElemReg
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): AssemblerState = {
     translateMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
       translateBranchLink("", new BranchString("malloc")) ::
+      translatePush("", List(translateRegister(ptrReg))) :: // TODO: Remove?
       translateMove("", translateRegister(ptrReg), r0) ::
       translateStr(getInstructionType(pairElemType), translateRegister(pairElem), translateRegister(ptrReg), new ImmediateInt(0)) ::
       translateMove("", translateRegister(pairElem), translateRegister(ptrReg)) ::
+      translatePop("", List(translateRegister(ptrReg))) :: // TODO: Remove?
       translatePush("", List(translateRegister(pairElem)))
   }
 
@@ -460,7 +479,6 @@ class Assembler {
   // ldr(type) dstReg [pairReg, 0]
   // pop pairReg
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
-    // TODO: Check Null
     addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
     addEndFunc("_prints", new HardcodeFunctions().translate_prints())
 
@@ -474,11 +492,17 @@ class Assembler {
   }
 
   // StorePairElem
+  // Check null
   // push pairReg
   // ldr pairReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
   // str srcReg [pairReg, 0]
   // pop pairReg
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
+    addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
+    addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+
+    translateCompare("", translateRegister(pairReg), new ImmediateInt(0)) ::
+    translateBranchLink("eq", new BranchString("_errNull")) ::
     translatePush("", List(translateRegister(pairReg))) ::
     translateLdr("", translateRegister(pairReg), translateRegister(pairReg), new ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4)) ::
     translateStr(getInstructionType(datatype), translateRegister(srcReg), translateRegister(pairReg), new ImmediateInt(0)) ::
@@ -533,7 +557,7 @@ class Assembler {
         translateSub("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Mul => {
-        translateMul("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateSmull("", Status(), translateRegister(res), translateOperand(op2), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HardcodeFunctions().translate_errDivZero())
@@ -687,6 +711,7 @@ class Assembler {
             translateBranchLink("", new BranchString(bl))
         }
       }
+
       case CmdT.Ret => {
         state.exitFunction
         translateMove("", r0, translateOperand(operand)) ::
@@ -695,6 +720,30 @@ class Assembler {
           translatePop("", List(fp, pc)) ::
           ".ltorg"
       }
+
+      case CmdT.Free => {
+      opType match {
+        case ArrayType(dataType, length) => {
+          translateSub("", Status(), r8, r4, new ImmediateInt(4)) ::
+            translatePush("", List(r8)) ::
+            translatePop("", List(r8)) ::
+          translateMove("", r8, r8) ::
+            translateMove("", r0, r8) ::
+            translateBranchLink("", new BranchString("free"))
+
+
+        }
+        case PairType(fstType, sndType) => {
+          addEndFunc("_freepair", new HardcodeFunctions().translate_freepair())
+          addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
+          addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+
+            translateMove("", r0, translateOperand(operand)) ::
+            translateBranchLink("", new BranchString("_freepair"))
+        }
+
+      }
+    }
 
       case _ => List("Command not implemented")
     }

@@ -27,6 +27,29 @@ class HardcodeFunctions extends Assembler {
     translateMove("", r0, new ImmediateInt(255)) ::
     translateBranchLink("", new BranchString("exit"))
   }
+
+  def translate_freepair(): List[String] = {
+    translateTAC(TextSegmentTAC()) ::
+    translateTAC(Label("_freepair")) ::
+      translatePush("", List(lr)) ::
+      translateMove("", r1, r0) ::
+      translateCompare("", r1, ImmediateInt(0)) ::
+      translateBranchLink("eq", new BranchString("_errNull")) ::
+      translateLdr("", r0, r1, ImmediateInt(0)) ::
+      translatePush("", List(r1)) ::
+      translateBranchLink("", new BranchString("free")) ::
+      translatePop("", List(r1)) ::
+      translateLdr("", r0, r1, ImmediateInt(4)) ::
+      translatePush("", List(r1)) ::
+      translateBranchLink("", new BranchString("free")) ::
+      translatePop("", List(r1)) ::
+      translateMove("", r0, r1) ::
+      translatePush("", List(r1)) ::
+      translateBranchLink("", new BranchString("free")) ::
+      translatePop("", List(r1)) ::
+      translatePop("", List(pc))
+  }
+
   
   def translate_errDivZero(): List[String] = {
     val sLbl = Label(".L._errDivZero_str0")
@@ -43,8 +66,17 @@ class HardcodeFunctions extends Assembler {
   }
 
   def translate_errOverflow(): List[String] = {
+    val sLbl = Label(".L._errOverflow_str0")
+    translateTAC(DataSegmentTAC()) ++
+    translateTAC(Comments("length of " + sLbl.name)) ++
+    translateTAC(StringLengthDefinitionTAC(52, sLbl)) ++
+    translateTAC(StringDefinitionTAC("fatal error: integer overflow or underflow\n", sLbl)) ++
+    translateTAC(TextSegmentTAC()) ++
     translateTAC(Label("_errOverflow")) ::
-    translateBranchLink("", new BranchString("_prints"))
+    translateLdr("", r0, null, LabelString(sLbl.name)) ::
+    translateBranchLink("", new BranchString("_prints")) ::
+    translateMove("", r0 , new ImmediateInt(255)) ::
+    translateBranchLink("", new BranchString("exit"))
   }
 
   // r3 = r3[r10]

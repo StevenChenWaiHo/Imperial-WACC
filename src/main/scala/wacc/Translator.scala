@@ -206,7 +206,7 @@ object Translator {
     }
     // Should not add this register to Map as it might update
     val dstReg = nextRegister()
-    (pairRegList ++ List(GetPairElem(elemType, pairReg, elem, dstReg)), dstReg)
+    (List(Comments("Getting Pair Elem")) ++ pairRegList ++ List(GetPairElem(elemType, pairReg, elem, dstReg)) ++ List(Comments("Got Pair Elem")), dstReg)
   }
 
   def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {
@@ -312,11 +312,17 @@ object Translator {
             val pairReg = nextRegister()
             val srcReg = nextRegister()
             val ptrReg = nextRegister()
-            addNode(pairValue, pairReg)
+
+             // TODO: Remove?
+            val fstReg2 = nextRegister()
+            val sndReg2 = nextRegister()
+             // TODO: Remove?
+             
+            // addNode(pairValue, pairReg)
             (List(Comments("Creating newpair")) ++
               exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, ptrReg, fstReg)) ++
               exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, ptrReg, sndReg),
-              CreatePair(fstType, sndType, srcReg, ptrReg, fstReg, sndReg, pairReg), Comments("Created newpair")), pairReg)
+              CreatePair(fstType, sndType, fstReg2, sndReg2, srcReg, ptrReg, pairReg), Comments("Created newpair")), pairReg)
           }
         }
 
@@ -372,7 +378,8 @@ object Translator {
             if (elem == PairElemT.Fst) fstType else sndType
           }
         }
-        (rvalueList ++ lvalueList ++ List(StorePairElem(elemType, lvalueReg, elem, rvalueReg)), lvalueReg)
+        (rvalueList ++ lvalueList ++ 
+        List(Comments("Store Pair Elem")) ++ List(StorePairElem(elemType, lvalueReg, elem, rvalueReg)) ++ List(Comments("Finish Storing Pair Elem")), lvalueReg)
       }
       case _ => (List(Label("Not translating PairElem")), null)
     }
@@ -387,7 +394,8 @@ object Translator {
           indexNodes += delegateASTNode(i)
         })
         val lvalueReg = findNode(name).get
-        (rvalueList ++ List(StoreArrayElem(null, lvalueReg, indexNodes.toList, rvalueReg)), lvalueReg)
+        (rvalueList ++ 
+        List(Comments("Store Pair Elem")) ++ List(StoreArrayElem(null, lvalueReg, indexNodes.toList, rvalueReg)) ++ List(Comments("Finish storing Pair Elem")), lvalueReg)
       }
       case _ => (List(Label("Not translating ArrayElem")), null)
     }
