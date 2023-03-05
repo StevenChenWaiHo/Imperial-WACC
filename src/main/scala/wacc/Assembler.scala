@@ -428,8 +428,6 @@ class Assembler {
   }
 
   def assembleRead(datatype: DeclarationType, readReg: TRegister): AssemblerState = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow()); 
-    addEndFunc("_prints", new HardcodeFunctions().translate_errOverflow()); 
     val bl = datatype match {
       case BaseType(baseType) => {
         baseType match {
@@ -442,6 +440,8 @@ class Assembler {
       }
       case _ => "_readi"
     }
+    addEndFunc("_errOverflow", new HardcodeFunctions().translate_errOverflow())
+    addEndFunc("_prints", new HardcodeFunctions().translate_errOverflow())
     addEndFunc(bl, new HardcodeFunctions().translate_read(bl))
     translateBranchLink("", new BranchString(bl))
     translateMove("", translateRegister(readReg), r0)
