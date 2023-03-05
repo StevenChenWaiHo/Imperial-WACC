@@ -409,10 +409,6 @@ class Assembler {
       translateMove("", translateRegister(pairElem), r0)
   }
 
-  def assembleLDR(datatype: DeclarationType, srcReg: TRegister, ptrReg: TRegister): AssemblerState = {
-    translateLdr("", translateRegister(srcReg), translateRegister(ptrReg), new ImmediateInt(-4))
-  }
-
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
     op match {
       case UnaryOpType.Neg => {
