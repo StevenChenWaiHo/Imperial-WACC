@@ -8,6 +8,7 @@ import wacc.TAC._
 
 import scala.collection.mutable.ListBuffer
 
+import wacc.HelperFunctions
 object StatelessAssembler {
   val argRegs = List(r0, r1, r2, r3)
 
@@ -151,8 +152,8 @@ class Assembler {
   }
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
+    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new HelperFunctions().assemble_prints())
     return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand + "\nblvs _errOverflow"
   }
 
@@ -175,8 +176,8 @@ class Assembler {
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
                     sourceRegister: LHSop, operand: LHSop): String = {
-    addEndFunc("_errOverflow", new HardcodeFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
+    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
     var str = condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
       "," + " " + operand +
@@ -439,9 +440,9 @@ class Assembler {
       }
       case _ => "_readi"
     }
-    addEndFunc("_errOverflow", new HardcodeFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())//.assemble_errOverflow())
-    addEndFunc(bl, new HardcodeFunctions().assemble_read(bl))
+    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new HelperFunctions().assemble_prints())//.assemble_errOverflow())
+    addEndFunc(bl, new HelperFunctions().assemble_read(bl))
     assembleBranchLink("", new BranchString(bl))
     assembleMove("", getRealReg(readReg), r0)
   }
@@ -480,8 +481,8 @@ class Assembler {
   // ldr(type) dstReg [pairReg, 0]
   // pop pairReg
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
-    addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
-    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
+    addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
+    addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
     assembleCompare("", getRealReg(pairReg), new ImmediateInt(0)) ::
       assembleBranchLink("eq", new BranchString("_errNull")) ::
@@ -499,8 +500,8 @@ class Assembler {
   // str srcReg [pairReg, 0]
   // pop pairReg
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
-    addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
-    addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
+    addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
+    addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
     assembleCompare("", getRealReg(pairReg), new ImmediateInt(0)) ::
     assembleBranchLink("eq", new BranchString("_errNull")) ::
@@ -559,8 +560,8 @@ class Assembler {
         assembleSmull("", Status(), getRealReg(res), getOperand(op2), getOperand(op1), getOperand(op2))
       }
       case BinaryOpType.Div => {
-        addEndFunc("_errDivZero", new HardcodeFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new HardcodeFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
+        addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
         assembleMove("", r0, getOperand(op1)) ::
           assembleMove("", r1, getOperand(op2)) ::
           assembleCompare("", r1, new ImmediateInt(0)) ::
@@ -569,8 +570,8 @@ class Assembler {
           assembleMove("", getRealReg(res), r0)
       }
       case BinaryOpType.Mod => {
-        addEndFunc("_errDivZero", new HardcodeFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new HardcodeFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
+        addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
         assembleMove("", r0, getOperand(op1)) ::
           assembleMove("", r1, getOperand(op2)) ::
           assembleCompare("", r1, new ImmediateInt(0)) ::
@@ -696,9 +697,9 @@ class Assembler {
 
           case ArrayType(t, _) if t is BaseType(Char_T) => "_prints"
         }
-        addEndFunc(bl, new HardcodeFunctions().assemble_print(bl))
+        addEndFunc(bl, new HelperFunctions().assemble_print(bl))
         if (cmd == CmdT.PrintLn) {
-          addEndFunc("_println", new HardcodeFunctions().assemble_print("_println"))
+          addEndFunc("_println", new HelperFunctions().assemble_print("_println"))
           assembleMove("", r0, getOperand(operand)) ::
             assembleBranchLink("", new BranchString(bl)) ::
             assembleBranchLink("", new BranchString("_println"))
@@ -731,9 +732,9 @@ class Assembler {
 
         }
         case PairType(fstType, sndType) => {
-          addEndFunc("_freepair", new HardcodeFunctions().assemble_freepair())
-          addEndFunc("_errNull", new HardcodeFunctions().assemble_errNull())
-          addEndFunc("_prints", new HardcodeFunctions().assemble_prints())
+          addEndFunc("_freepair", new HelperFunctions().assemble_freepair())
+          addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
+          addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
             assembleMove("", r0, getOperand(operand)) ::
             assembleBranchLink("", new BranchString("_freepair"))
@@ -782,8 +783,8 @@ class Assembler {
   // RECURSE LoadArrayElem
   // pop r0
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
-    addEndFunc("_arrLoad", new HardcodeFunctions().assemble_arrLoad())
-    addEndFunc("_boundsCheck", new HardcodeFunctions().assemble_boundsCheck())
+    addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
+    addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
     arrPos match {
       case _ if (arrPos.isEmpty) => Nil
       case _ => {
@@ -806,8 +807,8 @@ class Assembler {
   // RECURSE StoreArrayElem
   // pop r0, r2, r3
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
-    addEndFunc("_arrStore", new HardcodeFunctions().assemble_arrStore())
-    addEndFunc("_boundsCheck", new HardcodeFunctions().assemble_boundsCheck())
+    addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
+    addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
     // TODO assemble tac of each index
     // val index = arrayPos.head
     // checkIndexTAC(index) ::

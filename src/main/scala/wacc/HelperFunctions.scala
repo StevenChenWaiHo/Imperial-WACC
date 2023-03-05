@@ -6,7 +6,7 @@ import wacc.TAC._
 
 import scala.collection.mutable.ListBuffer
 
-class HardcodeFunctions extends Assembler {
+class HelperFunctions extends Assembler {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
 
   implicit private[this] def toStrings(state: AssemblerState) = state.code.toList
