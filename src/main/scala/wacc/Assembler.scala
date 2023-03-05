@@ -769,11 +769,15 @@ class Assembler {
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
-    assemblePush("", List(r0)) ::
+    assemblePush("", List(getRealReg(elemReg))) ::
+      assemblePush("", List(r0)) ::
       assembleMove("", r0, new ImmediateInt(getTypeSize(arrayElemType))) ::
       assembleBranchLink("", new BranchString("malloc")) ::
+      assembleStr("", getRealReg(elemReg), r0, new ImmediateInt(0))
+      assembleMove("", getRealReg(elemReg), r0)
       assemblePop("", List(r0)) ::
-      assembleStr(getInstructionType(arrayElemType), getRealReg(elemReg), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos))
+      assembleStr(getInstructionType(arrayElemType), getRealReg(elemReg), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos)) ::
+      assemblePop("", List(getRealReg(elemReg)))
   }
   
   // LoadArrayElem
@@ -795,6 +799,7 @@ class Assembler {
       assembleMove("", r0, getRealReg(a)) ::
       assembleMove("", r3, getRealReg(arrReg)) :: // arrLoad uses r0 = r3[r2]
       assembleBranchLink("", new BranchString("_arrLoad")) ::
+      assembleLdr("", r2, r2, new ImmediateInt(0)) ::
       assembleMove("", getRealReg(dstReg), r2)
     })
     // loadArrayElemHelper(assembleRegister(arrReg), arrPos, assembleRegister(dstReg)) ::
