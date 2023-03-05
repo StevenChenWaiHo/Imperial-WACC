@@ -378,12 +378,22 @@ class Assembler {
       translateMove("", translateRegister(dstReg), translateRegister(ptrReg))
   }
 
+  // mov r0 #(size)
+  // bl malloc
+  // push ptrReg (remove?)
+  // mov ptrReg r0
+  // str pairElemReg, [ptrReg, #0]
+  // mov fstReg ptrReg
+  // pop ptrReg (remove?)
+  // push pairElemReg
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): AssemblerState = {
     translateMove("", r0, new ImmediateInt(getTypeSize(pairElemType))) ::
       translateBranchLink("", new BranchString("malloc")) ::
+      translatePush("", List(translateRegister(ptrReg))) :: // TODO: Remove?
       translateMove("", translateRegister(ptrReg), r0) ::
       translateStr(getInstructionType(pairElemType), translateRegister(pairElem), translateRegister(ptrReg), new ImmediateInt(0)) ::
       translateMove("", translateRegister(pairElem), translateRegister(ptrReg)) ::
+      translatePop("", List(translateRegister(ptrReg))) :: // TODO: Remove?
       translatePush("", List(translateRegister(pairElem)))
   }
 
@@ -687,6 +697,7 @@ class Assembler {
             translateBranchLink("", new BranchString(bl))
         }
       }
+
       case CmdT.Ret => {
         state.exitFunction
         translateMove("", r0, translateOperand(operand)) ::
@@ -695,6 +706,30 @@ class Assembler {
           translatePop("", List(fp, pc)) ::
           ".ltorg"
       }
+
+      case CmdT.Free => {
+      opType match {
+        case ArrayType(dataType, length) => {
+          translateSub("", Status(), r8, r4, new ImmediateInt(4)) ::
+            translatePush("", List(r8)) ::
+            translatePop("", List(r8)) ::
+          translateMove("", r8, r8) ::
+            translateMove("", r0, r8) ::
+            translateBranchLink("", new BranchString("free"))
+
+
+        }
+        case PairType(fstType, sndType) => {
+          addEndFunc("_freepair", new HardcodeFunctions().translate_freepair())
+          addEndFunc("_errNull", new HardcodeFunctions().translate_errNull())
+          addEndFunc("_prints", new HardcodeFunctions().translate_prints())
+
+            translateMove("", r0, translateOperand(operand)) ::
+            translateBranchLink("", new BranchString("_freepair"))
+        }
+
+      }
+    }
 
       case _ => List("Command not implemented")
     }

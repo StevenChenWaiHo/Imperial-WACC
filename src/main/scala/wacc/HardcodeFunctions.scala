@@ -27,6 +27,29 @@ class HardcodeFunctions extends Assembler {
     translateMove("", r0, new ImmediateInt(255)) ::
     translateBranchLink("", new BranchString("exit"))
   }
+
+  def translate_freepair(): List[String] = {
+    translateTAC(TextSegmentTAC()) ::
+    translateTAC(Label("_freepair")) ::
+      translatePush("", List(lr)) ::
+      translateMove("", r1, r0) ::
+      translateCompare("", r1, ImmediateInt(0)) ::
+      translateBranchLink("eq", new BranchString("_errNull")) ::
+      translateLdr("", r0, r1, ImmediateInt(0)) ::
+      translatePush("", List(r1)) ::
+      translateBranchLink("", new BranchString("free")) ::
+      translatePop("", List(r1)) ::
+      translateLdr("", r0, r1, ImmediateInt(4)) ::
+      translatePush("", List(r1)) ::
+      translateBranchLink("", new BranchString("free")) ::
+      translatePop("", List(r1)) ::
+      translateMove("", r0, r1) ::
+      translatePush("", List(r1)) ::
+      translateBranchLink("", new BranchString("free")) ::
+      translatePop("", List(r1)) ::
+      translatePop("", List(pc))
+  }
+
   
   def translate_errDivZero(): List[String] = {
     val sLbl = Label(".L._errDivZero_str0")
