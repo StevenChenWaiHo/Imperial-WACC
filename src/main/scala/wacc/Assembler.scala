@@ -50,12 +50,12 @@ object StatelessAssembler {
   }
 
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    "adds" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
     
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    return "subs" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
@@ -159,12 +159,12 @@ class Assembler {
 
   //Incomplete, no condition
   def translateAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    return "adds" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    return "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
     
   }
 
   def translateSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
-    return "subs" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
+    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
   }
 
   def translateRsb(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): AssemblerState = {
@@ -204,7 +204,7 @@ class Assembler {
   }
 
   def translateSmlal(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: Register, operand1: Register, operand2: Register): AssemblerState = {
-    return "smlal" + fourMulAssist(condition, setflag, destinationRegister, sourceRegister, operand1, operand2)
+    return "smlal" + fourMulAssist(condition, None(), destinationRegister, sourceRegister, operand1, operand2)
   }
 
   def translateCompare(condition: String, register1: LHSop, operand: LHSop): AssemblerState = {
@@ -551,13 +551,13 @@ class Assembler {
   def assembleBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister): AssemblerState = {
     operation match {
       case BinaryOpType.Add => {
-        translateAdd("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateAdd("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Sub => {
-        translateSub("", None(), translateRegister(res), translateOperand(op1), translateOperand(op2))
+        translateSub("", Status(), translateRegister(res), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Mul => {
-        translateSmull("", None(), translateRegister(res), translateOperand(op2), translateOperand(op1), translateOperand(op2))
+        translateSmull("", Status(), translateRegister(res), translateOperand(op2), translateOperand(op1), translateOperand(op2))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HardcodeFunctions().translate_errDivZero())
