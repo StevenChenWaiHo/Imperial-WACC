@@ -792,8 +792,8 @@ class Assembler {
     addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
     var regs = List(getRealReg(arrReg), getRealReg(dstReg))
-    regs = regs ++ arrPos.map(a => getRealReg(a))
-    assemblePush("", regs.sortWith((s, t) => s < t)) ::
+    regs = (regs ++ arrPos.map(a => getRealReg(a._2))).distinct.sortWith((s, t) => s < t)
+    assemblePush("", regs) ::
     assemblePush("", List(r0, r1, r2, r3))
     arrPos.foreach(a => {
       assembleMove("", r0, getRealReg(a)) ::
@@ -804,7 +804,7 @@ class Assembler {
     })
     // loadArrayElemHelper(assembleRegister(arrReg), arrPos, assembleRegister(dstReg)) ::
     assemblePop("", List(r0, r1, r2, r3)) ::
-    assemblePop("", regs.sortWith((s, t) => s < t))
+    assemblePop("", regs)
   }
 
 
@@ -824,8 +824,8 @@ class Assembler {
     // checkIndexTAC(index) ::
     
     var regs = List(getRealReg(arrReg), getRealReg(srcReg))
-    regs = regs ++ arrPos.map(a => getRealReg(a._2))
-    assemblePush("", regs.sortWith((s, t) => s < t)) ::
+    regs = (regs ++ arrPos.map(a => getRealReg(a._2))).distinct.sortWith((s, t) => s < t)
+    assemblePush("", regs) ::
     assemblePush("", List(r0, r1, r2, r3))
     arrPos.foreach(a => {
       assembleMove("", r0, getRealReg(a._2)) ::
@@ -833,7 +833,7 @@ class Assembler {
       assembleBranchLink("", new BranchString("_arrStore"))
     })
     assemblePop("", List(r0, r1, r2, r3)) ::
-    assemblePop("", regs.sortWith((s, t) => s < t))
+    assemblePop("", regs)
 
     // arrPos match {
     //   case _ if (arrPos.isEmpty) => Nil
