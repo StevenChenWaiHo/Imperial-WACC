@@ -122,7 +122,7 @@ object TAC {
   
   // StoreArrayElem
   // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
-  case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister) extends TAC
+  case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister) extends TAC
   // LoadArrayElem
   // ldr dstReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
   case class LoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister) extends TAC

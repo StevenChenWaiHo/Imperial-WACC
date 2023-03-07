@@ -98,10 +98,10 @@ class HelperFunctions extends Assembler {
     assembleTAC(Label("_arrStore")) ++
     (assemblePush("", List(lr)) ::
       assembleCompare("", r0, new ImmediateInt(0)) ::
-      assembleMove("", r1, r0) ::
+      assembleMove("lt", r1, r0) ::
       assembleBranchLink("lt", new BranchString("_boundsCheck")) ::
       assembleLdr("", lr, r3, new ImmediateInt(-4)) ::
-      assembleCompare("eq", r0, lr) ::
+      assembleCompare("", r0, lr) ::
       assembleMove("ge", r1, r0) ::
       assembleBranchLink("ge", new BranchString("_boundsCheck")) ::
       assembleStr("", r2, r3, LogicalShiftLeft(r0, Right(2))) ::

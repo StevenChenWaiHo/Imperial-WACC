@@ -228,7 +228,7 @@ object Translator {
           }
         })
         val dstReg = nextRegister()
-        (is.toList ++ List(LoadArrayElem(findType(indices.head).get, arrReg, rs.toList, dstReg)), dstReg)
+        (List(Comments("Load Array Elem")) ++ is.toList ++ List(LoadArrayElem(findType(indices.head).get, arrReg, rs.toList, dstReg)) ++ List(Comments("Finish loading Array Elem")), dstReg)
       }
       case _ => (List(Label("Not translating ArrayElem")), null)
     }
@@ -303,7 +303,7 @@ object Translator {
           addNode(elements(i), reg)
           tacs ++= elemTacs
           tRegs += reg
-          tacs += CreateArrayElem(elemType, i, dstReg, reg)
+          tacs ++= List(Comments("ArrayElem Declaration Start"), CreateArrayElem(elemType, i, dstReg, reg), Comments("ArrayElem Declaration End"))
         }
         (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, lenReg, dstReg)) ++ tacs.toList ++ List(CreateArray(elemType, tRegs.toList, dstReg),
          Comments("Array Declaration End")), dstReg)
@@ -401,9 +401,9 @@ object Translator {
     val (rvalueList, rvalueReg) = delegateASTNode(rvalue)
     lvalue match {
       case ArrayElem(name, indices) => {
-        var indexNodes = ListBuffer[(List[TAC], TRegister)]()
+        var indexNodes = ListBuffer[TRegister]()
         indices.foreach(i => {
-          indexNodes += delegateASTNode(i)
+          indexNodes += delegateASTNode(i)._2
         })
         val lvalueReg = findNode(name).get
         (rvalueList ++ 

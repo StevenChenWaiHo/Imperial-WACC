@@ -773,8 +773,8 @@ class Assembler {
       assemblePush("", List(r0)) ::
       assembleMove("", r0, new ImmediateInt(getTypeSize(arrayElemType))) ::
       assembleBranchLink("", new BranchString("malloc")) ::
-      assembleStr("", getRealReg(elemReg), r0, new ImmediateInt(0))
-      assembleMove("", getRealReg(elemReg), r0)
+      assembleStr("", getRealReg(elemReg), r0, new ImmediateInt(0)) ::
+      assembleMove("", getRealReg(elemReg), r0) ::
       assemblePop("", List(r0)) ::
       assembleStr(getInstructionType(arrayElemType), getRealReg(elemReg), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos)) ::
       assemblePop("", List(getRealReg(elemReg)))
@@ -799,7 +799,7 @@ class Assembler {
       assembleMove("", r0, getRealReg(a)) ::
       assembleMove("", r3, getRealReg(arrReg)) :: // arrLoad uses r0 = r3[r2]
       assembleBranchLink("", new BranchString("_arrLoad")) ::
-      assembleLdr("", r2, r2, new ImmediateInt(0)) ::
+      assembleLdr("", r2, r2, new ImmediateInt(0)) :: //?? bad line for array & arraySimple good for lookup and print
       assembleMove("", getRealReg(dstReg), r2)
     })
     // loadArrayElemHelper(assembleRegister(arrReg), arrPos, assembleRegister(dstReg)) ::
@@ -816,7 +816,7 @@ class Assembler {
   // bl _arrStore
   // RECURSE StoreArrayElem
   // pop r0, r2, r3 
-  def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[(List[TAC], TRegister)], srcReg: TRegister): AssemblerState = {
+  def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
     // TODO assemble tac of each index
@@ -824,11 +824,12 @@ class Assembler {
     // checkIndexTAC(index) ::
     
     var regs = List(getRealReg(arrReg), getRealReg(srcReg))
-    regs = (regs ++ arrPos.map(a => getRealReg(a._2))).distinct.sortWith((s, t) => s < t)
+    regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     assemblePush("", regs) ::
     assemblePush("", List(r0, r1, r2, r3))
     arrPos.foreach(a => {
-      assembleMove("", r0, getRealReg(a._2)) ::
+      assembleMove("", r2, getRealReg(srcReg)) ::
+      assembleMove("", r0, getRealReg(a)) ::
       assembleMove("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
       assembleBranchLink("", new BranchString("_arrStore"))
     })
