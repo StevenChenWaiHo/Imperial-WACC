@@ -792,7 +792,7 @@ class Assembler {
     addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
     var regs = List(getRealReg(arrReg), getRealReg(dstReg))
-    regs = (regs ++ arrPos.map(a => getRealReg(a._2))).distinct.sortWith((s, t) => s < t)
+    regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     assemblePush("", regs) ::
     assemblePush("", List(r0, r1, r2, r3))
     arrPos.foreach(a => {
