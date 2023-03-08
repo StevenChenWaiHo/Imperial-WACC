@@ -783,12 +783,12 @@ class Assembler {
   // arrLoad uses r0 = r3[r2]
   // LoadArrayElem
   // Check Null?
-  // push r0
-  // mov r2 arrPos
-  // mov r3 arrReg
-  // bl _arrLoad
-  // RECURSE LoadArrayElem
-  // pop r0
+  // push r0-3 & used regs
+  // for arrPos
+  //   mov r2 arrPos
+  //   mov r3 arrReg
+  //   bl _arrLoad
+  // pop r0-3 & used regs
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
@@ -807,15 +807,17 @@ class Assembler {
     assemblePop("", regs)
   }
 
-
+  //store out of bounds ONLY when storing to first elem of the first array
+  // where penultimate element != 0 or not exists ie singleton array
+  
   // StoreArrayElem
-  // push r0, r2, r3
-  // mov r0 arrPos 
-  // mov r2 srcReg
-  // mov r3 arrReg
-  // bl _arrStore
-  // RECURSE StoreArrayElem
-  // pop r0, r2, r3 
+  // push r0-3 & used regs
+  // for arrPos
+  //   mov r2 srcReg
+  //   mov r0 arrPos 
+  //   mov r3 arrReg
+  //   bl _arrStore
+  // pop r0-3 & used regs 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
