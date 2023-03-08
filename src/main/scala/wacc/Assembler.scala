@@ -780,10 +780,11 @@ class Assembler {
       assemblePop("", List(getRealReg(elemReg)))
   }
   
+  // arrLoad uses r0 = r3[r2]
   // LoadArrayElem
   // Check Null?
   // push r0
-  // mov r0 arrPos
+  // mov r2 arrPos
   // mov r3 arrReg
   // bl _arrLoad
   // RECURSE LoadArrayElem
@@ -796,11 +797,11 @@ class Assembler {
     assemblePush("", regs) ::
     assemblePush("", List(r0, r1, r2, r3))
     arrPos.foreach(a => {
-      assembleMove("", r0, getRealReg(a)) ::
+      assembleMove("", r2, getRealReg(a)) ::
       assembleMove("", r3, getRealReg(arrReg)) :: // arrLoad uses r0 = r3[r2]
       assembleBranchLink("", new BranchString("_arrLoad")) ::
-      assembleLdr("", r2, r2, new ImmediateInt(0)) :: //?? bad line for array & arraySimple good for lookup and print
-      assembleMove("", getRealReg(dstReg), r2)
+      // assembleLdr("", r0, r0, new ImmediateInt(0)) ::
+      assembleMove("", getRealReg(dstReg), r0)
     })
     // loadArrayElemHelper(assembleRegister(arrReg), arrPos, assembleRegister(dstReg)) ::
     assemblePop("", List(r0, r1, r2, r3)) ::
