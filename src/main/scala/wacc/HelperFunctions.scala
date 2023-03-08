@@ -78,31 +78,35 @@ class HelperFunctions extends Assembler {
     assembleBranchLink("", new BranchString("exit"))
   }
 
-  // r2 = r3[r0]
+  // Special calling convention: array ptr passed in R3, index in R10, LR (R14) is used as general register, and return into R3
+  // ie r3 = r3[r10] (from reference compiler)
+  // we instead use r0 = r3[r2]
   def assemble_arrLoad(): List[String] = {
     assembleTAC(Label("_arrLoad")) ++
     (assemblePush("", List(lr)) ::
-      assembleCompare("", r0, new ImmediateInt(0)) ::
-      assembleMove("", r1, r0) ::
+      assembleCompare("", r2, new ImmediateInt(0)) ::
+      assembleMove("", r1, r2) ::
       assembleBranchLink("lt", new BranchString("_boundsCheck")) ::
       assembleLdr("", lr, r3, new ImmediateInt(-4)) ::
-      assembleCompare("eq", r0, lr) ::
-      assembleMove("ge", r1, r0) ::
+      assembleCompare("", r2, lr) ::
+      assembleMove("ge", r1, r2) ::
       assembleBranchLink("ge", new BranchString("_boundsCheck")) ::
-      assembleLdr("", r2, r3, LogicalShiftLeft(r0, Right(2))) ::
+      assembleLdr("", r0, r3, LogicalShiftLeft(r2, Right(2))) ::
       assemblePop("", List(pc)))
   }
 
-  // r3[r0] = r2
+  // Special calling convention: array ptr passed in R3, index in R10, value to store in R8, LR (R14) is used as general register
+  // ie r3[r10] = r8 (from reference compiler)
+  // we instead use r3[r0] = r2
   def assemble_arrStore(): List[String] = {
     assembleTAC(Label("_arrStore")) ++
     (assemblePush("", List(lr)) ::
       assembleCompare("", r0, new ImmediateInt(0)) ::
-      assembleMove("lt", r1, r0) ::
+      assembleMove("lt", r1, r0) :: // r0 < 0
       assembleBranchLink("lt", new BranchString("_boundsCheck")) ::
       assembleLdr("", lr, r3, new ImmediateInt(-4)) ::
       assembleCompare("", r0, lr) ::
-      assembleMove("ge", r1, r0) ::
+      assembleMove("ge", r1, r0) :: // r0 >= lr
       assembleBranchLink("ge", new BranchString("_boundsCheck")) ::
       assembleStr("", r2, r3, LogicalShiftLeft(r0, Right(2))) ::
       assemblePop("", List(pc)))
