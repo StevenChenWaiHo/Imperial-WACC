@@ -803,7 +803,6 @@ class Assembler {
       // assembleLdr("", r0, r0, new ImmediateInt(0)) ::
       assembleMove("", getRealReg(dstReg), r0)
     })
-    // loadArrayElemHelper(assembleRegister(arrReg), arrPos, assembleRegister(dstReg)) ::
     assemblePop("", List(r0, r1, r2, r3)) ::
     assemblePop("", regs)
   }
@@ -820,9 +819,6 @@ class Assembler {
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
-    // TODO assemble tac of each index
-    // val index = arrayPos.head
-    // checkIndexTAC(index) ::
     
     var regs = List(getRealReg(arrReg), getRealReg(srcReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
@@ -836,25 +832,5 @@ class Assembler {
     })
     assemblePop("", List(r0, r1, r2, r3)) ::
     assemblePop("", regs)
-
-    // arrPos match {
-    //   case _ if (arrPos.isEmpty) => Nil
-    //   case _ => {
-    //     assemblePush("", List(r0, r2, r3)) ::
-    //     assembleMove("", r0, getRealReg(arrPos.head._2)) ::
-    //     assembleMove("", r2, getRealReg(srcReg)) ::
-    //     assembleMove("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
-    //     assembleBranchLink("", new BranchString("_arrStore")) ::
-    //     assemblePop("", List(r0, r2, r3)) ::
-    //     assembleStoreArrayElem(datatype, arrReg, arrPos.drop(1), srcReg)
-    //   }
-    // }
   }
-
-  // def checkIndexTAC(arrayPos: (List[TAC], TRegister)): AssemblerState = { 
-  //   arrayPos match {
-  //     case _ if (!arrayPos._1.isEmpty) => assembleTAC(arrayPos._1.head)
-  //     case _ => Nil
-  //   }
-  // }
 }
