@@ -807,8 +807,9 @@ class Assembler {
     assemblePop("", regs)
   }
 
-  //store out of bounds ONLY when storing to first elem of the first array
-  // where penultimate element != 0 or not exists ie singleton array
+  // 1D store out of bounds ONLY when 1st array does NOT have the index to store to in the array
+  // ie assignment to int[] a = [13, 24, 55] will fail
+  // but assignment to int[] b = [9, 45, ?, 11] will assign to b[?] as 0-3 are not in the array
   
   // StoreArrayElem
   // push r0-3 & used regs
