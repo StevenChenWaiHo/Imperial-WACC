@@ -242,9 +242,9 @@ object Translator {
     val startLabel = generateLabel()
     val bodyLabel = generateLabel()
     val endLabel = generateLabel()
-    (List(startLabel) ++ expList
+    (List(Comments("While Loop Start"), startLabel) ++ expList
       ++ List(IfTAC(expReg, bodyLabel), GOTO(endLabel), bodyLabel)
-      ++ statList ++ List(GOTO(startLabel), endLabel), statReg)
+      ++ statList ++ List(GOTO(startLabel), endLabel, Comments("While Loop End")), statReg)
   }
 
 
