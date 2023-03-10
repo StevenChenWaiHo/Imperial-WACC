@@ -6,6 +6,11 @@ import wacc.RegisterAllocator.AssemblerState
 import collection.mutable
 
 class ARM11Assembler {
+
+  def assemble(irCode: List[FinalIR]): String = {
+    irCode.map(assembleIR).mkString("\n")
+  }
+
   def assembleIR(irCode: FinalIR): String = {
     irCode match {
         case Str(cond, src, operand, dst) => assembleStr(cond, src, operand, dst)
