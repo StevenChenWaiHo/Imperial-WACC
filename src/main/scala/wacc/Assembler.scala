@@ -72,6 +72,13 @@ class Assembler {
   var labelCount = 0
   val argRegs = StatelessAssembler.argRegs
 
+  // Add predefined function to end of assembly code (.e.g _prints)
+  def addEndFunc(name: String, code: List[FinalIR]): Unit = {
+    if (!endFuncs.contains(name)) {
+      endFuncs.addOne(name, code)
+    }
+  }
+
   def getRealReg(t: TRegister) = state.getRegister(t)
 
   implicit private[this] def updateState(str: String): AssemblerState = {
@@ -291,7 +298,7 @@ class Assembler {
 
   def assembleProgram(tacList: List[TAC]): List[FinalIR] = {
     tacList.map(assembleTAC).flatten
-    
+
   }
 
   def assembleJump(label: Label): List[FinalIR] = {
