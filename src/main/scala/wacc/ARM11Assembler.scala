@@ -26,24 +26,26 @@ class ARM11Assembler {
         case Branch(cond, name) => assembleBranch(cond, name)
         case BranchLink(cond, name) => assembleBranchLink(cond, name)
         case Cmp(cond, op1, op2) => assembleCmp(cond, op1, op2)
+        case Global(name) => assembleGlobal(name)
+        case Lbl(name) => assembleLabel(name)
     }
   }
 
   // TODO: check this line
   private[this] val state = new AssemblerState(mutable.ListBuffer(r4, r5, r6, r7, r8, r10))
-  val endFuncs = collection.mutable.Map[String, List[String]]()
+  val endFuncsIR = collection.mutable.Map[String, List[FinalIR]]()
 
   // Add predefined function to end of assembly code (.e.g _prints)
-  def addEndFunc(name: String, code: List[String]): Unit = {
-    if (!endFuncs.contains(name)) {
-      endFuncs.addOne(name, "" :: code)
+  def addEndFunc(name: String, code: List[FinalIR]): Unit = {
+    if (!endFuncsIR.contains(name)) {
+      endFuncsIR.addOne(name, code)
     }
   }
 
-  def endFuncsToList(): List[String] = {
-    endFuncs.toList.map(entry => entry match {
-      case (name, code) => code
-    }).flatten
+  def endFuncsToList(): String = {
+    endFuncsIR.toList.map(entry => entry match {
+      case (name, code) => assemble(code)
+    }).mkString("\n") // TODO: check if newline is correct here
   }
 
   def assembleStr(condition: String, src: Register, operand: LHSop, dst: Register): String = {
@@ -140,6 +142,18 @@ class ARM11Assembler {
   def assembleBranchLink(condition: String, name: LHSop): String = {
     state.enterBranch
     return "bl" + condition + " " + name
+  }
+
+  def assembleGlobal(name: String) = {
+    ".global " + name
+  }
+
+  def assembleLabel(name: String): String = {
+      name + ":"
+  }
+
+  def assembleComment(comment: String) = {
+    "@ " + comment
   }
 
 }
