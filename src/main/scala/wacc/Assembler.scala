@@ -129,8 +129,8 @@ class Assembler {
       case StringLengthDefinitionTAC(len, _) => List(FinalIR.Word(len))
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
       case BeginFuncTAC() => {
+        state.enterFunction // TODO: this was moved above the return line... does this matter?
         assembleBeginFunc()
-        state.enterFunction
       }
       case EndFuncTAC() => {
         state.exitFunction
@@ -296,9 +296,9 @@ class Assembler {
     FinalIR.Pop("", List(getRealReg(pairReg))) :: List()
   }
 
-  def assembleProgram(tacList: List[TAC]): List[FinalIR] = {
-    tacList.map(assembleTAC).flatten
-
+  // Returns tuple containing the main program and helper functions
+  def assembleProgram(tacList: List[TAC]): (List[FinalIR], collection.mutable.Map[String, List[FinalIR]]) = {
+    (tacList.map(assembleTAC).flatten, endFuncs)
   }
 
   def assembleJump(label: Label): List[FinalIR] = {
@@ -520,8 +520,8 @@ class Assembler {
     FinalIR.Str("", getRealReg(lenReg), new ImmediateInt(-POINTER_BYTE_SIZE), getRealReg(dstReg)) :: List()
   }
 
-  def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): AssemblerState = {
-    Nil
+  def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): List[FinalIR] = {
+    List[FinalIR]()
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): List[FinalIR] = {
