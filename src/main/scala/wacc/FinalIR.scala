@@ -5,7 +5,7 @@ import wacc.AssemblerTypes._
 object FinalIR {
   sealed trait FinalIR
 
-  case class Str(condition: String, src: Register, operand: LHSop, dst: Register) extends FinalIR
+  case class Str(condition: String, src: LHSop, operand: LHSop, dst: Register) extends FinalIR
   case class StrPre(condition: String, src: Register, operand: LHSop, dst: Register) extends FinalIR
   case class Ldr(condition: String, src: Register, operand: LHSop, dst: Register) extends FinalIR
 
