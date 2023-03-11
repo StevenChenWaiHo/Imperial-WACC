@@ -25,43 +25,24 @@ object StatelessAssembler {
     str + "}"
   }
 
-  def assemblePush(condition: String, registers: List[Register]): String = {
-    "push" + pushPopAssist(condition, registers)
+  def assemblePush(condition: String, registers: List[Register]): FinalIR = {
+    FinalIR.Push(condition, registers)
   }
 
-  def assembleLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
-    //Incomplete
-    "ldr" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  def assembleLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): FinalIR = {
+    FinalIR.Ldr(condition, sourceRegister, operand, destinationRegister)
   }
 
-  def assembleStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
-    return "str" + ldrStrAssist(condition, destinationRegister, sourceRegister, operand)
+  def assembleStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): FinalIR = {
+    FinalIR.Str(condition, sourceRegister, operand, destinationRegister)
   }
 
-  def ldrStrAssist(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): String = {
-    var str = condition + " " + destinationRegister.toString + ", "
-    operand match {
-      case ImmediateInt(x) => {
-        str = str + "[" + sourceRegister.toString + ", #" + x + "]"
-      }
-      case LabelString(x) => {
-        str = str + "=" + x
-      }
-    }
-    str
+  def assembleAdd(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: LHSop, operand: LHSop): FinalIR = {
+    FinalIR.Add(condition, setflag, sourceRegister, operand, destinationRegister)
   }
 
-  def assembleAdd(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    "add" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
-    
-  }
-
-  def assembleSub(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    return "sub" + addSubMulAssist(condition, setflag, destinationRegister, sourceRegister, operand)
-  }
-
-  def addSubMulAssist(condition: String, setflag: Suffi, destinationRegister: LHSop, sourceRegister: LHSop, operand: LHSop): String = {
-    return condition + setflag + " " + destinationRegister + ", " + sourceRegister + ", " + operand
+  def assembleSub(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: LHSop, operand: LHSop): FinalIR = {
+    FinalIR.Sub(condition, setflag, sourceRegister, operand, destinationRegister)
   }
 
 }
