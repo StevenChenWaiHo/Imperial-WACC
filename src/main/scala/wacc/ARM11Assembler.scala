@@ -2,7 +2,6 @@ package wacc
 
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
-import wacc.RegisterAllocator.AssemblerState
 import collection.mutable
 
 class ARM11Assembler {
@@ -31,11 +30,8 @@ class ARM11Assembler {
     }
   }
 
-  // TODO: check this line
-  private[this] val state = new AssemblerState(mutable.ListBuffer(r4, r5, r6, r7, r8, r10))
   val endFuncsIR = collection.mutable.Map[String, List[FinalIR]]()
 
-  // Add predefined function to end of assembly code (.e.g _prints)
   def addEndFunc(name: String, code: List[FinalIR]): Unit = {
     if (!endFuncsIR.contains(name)) {
       endFuncsIR.addOne(name, code)
@@ -48,7 +44,7 @@ class ARM11Assembler {
     }).mkString("\n") // TODO: check if newline is correct here
   }
 
-  def assembleStr(condition: String, src: Register, operand: LHSop, dst: Register): String = {
+  def assembleStr(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
     "str" + ldrStrAssist(condition, src, operand, dst)
   }
   
@@ -56,7 +52,7 @@ class ARM11Assembler {
     "ldr" + ldrStrAssist(condition, src, operand, dst)
   }
 
-  def ldrStrAssist(condition: String, src: Register, operand: LHSop, dst: Register): String = {
+  def ldrStrAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
     var str = condition + " " + dst.toString + ", "
     operand match {
       case ImmediateInt(x) => {
@@ -112,7 +108,7 @@ class ARM11Assembler {
   }
 
   def assembleCmp(condition: String, op1: LHSop, op2: LHSop): String = {
-    return "cmp" + condition + " " + op1.toString + ", " + op2.toString
+    "cmp" + condition + " " + op1.toString + ", " + op2.toString
   }
 
   // Determine when a mov is allowed
@@ -135,13 +131,11 @@ class ARM11Assembler {
   }
 
   def assembleBranch(condition: String, name: String): String = {
-    state.enterBranch
-    return "b" + condition + " " + name
+    "b" + condition + " " + name
   }
 
   def assembleBranchLink(condition: String, name: LHSop): String = {
-    state.enterBranch
-    return "bl" + condition + " " + name
+    "bl" + condition + " " + name
   }
 
   def assembleGlobal(name: String) = {
