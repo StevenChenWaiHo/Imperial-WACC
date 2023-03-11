@@ -3,13 +3,13 @@ package wacc
 import wacc.StatelessAssembler.{assembleAdd, assembleLdr, assemblePush, assembleStr, assembleSub}
 import wacc.AssemblerTypes.{ImmediateInt, Register, fp, sp}
 import wacc.TAC._
+import wacc.FinalIR.FinalIR
 
-import scala.collection.AbstractSeq
 import scala.collection.mutable.ListBuffer
 
 object RegisterAllocator {
 
-  class AssemblerState(var code: ListBuffer[String],
+  class AssemblerState(var code: ListBuffer[FinalIR],
                        var available: ListBuffer[Register],
                        var used: ListBuffer[(TRegister, Register)],
                        var memory: ListBuffer[ListBuffer[TRegister]]) {
@@ -23,7 +23,7 @@ object RegisterAllocator {
         index = currentScope.length
         currentScope.addOne(used.head._1)
       }
-      code = code.addOne(assembleStr("", used.head._2, fp, ImmediateInt(-offset + (4 * index))))
+      code = code.addOne(FinalIR.Str("", fp, ImmediateInt(-offset + (4 * index)), used.head._2))
       available.addOne(used.head._2)
       used = used.tail
       this
@@ -59,12 +59,12 @@ object RegisterAllocator {
     def this(available: ListBuffer[Register]) = //, assembler: Assembler[Register]) =
       this(ListBuffer(), available, ListBuffer(), ListBuffer(ListBuffer()))
 
-    def addInstruction(instr: String): AssemblerState = {
+    def addInstruction(instr: FinalIR): AssemblerState = {
       code = code.addOne(instr)
       this
     }
 
-    def addInstructions(instrs: List[String]): AssemblerState = {
+    def addInstructions(instrs: List[FinalIR]): AssemblerState = {
       code = code.addAll(instrs)
       this
     }
