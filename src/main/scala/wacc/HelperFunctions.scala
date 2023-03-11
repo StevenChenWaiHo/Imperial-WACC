@@ -1,5 +1,6 @@
 package wacc
 
+import wacc.Assembler
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
@@ -39,7 +40,7 @@ class HelperFunctions extends Assembler {
     FinalIR.Push("", List(r1)) ::
     FinalIR.BranchLink("", new BranchString("free")) ::
     FinalIR.Pop("", List(r1)) ::
-    FinalIR.Ldr("", r1, ImmediateInt(4), r0) ::
+    FinalIR.Ldr("", r1, ImmediateInt(POINTER_BYTE_SIZE), r0) ::
     FinalIR.Push("", List(r1)) ::
     FinalIR.BranchLink("", new BranchString("free")) ::
     FinalIR.Pop("", List(r1)) ::
@@ -88,7 +89,7 @@ class HelperFunctions extends Assembler {
       FinalIR.Cmp("", r2, new ImmediateInt(0)) ::
       FinalIR.Mov("", r2, r1) ::
       FinalIR.BranchLink("lt", new BranchString("_boundsCheck")) ::
-      FinalIR.Ldr("", r3, new ImmediateInt(-4), lr) ::
+      FinalIR.Ldr("", r3, new ImmediateInt(-POINTER_BYTE_SIZE), lr) ::
       FinalIR.Cmp("", r2, lr) ::
       FinalIR.Mov("ge", r2, r1) ::
       FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
@@ -105,7 +106,7 @@ class HelperFunctions extends Assembler {
       FinalIR.Cmp("", r0, new ImmediateInt(0)) ::
       FinalIR.Mov("lt", r0, r1) :: // r0 < 0
       FinalIR.BranchLink("lt", new BranchString("_boundsCheck")) ::
-      FinalIR.Ldr("", r3, new ImmediateInt(-4), lr) ::
+      FinalIR.Ldr("", r3, new ImmediateInt(-POINTER_BYTE_SIZE), lr) ::
       FinalIR.Cmp("", r0, lr) ::
       FinalIR.Mov("ge", r0, r1) :: // r0 >= lr
       FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
@@ -168,7 +169,7 @@ class HelperFunctions extends Assembler {
       assembleTAC(Label("_prints")) ++
       (FinalIR.Push("", List(lr)) ::
         FinalIR.Mov("", r0, r2) ::
-        FinalIR.Ldr("", r0, ImmediateInt(-4), r1) ::
+        FinalIR.Ldr("", r0, ImmediateInt(-POINTER_BYTE_SIZE), r1) ::
         FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
         FinalIR.BranchLink("", new BranchString("printf")) ::
         FinalIR.Mov("", new ImmediateInt(0), r0) ::
@@ -251,7 +252,7 @@ class HelperFunctions extends Assembler {
         assembleTAC(Label(".L_printb0"))) ++
       (FinalIR.Ldr("", r0, new LabelString(tLbl.name), r2) ::
         assembleTAC(Label(".L_printb1"))) ++
-      (FinalIR.Ldr("", r2, ImmediateInt(-4), r1) ::
+      (FinalIR.Ldr("", r2, ImmediateInt(-POINTER_BYTE_SIZE), r1) ::
         FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
         FinalIR.BranchLink("", new BranchString("printf")) ::
         FinalIR.Mov("", new ImmediateInt(0), r0) ::
@@ -276,12 +277,12 @@ class HelperFunctions extends Assembler {
       assembleTAC(TextSegmentTAC()) ++
       assembleTAC(Label("_readi")) ++
       (FinalIR.Push("", List(lr)) ::
-      FinalIR.StrPre("", sp, new ImmediateInt(-4), r0) ::
+      FinalIR.StrPre("", sp, new ImmediateInt(-POINTER_BYTE_SIZE), r0) ::
       FinalIR.Mov("", sp, r1) ::
       FinalIR.Ldr("", null, new LabelString(lbl.name), r0) ::
       FinalIR.BranchLink("", new BranchString("scanf")) ::
       FinalIR.Ldr("", sp, new ImmediateInt(0), r0) ::
-      FinalIR.Add("", None(), sp, new ImmediateInt(4), sp) ::
+      FinalIR.Add("", None(), sp, new ImmediateInt(POINTER_BYTE_SIZE), sp) ::
       FinalIR.Pop("", List(pc)))
   }
 

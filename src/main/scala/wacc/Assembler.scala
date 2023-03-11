@@ -52,6 +52,7 @@ class Assembler {
   val endFuncs = collection.mutable.Map[String, AssemblerState]()
   var labelCount = 0
   val argRegs = StatelessAssembler.argRegs
+  val POINTER_BYTE_SIZE = 4
 
   // Add predefined function to end of assembly code (.e.g _prints)
   def addEndFunc(name: String, code: AssemblerState): Unit = {
@@ -158,7 +159,6 @@ class Assembler {
     }
   }
 
-
   def getTypeSize(decType: DeclarationType): Int = {
     decType match {
       case BaseType(BaseT.Int_T) => 4
@@ -166,8 +166,6 @@ class Assembler {
       case _ => 4
     }
   }
-
-  val POINTER_BYTE_SIZE = 4
 
   def assemblePair(fstType: DeclarationType, sndType: DeclarationType, fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister): AssemblerState = {
     FinalIR.Pop("", List(getRealReg(fstReg))) ::
@@ -209,7 +207,7 @@ class Assembler {
         FinalIR.Mov("", getOperand(t1), getRealReg(res))
       }
       case UnaryOpType.Len => {
-        FinalIR.Ldr("", getRealReg(t1.asInstanceOf[TRegister]), ImmediateInt(-4), getRealReg(res))
+        FinalIR.Ldr("", getRealReg(t1.asInstanceOf[TRegister]), ImmediateInt(-POINTER_BYTE_SIZE), getRealReg(res))
       }
     }
   }
@@ -242,15 +240,15 @@ class Assembler {
     }
     // push extra args into memory
     if (args.length > argRegs.length) {
-      args.slice(4, args.length).reverse.foreach(reg => {
-        output = output ++ FinalIR.StrPre("", sp, ImmediateInt(-4), getRealReg(reg))
+      args.slice(POINTER_BYTE_SIZE, args.length).reverse.foreach(reg => {
+        output = output ++ FinalIR.StrPre("", sp, ImmediateInt(-POINTER_BYTE_SIZE), getRealReg(reg))
       })
     }
     output = output ++ FinalIR.BranchLink("", BranchString(lbl.name))
 
     /* Decrement the stack pointer for each argument pushed to the stack */
     if (args.length > argRegs.length)
-      output = output ++ FinalIR.Sub("", None(), sp, ImmediateInt(4 * (argRegs.length - args.length)), sp)
+      output = output ++ FinalIR.Sub("", None(), sp, ImmediateInt(POINTER_BYTE_SIZE * (argRegs.length - args.length)), sp)
 
     // move the result into dst before r0 is popped back
     output ++ FinalIR.Mov("", r0, getRealReg(dstReg))
@@ -262,7 +260,7 @@ class Assembler {
 
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
     FinalIR.BranchLink("eq", new BranchString("_errNull")) ::
-    FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4),  getRealReg(dstReg)) ::
+    FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE),  getRealReg(dstReg)) ::
     FinalIR.Push("", List(getRealReg(pairReg))) ::
     FinalIR.Mov("", getRealReg(dstReg), getRealReg(pairReg)) ::
     FinalIR.Ldr(getLdrInstructionType(datatype), getRealReg(pairReg), ImmediateInt(0), getRealReg(dstReg)) ::
@@ -276,7 +274,7 @@ class Assembler {
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
     FinalIR.BranchLink("eq", BranchString("_errNull")) ::
     FinalIR.Push("", List(getRealReg(pairReg))) ::
-    FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else 4),  getRealReg(pairReg)) ::
+    FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE),  getRealReg(pairReg)) ::
     FinalIR.Str(getInstructionType(datatype), getRealReg(pairReg), ImmediateInt(0), getRealReg(srcReg)) ::
     FinalIR.Pop("", List(getRealReg(pairReg)))
   }
@@ -308,7 +306,7 @@ class Assembler {
       FinalIR.Mov("", getRealReg(treg), callReg)
     } else {
       // Populate from stack
-      FinalIR.Ldr("", fp, ImmediateInt(funcStackFrameSize + (4 * (index - cRegs.size))), getRealReg(treg))
+      FinalIR.Ldr("", fp, ImmediateInt(funcStackFrameSize + (POINTER_BYTE_SIZE * (index - cRegs.size))), getRealReg(treg))
     }
   }
 
@@ -475,7 +473,7 @@ class Assembler {
       case CmdT.Free => {
         opType match {
           case ArrayType(dataType, length) => {
-            FinalIR.Sub("", Status(), r4, new ImmediateInt(4), r8) ::
+            FinalIR.Sub("", Status(), r4, new ImmediateInt(POINTER_BYTE_SIZE), r8) ::
             FinalIR.Push("", List(r8)) ::
             FinalIR.Pop("", List(r8)) ::
             FinalIR.Mov("", r8, r8) ::
