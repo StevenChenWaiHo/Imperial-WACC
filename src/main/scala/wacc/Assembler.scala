@@ -62,12 +62,12 @@ class Assembler {
 
   def getRealReg(t: TRegister) = state.getRegister(t)
 
-  implicit private[this] def updateState(str: String): AssemblerState = {
-    state.addInstruction(str)
+  implicit private[this] def updateState(instr: FinalIR): AssemblerState = {
+    state.addInstruction(instr)
   }
 
-  implicit private[this] def updateState(strs: List[String]): AssemblerState = {
-    state.addInstructions(strs)
+  implicit private[this] def updateState(instrs: List[FinalIR]): AssemblerState = {
+    state.addInstructions(instrs)
   }
 
   def determineLdr(x: Int): Boolean = {
@@ -315,7 +315,7 @@ class Assembler {
       }
       case BinaryOpType.Mul => {
         // TODO: implement Smull in FinalIR
-        assembleSmull("", Status(), getRealReg(res), getOperand(op2), getOperand(op1), getOperand(op2))
+        List(FinalIR.Smull("", Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res)))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
@@ -522,17 +522,20 @@ class Assembler {
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
     var regs = List(getRealReg(arrReg), getRealReg(dstReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
-    // TODO: this is not correct return statement
-    FinalIR.Push("", regs) ::
-    FinalIR.Push("", List(r0, r1, r2, r3))
+    var output = List[FinalIR]()
+    output = output ++
+    (FinalIR.Push("", regs) ::
+    FinalIR.Push("", List(r0, r1, r2, r3)) :: List())
     arrPos.foreach(a => {
-      FinalIR.Mov("", r2, getRealReg(a)) ::
+      output = output ++ 
+      (FinalIR.Mov("", r2, getRealReg(a)) ::
       FinalIR.Mov("", r3, getRealReg(arrReg)) :: // arrLoad uses r0 = r3[r2]
       FinalIR.BranchLink("", new BranchString("_arrLoad")) ::
-      FinalIR.Mov("", getRealReg(dstReg), r0)
+      FinalIR.Mov("", getRealReg(dstReg), r0) :: List())
     })
-    FinalIR.Mov("", List(r0, r1, r2, r3)) ::
-    FinalIR.Mov("", regs) :: List()
+    output ++
+    (FinalIR.Pop("", List(r0, r1, r2, r3)) ::
+    FinalIR.Pop("", regs) :: List())
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): List[FinalIR] = {
@@ -541,16 +544,19 @@ class Assembler {
     
     var regs = List(getRealReg(arrReg), getRealReg(srcReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
-    // TODO: return statement is incorrect
-    FinalIR.Push("", regs) ::
-    FinalIR.Push("", List(r0, r1, r2, r3))
+    var output = List[FinalIR]()
+    output = output ++
+    (FinalIR.Push("", regs) ::
+    FinalIR.Push("", List(r0, r1, r2, r3)) :: List())
     arrPos.foreach(a => {
-      FinalIR.Mov("", r2, getRealReg(srcReg)) ::
+      output = output ++
+      (FinalIR.Mov("", r2, getRealReg(srcReg)) ::
       FinalIR.Mov("", r0, getRealReg(a)) ::
       FinalIR.Mov("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
-      FinalIR.BranchLink("", new BranchString("_arrStore"))
+      FinalIR.BranchLink("", new BranchString("_arrStore")) :: List())
     })
-    FinalIR.Pop("", List(r0, r1, r2, r3)) ::
-    FinalIR.Pop("", regs) :: List()
+    output ++
+    (FinalIR.Pop("", List(r0, r1, r2, r3)) ::
+    FinalIR.Pop("", regs) :: List())
   }
 }
