@@ -69,7 +69,7 @@ object Main {
       val outputFilename = inputFilename.replace(".wacc", ".s")
       val outputFile = new File(outputFilename)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))
-      fileWriter.write(result + "\n")
+      fileWriter.write(arm + "\n")
       fileWriter.close()
     }
     println("\n\nCompilation Successful!")
