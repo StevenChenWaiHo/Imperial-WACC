@@ -4,6 +4,7 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
+import wacc.ARM11Assembler
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -48,16 +49,19 @@ object Main {
       sys.exit(SemanticErrorCode)
     }
     
-    // Translate the ast in to IR
+    // Translate the ast to TAC
     val tac = delegateASTNode(ast.get)._1
     println("--- TAC ---")
     tac.foreach(l => println(l))
 
-    // Convert the IR to ARM
+    // Convert the TAC to IR
     val assembler = new Assembler()
-    val result = assembler.assembleProgram(tac)
+    val (result, funcs) = assembler.assembleProgram(tac)
+
+    // Convert the IR to ARM
+    val arm = ARM11Assembler.assemble(result, funcs)
     println("--- ARM ---")
-    print(result)
+    print(arm)
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
