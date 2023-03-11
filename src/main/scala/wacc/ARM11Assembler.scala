@@ -8,7 +8,7 @@ object ARM11Assembler {
 
   def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
     endFuncsIR = endFuncs
-    irCode.map(assembleIR).mkString("\n")
+    (irCode.map(assembleIR) ++ endFuncsToList()).mkString("\n")
   }
 
   def assembleIR(irCode: FinalIR): String = {
@@ -46,10 +46,10 @@ object ARM11Assembler {
     }
   }
 
-  def endFuncsToList(): String = {
+  def endFuncsToList(): List[String] = {
     endFuncsIR.toList.map(entry => entry match {
       case (name, code) => code.map(c => assembleIR(c))
-    }).mkString("\n") // TODO: check if newline is correct here
+    }).flatten
   }
 
   def assembleStr(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
