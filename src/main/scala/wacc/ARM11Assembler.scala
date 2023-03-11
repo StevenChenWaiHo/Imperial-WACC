@@ -2,7 +2,6 @@ package wacc
 
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
-import collection.mutable
 
 class ARM11Assembler {
 
@@ -21,6 +20,7 @@ class ARM11Assembler {
         case Sub(cond, flag, op1, op2, dst) => assembleSub(cond, flag, op1, op2, dst)
         case Rsb(cond, flag, op1, op2, dst) => assembleRsb(cond, flag, op1, op2, dst)
         case Mul(cond, flag, op1, op2, dst) => assembleMul(cond, flag, op1, op2, dst)
+        case Smull(cond, flag, op1, op2, dst, _) => assembleMul(cond, flag, op1, op2, dst) // TODO: change tp actuallt assemble smull
         case Mov(cond, src, dst) => assembleMove(cond, src, dst)
         case Branch(cond, name) => assembleBranch(cond, name)
         case BranchLink(cond, name) => assembleBranchLink(cond, name)
