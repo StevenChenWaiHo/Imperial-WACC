@@ -414,7 +414,7 @@ class Assembler {
 
   def assembleBeginFunc(): List[FinalIR] = {
     FinalIR.Push("", List(fp, lr)) ::
-    FinalIR.Mov("", fp, sp) :: List()
+    FinalIR.Mov("", sp, fp) :: List()
   }
 
   def assembleEndFunc(): List[FinalIR] = {
