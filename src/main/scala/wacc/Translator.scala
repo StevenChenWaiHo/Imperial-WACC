@@ -128,8 +128,6 @@ object Translator {
 
   def delegateASTNode(node: ASTNode): (List[TAC], TRegister) = {
     // Check if ASTNode has already been calculated
-    println(node)
-    println(findNode(node))
     findNode(node) match {
       case Some(reg) => (List(), reg)
       case None => {
