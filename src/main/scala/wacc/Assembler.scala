@@ -102,7 +102,11 @@ class Assembler {
     tripleAddressCode match {
       case Label(name) => {
         state.enterBranch // TODO: check state here
-        List(FinalIR.Lbl(name))
+        if (name == "main") {
+          List(FinalIR.Global(name), FinalIR.Lbl(name))
+        } else {
+          List(FinalIR.Lbl(name))
+        }
       }
       case Comments(str) => List(FinalIR.Comment(str))
       case DataSegmentTAC() => List(FinalIR.DataSeg())
