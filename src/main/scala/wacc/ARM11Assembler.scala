@@ -188,7 +188,7 @@ object ARM11Assembler {
   }
 
   def assembleAsciiZ(str: String): String = {
-    ".asciiz " + str
+    ".asciz " + str
   }
 
   def assembleWord(len: Int): String = {
