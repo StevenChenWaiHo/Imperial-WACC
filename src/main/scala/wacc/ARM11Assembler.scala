@@ -2,11 +2,13 @@ package wacc
 
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
+import collection.mutable
 
-class ARM11Assembler {
+object ARM11Assembler {
 
-  def assemble(irCode: List[FinalIR]): String = {
-    irCode.map(assembleIR).mkString("\n")
+  def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
+    endFuncsIR = endFuncs
+    (irCode.map(assembleIR) ++ endFuncsToList()).mkString("\n")
   }
 
   def assembleIR(irCode: FinalIR): String = {
@@ -36,7 +38,7 @@ class ARM11Assembler {
     }
   }
 
-  val endFuncsIR = collection.mutable.Map[String, List[FinalIR]]()
+  var endFuncsIR = collection.mutable.Map[String, List[FinalIR]]()
 
   def addEndFunc(name: String, code: List[FinalIR]): Unit = {
     if (!endFuncsIR.contains(name)) {
@@ -44,10 +46,10 @@ class ARM11Assembler {
     }
   }
 
-  def endFuncsToList(): String = {
+  def endFuncsToList(): List[String] = {
     endFuncsIR.toList.map(entry => entry match {
-      case (name, code) => assemble(code)
-    }).mkString("\n") // TODO: check if newline is correct here
+      case (name, code) => code.map(c => assembleIR(c))
+    }).flatten
   }
 
   def assembleStr(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
