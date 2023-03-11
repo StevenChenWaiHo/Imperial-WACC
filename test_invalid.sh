@@ -5,7 +5,7 @@ SEMANTIC_ERR=200
 ERRORS=0
 TOTAL=0
 # Check all invalid syntax programs
-for f in $(find ../wacc_examples/invalid/syntaxErr -name '*.wacc');
+for f in $(find src/test/wacc_examples/invalid/syntaxErr -name '*.wacc');
 do 
     let TOTAL++
     # Compile file recording output
