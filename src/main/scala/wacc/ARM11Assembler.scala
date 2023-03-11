@@ -12,7 +12,7 @@ class ARM11Assembler {
   def assembleIR(irCode: FinalIR): String = {
     irCode match {
         case Str(cond, src, operand, dst) => assembleStr(cond, src, operand, dst)
-        case StrPre(cond, src, operand, dst) => assembleStr(cond, src, operand, dst) // TODO: change to correct assemble func
+        case StrPre(cond, src, operand, dst) => assembleStrPre(cond, src, operand, dst)
         case Ldr(cond, src, operand, dst) => assembleLdr(cond, src, operand, dst)
         case Push(cond, regs) => assemblePush(cond, regs)
         case Pop(cond, regs) => assemblePop(cond, regs)
@@ -20,13 +20,19 @@ class ARM11Assembler {
         case Sub(cond, flag, op1, op2, dst) => assembleSub(cond, flag, op1, op2, dst)
         case Rsb(cond, flag, op1, op2, dst) => assembleRsb(cond, flag, op1, op2, dst)
         case Mul(cond, flag, op1, op2, dst) => assembleMul(cond, flag, op1, op2, dst)
-        case Smull(cond, flag, op1, op2, dst, _) => assembleMul(cond, flag, op1, op2, dst) // TODO: change tp actuallt assemble smull
+        case Smull(cond, flag, src, op1, op2, dst) => assembleSmull(cond, flag, src, op1, op2, dst)
         case Mov(cond, src, dst) => assembleMove(cond, src, dst)
         case Branch(cond, name) => assembleBranch(cond, name)
         case BranchLink(cond, name) => assembleBranchLink(cond, name)
         case Cmp(cond, op1, op2) => assembleCmp(cond, op1, op2)
         case Global(name) => assembleGlobal(name)
         case Lbl(name) => assembleLabel(name)
+        case Comment(str) => assembleComment(str)
+        case DataSeg() => assembleDataSeg()
+        case TextSeg() => assembleTextSeg()
+        case AsciiZ(str) => assembleAsciiZ(str)
+        case Word(len) => assembleWord(len)
+        case Special(str) => str
     }
   }
 
@@ -47,6 +53,11 @@ class ARM11Assembler {
   def assembleStr(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
     "str" + ldrStrAssist(condition, src, operand, dst)
   }
+
+  def assembleStrPre(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
+    "str" + ldrStrAssist(condition, src, operand, dst).toString + "!".toString()
+  }
+
   
   def assembleLdr(condition: String, src: Register, operand: LHSop, dst: Register): String = {
     "ldr" + ldrStrAssist(condition, src, operand, dst)
@@ -101,6 +112,22 @@ class ARM11Assembler {
     "mul" + addSubMulAssist(condition, setflag, op1, op2, dst)
   }
 
+  def assembleSmull(condition: String, setflag: Suffi, src: LHSop, op1: LHSop, op2: LHSop, dst: LHSop): String = {
+    "smull" + fourMulAssist(condition, setflag, dst, src, op1, op2)
+  }
+
+  def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
+                    sourceRegister: LHSop, operand: LHSop): String = {
+    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+
+    condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
+      "," + " " + operand +
+      "\ncmp " + destinationHigh + ", " + destinationLow + ", asr #31" +
+      "\nbne _errOverflow"
+  }
+
+
   def addSubMulAssist(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
     addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
     addEndFunc("_prints", new HelperFunctions().assemble_prints())
@@ -146,8 +173,24 @@ class ARM11Assembler {
       name + ":"
   }
 
-  def assembleComment(comment: String) = {
+  def assembleComment(comment: String): String = {
     "@ " + comment
+  }
+
+  def assembleDataSeg(): String = {
+    ".data"
+  }
+
+  def assembleTextSeg(): String = {
+    ".text"
+  }
+
+  def assembleAsciiZ(str: String): String = {
+    ".asciiz " + str
+  }
+
+  def assembleWord(len: Int): String = {
+    ".word " + len.toString()
   }
 
 }
