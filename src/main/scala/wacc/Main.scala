@@ -18,8 +18,8 @@ object Main {
   val SuccessCode = 0
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 1) throw new IllegalArgumentException(
-      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 1."
+    if (args.length != 2) throw new IllegalArgumentException(
+      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 2."
     )
     val file = Option(Source.fromFile(args.head))
       .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
@@ -27,6 +27,9 @@ object Main {
     file.close
 
     println(inputProgram + "\n\n")
+
+    val target = getArchitecture(args(2))
+      .getOrElse(throw new FileNotFoundException("Architecture: " + args(2) + " does not exist."))
 
     /* Compile */
     val ast = program.parse(inputProgram)
@@ -58,10 +61,22 @@ object Main {
     val assembler = new Assembler()
     val (result, funcs) = assembler.assembleProgram(tac)
 
-    // Convert the IR to ARM
-    val arm = ARM11Assembler.assemble(result, funcs)
-    println("--- ARM ---")
-    print(arm)
+    target match {
+      case ARM11 => {
+        // Convert the IR to ARM11
+        val arm = ARM11Assembler.assemble(result, funcs)
+        println("--- ARM ---")
+        print(arm)
+      }
+      case X86 => {
+        // Convert the IR to X86_64
+        val x86 = X86Assembler.assemble(result, funcs)
+        println("--- X86_64 ---")
+        print(x86)
+      }
+    }
+
+    
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
