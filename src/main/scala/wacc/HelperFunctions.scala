@@ -15,6 +15,8 @@ class HelperFunctions extends Assembler {
 
   implicit private[this] def updateState(instr: FinalIR): AssemblerState = state.addInstruction(instr)
 
+//TODO add assemble_malloc for x86
+
   def assemble_errNull(): List[FinalIR] = {
     val sLbl = new Label(".L._errNull_str0")
     assembleTAC(DataSegmentTAC()) ++
