@@ -114,20 +114,21 @@ object PeepholeOptimisation {
 
   // Slide over a list filtering consecutive elements using func(a,b)
   def slideAndFilter(code: List[FinalIR], func: (FinalIR, FinalIR) => Boolean): List[FinalIR] = {
-    var lastRemovedIndex = 0
-    code.sliding(2).toList.zipWithIndex.map(pair => pair match {
-        case (list@List(instr1, instr2), index)
+    var lastRemovedIndex = -2
+    code.sliding(2).toList.zipWithIndex.filter(pair => pair match {
+        case (List(instr1, instr2), index) => {
             // If a pair was 'removed' previously, then we skip the next pair
-            if lastRemovedIndex + 1 != index => {
-                if (func(instr1, instr2)) {
-                    lastRemovedIndex = index
-                    List[FinalIR]()
-                } else {
-                   list
-                }
+            if (lastRemovedIndex + 1 != index && func(instr1, instr2)) {
+                lastRemovedIndex = index
+                false
+            } else {
+                true
+            }
         }
-        case (list: List[FinalIR], _) => list
-    }).flatten
+        case _ => true
+    }).map(elem => elem match {
+        case (list, _) => list.head
+    })
   }
 
 }

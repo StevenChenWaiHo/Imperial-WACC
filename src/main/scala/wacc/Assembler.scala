@@ -5,7 +5,7 @@ import wacc.AbstractSyntaxTree._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
-import wacc.FinalIR.FinalIR // TODO: change this to not import everything
+import wacc.FinalIR.FinalIR
 
 import scala.collection.mutable.ListBuffer
 
