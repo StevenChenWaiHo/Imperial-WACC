@@ -23,7 +23,7 @@ object  PeepholeOptimisation {
   // True if x is a power of 2
   def isPower2(x: Int): Boolean = {
     // Using the fact that if x is a power of 2, x & (x-1) = 0
-    (x & (x-1)) == 0
+    x != 0 && (x & (x-1)) == 0
   }
 
   // Returns n where x = 2^n
