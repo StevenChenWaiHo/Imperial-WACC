@@ -13,10 +13,28 @@ object  PeepholeOptimisation {
   def strengthReduction(instr: FinalIR): FinalIR = {
     instr match {
         // src*(2^x) => src << x
-        case Mul(_, _, op1, op2, dst)
-            if (op1 equals dst) && (op2 equals ImmediateInt(2)) => true
+        case Mul(cond, flag, op1, ImmediateInt(x), dst) if (op1 equals dst) 
+            && isPower2(x) => ShiftL(cond, flag, op1, ImmediateInt(getPower2(x)), dst)
     }
     instr
+  }
+
+  // True if x is a power of 2
+  def isPower2(x: Int): Boolean = {
+    // Using the fact that if x is a power of 2, x & (x-1) = 0
+    (x & (x-1)) == 0
+  }
+
+  // Returns n where x = 2^n
+  def getPower2(x: Int): Int = {
+    assert(isPower2(x))
+    var tmp = x
+    var n = 0
+    while (tmp != 0) {
+        tmp -= 2
+        n += 1
+    }
+    n
   }
 
   // Identify if the instruction can be removed entirely
