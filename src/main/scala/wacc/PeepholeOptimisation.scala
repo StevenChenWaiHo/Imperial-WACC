@@ -13,7 +13,7 @@ object  PeepholeOptimisation {
   def strengthReduction(instr: FinalIR): FinalIR = {
     instr match {
         // src*(2^x) => src << x
-        case Mul(cond, flag, op1, ImmediateInt(x), dst) if (op1 equals dst) 
+        case Mul(cond, None(), op1, ImmediateInt(x), dst) if (op1 equals dst) 
             && isPower2(x) => Mov(cond, LogicalShiftLeft(dst, Right(getPower2(x))), dst)
         // TODO: do the same for smull
         case _ => instr
@@ -49,15 +49,15 @@ object  PeepholeOptimisation {
         case StrPre(condition, src, operand, dst) => false
         case Ldr(condition, src, operand, dst) => false
         // Add/Sub with 0
-        case Add(_, _, op1, ImmediateInt(0), dst) if (op1 equals dst) => true
-        case Add(_, _, ImmediateInt(0), op2, dst) if (op2 equals dst) => true
-        case Sub(_, _, op1, ImmediateInt(0), dst) if (op1 equals dst) => true
-        case Sub(_, _, ImmediateInt(0), op2, dst) if (op2 equals dst) => true
+        case Add(_, None(), op1, ImmediateInt(0), dst) if (op1 equals dst) => true
+        case Add(_, None(), ImmediateInt(0), op2, dst) if (op2 equals dst) => true
+        case Sub(_, None(), op1, ImmediateInt(0), dst) if (op1 equals dst) => true
+        case Sub(_, None(), ImmediateInt(0), op2, dst) if (op2 equals dst) => true
         // Mul with 1
-        case Mul(_, _, op1, ImmediateInt(1), dst) if (op1 equals dst) => true
-        case Mul(_, _, ImmediateInt(1), op2, dst) if (op2 equals dst) => true
-        case Smull(_, _, op1, ImmediateInt(1), dst, dst1) if (op1 equals dst) => false // TODO: implement correctly
-        case Smull(_, _, ImmediateInt(1), op2, dst, dst1) if (op2 equals dst) => false
+        case Mul(_, None(), op1, ImmediateInt(1), dst) if (op1 equals dst) => true
+        case Mul(_, None(), ImmediateInt(1), op2, dst) if (op2 equals dst) => true
+        case Smull(_, None(), op1, ImmediateInt(1), dst, dst1) if (op1 equals dst) => false // TODO: implement correctly
+        case Smull(_, None(), ImmediateInt(1), op2, dst, dst1) if (op2 equals dst) => false
         // Empty push/pop
         case Push(_, List()) => true
         case Pop(_, List()) => true
