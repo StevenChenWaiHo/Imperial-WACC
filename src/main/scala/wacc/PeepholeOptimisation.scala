@@ -3,10 +3,12 @@ package wacc
 import wacc.FinalIR._
 import wacc.AssemblerTypes._
 
-object  PeepholeOptimisation {
+object PeepholeOptimisation {
   def PeepholeOptimise(code: List[FinalIR]): List[FinalIR] = {
     // Loop through code applying optimisations
-    code.filterNot(isNullOp).map(strengthReduction)
+    slideAndFilter(code, isRedundant)
+        .filterNot(isNullOp)
+        .map(strengthReduction)
   }
 
   // Convert higher processing time instructions to lower cost ones
@@ -108,6 +110,24 @@ object  PeepholeOptimisation {
         }
         case _ => false
     }
+  }
+
+  // Slide over a list filtering consecutive elements using func(a,b)
+  def slideAndFilter(code: List[FinalIR], func: (FinalIR, FinalIR) => Boolean): List[FinalIR] = {
+    var lastRemovedIndex = 0
+    code.sliding(2).toList.zipWithIndex.map(pair => pair match {
+        case (list@List(instr1, instr2), index)
+            // If a pair was 'removed' previously, then we skip the next pair
+            if lastRemovedIndex + 1 != index => {
+                if (func(instr1, instr2)) {
+                    lastRemovedIndex = index
+                    List[FinalIR]()
+                } else {
+                   list
+                }
+        }
+        case (list: List[FinalIR], _) => list
+    }).flatten
   }
 
 }

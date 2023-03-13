@@ -27,7 +27,7 @@ object Main {
     val inputProgram = file.mkString
     file.close
 
-    println(inputProgram + "\n\n")
+    println(inputProgram)
 
     /* Compile */
     // Parse input file
