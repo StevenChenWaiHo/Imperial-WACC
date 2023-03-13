@@ -6,7 +6,7 @@ import wacc.AssemblerTypes._
 object  PeepholeOptimisation {
   def PeepholeOptimise(code: List[FinalIR]): List[FinalIR] = {
     // Loop through code applying optimisations
-    code.filterNot(isNullOp)
+    code.filterNot(isNullOp).map(strengthReduction)
   }
 
   // Convert higher processing time instructions to lower cost ones
@@ -14,9 +14,10 @@ object  PeepholeOptimisation {
     instr match {
         // src*(2^x) => src << x
         case Mul(cond, flag, op1, ImmediateInt(x), dst) if (op1 equals dst) 
-            && isPower2(x) => ShiftL(cond, flag, op1, ImmediateInt(getPower2(x)), dst)
+            && isPower2(x) => Mov(cond, LogicalShiftLeft(dst, Right(getPower2(x))), dst)
+        // TODO: do the same for smull
+        case _ => instr
     }
-    instr
   }
 
   // True if x is a power of 2

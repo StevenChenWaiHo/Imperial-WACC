@@ -16,8 +16,8 @@ object FinalIR {
   case class Sub(condition: String, setFlag: Suffi, op1: LHSop, op2: LHSop, dst: Register) extends FinalIR
   case class Rsb(condition: String, setFlag: Suffi, op1: LHSop, op2: LHSop, dst: Register) extends FinalIR
   case class Mul(condition: String, setFlag: Suffi, op1: LHSop, op2: LHSop, dst: Register) extends FinalIR
-  case class Smull(condition: String, setFlag: Suffi, src: LHSop, op1: LHSop, op2: LHSop, dst: LHSop) extends FinalIR
-
+  case class Smull(condition: String, setFlag: Suffi, src: LHSop, op1: LHSop, op2: LHSop, dst: Register) extends FinalIR
+  
   case class Mov(condition: String, src: LHSop, dst: Register) extends FinalIR
 
   case class Branch(condition: String, name: String) extends FinalIR

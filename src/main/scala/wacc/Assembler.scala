@@ -318,7 +318,6 @@ class Assembler {
         List(FinalIR.Sub("", Status(), getOperand(op1), getOperand(op2),  getRealReg(res)))
       }
       case BinaryOpType.Mul => {
-        // TODO: implement Smull in FinalIR
         List(FinalIR.Smull("", Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res)))
       }
       case BinaryOpType.Div => {
