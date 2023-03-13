@@ -64,4 +64,50 @@ object  PeepholeOptimisation {
         case _ => false
     }
   }
+
+  // Remove consecutive intructions that contradict each other
+  def isRedundant(instr1: FinalIR, instr2: FinalIR): Boolean = {
+    instr1 match {
+        // Mov back and forth
+        case Mov(cond1, src1, dst1) => {
+            instr2 match {
+                case Mov(cond2, dst2, src2) => 
+                    cond1.equals(cond2) && dst1.equals(dst2) && src1.equals(dst2)
+                case _ => false
+            }
+        }
+        // Push then Pop
+        case Push(pushCond, pushList) => {
+            instr2 match {
+                case Pop(popCond, popList) =>
+                    pushCond.equals(popCond) && pushList.equals(popList)
+                case _ => false
+            }
+        }
+        // Pop then Push
+        case Pop(popCond, popList) => {
+            instr2 match {
+                case Push(pushCond, pushList) =>
+                    pushCond.equals(popCond) && pushList.equals(popList)
+                case _ => false
+            }
+        }
+        // Double Str
+        case str1: Str => {
+            instr2 match {
+                case str2: Str => str1.equals(str2)
+                case _ => false
+            }
+        }
+        // Double StrPre
+        case str1: StrPre => {
+            instr2 match {
+                case str2: StrPre => str1.equals(str2)
+                case _ => false
+            }
+        }
+        case _ => false
+    }
+  }
+
 }
