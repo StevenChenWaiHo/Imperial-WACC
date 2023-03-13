@@ -6,7 +6,7 @@ import wacc.AssemblerTypes._
 object PeepholeOptimisation {
   def PeepholeOptimise(code: List[FinalIR]): List[FinalIR] = {
     // Loop through code applying optimisations
-    slideAndFilter(code, isRedundant)
+    code.slideAndFilter(isRedundant)
         .filterNot(isNullOp)
         .map(strengthReduction)
   }
@@ -112,33 +112,35 @@ object PeepholeOptimisation {
     }
   }
 
-  // Slide over a list filtering consecutive elements using func(a,b)
-  def slideAndFilter(code: List[FinalIR], func: (FinalIR, FinalIR) => Boolean): List[FinalIR] = {
-    var lastRemovedIndex = -2
-    var currentIndex = 0
-    val reducedCode = code.sliding(2).toList.zipWithIndex.filter(pair => pair match {
-        case (List(instr1, instr2), index) => {
-            currentIndex = index
-            // If a pair was 'removed' previously, then we skip the next pair
-            if (lastRemovedIndex + 1 != index && func(instr1, instr2)) {
-                lastRemovedIndex = index
-                false
-            } else {
+  implicit class slidableList[FinalIR](code: List[FinalIR]) {
+    // Slide over a list filtering consecutive elements using func(a,b)
+    def slideAndFilter(func: (FinalIR, FinalIR) => Boolean): List[FinalIR] = {
+        var lastRemovedIndex = -2
+        var currentIndex = 0
+        val reducedCode = code.sliding(2).toList.zipWithIndex.filter(pair => pair match {
+            case (List(instr1, instr2), index) => {
+                currentIndex = index
+                // If a pair was 'removed' previously, then we skip the next pair
+                if (lastRemovedIndex + 1 != index && func(instr1, instr2)) {
+                    lastRemovedIndex = index
+                    false
+                } else {
+                    true
+                }
+            }
+            case (_, index) => {
+                currentIndex = index
                 true
             }
+        }).map(elem => elem match {
+            case (list, _) => list.head
+        })
+        // Add the last instruction at the end if the last tuple wasn't filtered
+        if (currentIndex == lastRemovedIndex) {
+            reducedCode
+        } else {
+            reducedCode.appended(code.last)
         }
-        case (_, index) => {
-            currentIndex = index
-            true
-        }
-    }).map(elem => elem match {
-        case (list, _) => list.head
-    })
-    // Add the last instruction at the end if the last tuple wasn't filtered
-    if (currentIndex == lastRemovedIndex) {
-        reducedCode
-    } else {
-        reducedCode.appended(code.last)
     }
   }
 
