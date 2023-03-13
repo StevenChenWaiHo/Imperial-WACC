@@ -30,6 +30,7 @@ object Main {
     println(inputProgram + "\n\n")
 
     /* Compile */
+    // Parse input file
     val ast = program.parse(inputProgram)
     ast match {
       case Failure(err) => {
@@ -39,6 +40,7 @@ object Main {
       case Success(x) =>
     }
 
+    // Apply semantic analysis
     val verified = verifyProgram(ast.get)
     if (verified.isLeft) {
       print("Semantic Error: ")
