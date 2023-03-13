@@ -76,7 +76,7 @@ object CFG {
         case CreatePairElem(_, _, ptr, value) =>  //TODO: These pair-related ones could be wrong:
           uses = List(value)
           defs = List(ptr)
-        case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) =>  //TODO: This should really be a three address code, it uses up about half the registers
+        case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) =>  //TODO
           print("CreatePair not yet translated in CFG.scala")
         case _ =>
 

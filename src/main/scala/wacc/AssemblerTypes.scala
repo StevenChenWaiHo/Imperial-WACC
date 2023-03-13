@@ -19,7 +19,10 @@ object AssemblerTypes {
     override def toString(): String = name
   }
 
-  sealed trait Register extends LHSop
+  sealed trait Register extends LHSop with Ordered[Register] {
+      import scala.math.Ordered.orderingToOrdered
+    def compare(that: Register): Int =  listOfRegisters.get(this) compare listOfRegisters.get(that)
+  }
 
   object r0 extends Register {
     override def toString(): String = "r0"
@@ -97,8 +100,8 @@ object AssemblerTypes {
     override def toString(): String = "sp"
   }
 
-  val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 0, r2 -> 0, r3 -> 0, r4 -> 0, r5 -> 0, r6 -> 0,
-    r7 -> 0, r8 -> 0, r9 -> 0, r10 -> 0, r11 -> 0, r12 -> 0, r13 -> 0, r14 -> 0)
+  val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 1, r2 -> 2, r3 -> 3, r4 -> 4, r5 -> 5, r6 -> 6,
+    r7 -> 7, r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14)
 
 
   sealed trait Operand2

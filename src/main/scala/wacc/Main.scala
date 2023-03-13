@@ -4,6 +4,7 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
+import wacc.ARM11Assembler
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -25,6 +26,8 @@ object Main {
     val inputProgram = file.mkString
     file.close
 
+    println(inputProgram + "\n\n")
+
     /* Compile */
     val ast = program.parse(inputProgram)
     ast match {
@@ -40,22 +43,25 @@ object Main {
       print("Semantic Error: ")
       verified.left.foreach(errList => {
         errList.reverse.foreach(err => {
-          if (err != Nil && err.nonEmpty) println(err)
+          if (err != null && err.nonEmpty) println(err)
         })
       })
       sys.exit(SemanticErrorCode)
     }
     
-    // Translate the ast in to IR
+    // Translate the ast to TAC
     val tac = delegateASTNode(ast.get)._1
     println("--- TAC ---")
     tac.foreach(l => println(l))
 
+    // Convert the TAC to IR
+    val assembler = new Assembler()
+    val (result, funcs) = assembler.assembleProgram(tac)
+
     // Convert the IR to ARM
-    val assembler = new Assembler(tac.toVector)
-    val result = assembler.assembleProgram(tac)
+    val arm = ARM11Assembler.assemble(result, funcs)
     println("--- ARM ---")
-    print(result)
+    print(arm)
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
@@ -63,7 +69,7 @@ object Main {
       val outputFilename = inputFilename.replace(".wacc", ".s")
       val outputFile = new File(outputFilename)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))
-      fileWriter.write(result + "\n")
+      fileWriter.write(arm + "\n")
       fileWriter.close()
     }
     println("\n\nCompilation Successful!")
