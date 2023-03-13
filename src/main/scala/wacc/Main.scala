@@ -4,6 +4,7 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
+import wacc.PeepholeOptimisation.PeepholeOptimise
 import wacc.ARM11Assembler
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
@@ -56,7 +57,11 @@ object Main {
 
     // Convert the TAC to IR
     val assembler = new Assembler()
-    val (result, funcs) = assembler.assembleProgram(tac)
+    val (ir, funcs) = assembler.assembleProgram(tac)
+
+    // Apply optimisations here
+    // TODO: only optimise based on cmdline flags
+    val result = PeepholeOptimise(ir)
 
     // Convert the IR to ARM
     val arm = ARM11Assembler.assemble(result, funcs)

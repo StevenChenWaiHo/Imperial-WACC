@@ -3,7 +3,7 @@ package wacc
 import wacc.FinalIR._
 import wacc.AssemblerTypes._
 
-class PeepholeOptimisation {
+object  PeepholeOptimisation {
   def PeepholeOptimise(code: List[FinalIR]): List[FinalIR] = {
     // Loop through code applying optimisations
     code.filterNot(isNullOp)
