@@ -5,7 +5,7 @@ import wacc.AssemblerTypes._
 
 object PeepholeOptimisation {
   def PeepholeOptimise(code: List[FinalIR]): List[FinalIR] = {
-    // Loop through code applying optimisations
+    // Apply peephole optimisations trying to decrease length the most early on
     code.slideAndFilter(isRedundant)
         .filterNot(isNullOp)
         .map(strengthReduction)
@@ -58,8 +58,8 @@ object PeepholeOptimisation {
         // Mul with 1
         case Mul(_, None(), op1, ImmediateInt(1), dst) if (op1 equals dst) => true
         case Mul(_, None(), ImmediateInt(1), op2, dst) if (op2 equals dst) => true
-        case Smull(_, None(), op1, ImmediateInt(1), dst, dst1) if (op1 equals dst) => false // TODO: implement correctly
-        case Smull(_, None(), ImmediateInt(1), op2, dst, dst1) if (op2 equals dst) => false
+        case Smull(_, None(), src, op1, ImmediateInt(1), dst) if (src equals dst) => false // TODO: implement correctly
+        case Smull(_, None(), src, ImmediateInt(1), op2, dst) if (src equals dst) => false
         // Empty push/pop
         case Push(_, List()) => true
         case Pop(_, List()) => true
@@ -67,7 +67,7 @@ object PeepholeOptimisation {
     }
   }
 
-  // Remove consecutive intructions that contradict each other
+  // Identify consecutive intructions that contradict each other
   def isRedundant(instr1: FinalIR, instr2: FinalIR): Boolean = {
     instr1 match {
         // Mov back and forth
@@ -112,6 +112,7 @@ object PeepholeOptimisation {
     }
   }
 
+  // Implicit class allows for `code.slideAndFilter(func)`
   implicit class slidableList[FinalIR](code: List[FinalIR]) {
     // Slide over a list filtering consecutive elements using func(a,b)
     def slideAndFilter(func: (FinalIR, FinalIR) => Boolean): List[FinalIR] = {
