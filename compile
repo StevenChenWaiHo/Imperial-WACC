@@ -3,9 +3,9 @@
 # You are free to change the language used for this script,
 # but do *not* change its name.
 
-for var in $@
+for ((i=1; i<${#@}; i+=2))
 do
-    java -jar wacc-39-compiler.jar "$var"
+    java -jar wacc-39-compiler.jar "${@:i:1}" "${@:i+1:1}"
 done
 
 exit $?
