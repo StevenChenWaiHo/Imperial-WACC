@@ -1,8 +1,6 @@
 package wacc
 
-//TODO Change all to x86_64 Architecture
-
-object x86AssemblerTypes {
+object AssemblerTypes {
   sealed trait LHSop
 
   case class StackOffset(offset: Int) extends LHSop {
@@ -10,11 +8,11 @@ object x86AssemblerTypes {
   }
 
   case class ImmediateInt(i: Int) extends LHSop {
-    override def toString(): String = i.toString()
+    override def toString(): String = "#" + i.toString()
   }
 
   case class LabelString(name: String) extends LHSop {
-    override def toString(): String = name
+    override def toString(): String = "=" + name
   }
 
   case class BranchString(name: String) extends LHSop {
@@ -104,9 +102,6 @@ object x86AssemblerTypes {
 
   val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 1, r2 -> 2, r3 -> 3, r4 -> 4, r5 -> 5, r6 -> 6,
     r7 -> 7, r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14)
-
-
-  sealed trait Operand2 //is this needed?
 
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends LHSop {
     @Override
