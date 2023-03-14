@@ -2,12 +2,9 @@ package wacc
 
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
-import wacc.TAC.ReservedPushTAC
-
 import collection.mutable
 
-
-object X86Assembler {
+object ARM11LowLevelAssembler {
 
   def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
     endFuncsIR = endFuncs
@@ -25,7 +22,7 @@ object X86Assembler {
         case Sub(cond, flag, op1, op2, dst) => assembleSub(cond, flag, op1, op2, dst)
         case Rsb(cond, flag, op1, op2, dst) => assembleRsb(cond, flag, op1, op2, dst)
         case Mul(cond, flag, op1, op2, dst) => assembleMul(cond, flag, op1, op2, dst)
-        case Smull(cond, flag, src, op1, op2, dst) => assembleSmull(cond, flag, src, op1, op2, dst)
+        case Smull(cond, flag, dst, op11, op1, op2) => assembleSmull(cond, flag, dst, op11, op1, op2)
         case Mov(cond, src, dst) => assembleMove(cond, src, dst)
         case Branch(cond, name) => assembleBranch(cond, name)
         case BranchLink(cond, name) => assembleBranchLink(cond, name)
@@ -55,41 +52,38 @@ object X86Assembler {
     }).flatten
   }
 
-  //TODO determine if register size change needed (ie q to l or similar)
-
-  //Uses movq and r registers for now
   def assembleStr(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
-    "movq" + ldrStrAssist(condition, src, operand, dst)
+    "str" + ldrStrAssist(condition, src, operand, dst)
   }
 
   def assembleStrPre(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
-    "movq" + ldrStrAssist(condition, src, operand, dst).toString + "!".toString()
+    "str" + ldrStrAssist(condition, src, operand, dst).toString + "!".toString()
   }
 
   
   def assembleLdr(condition: String, src: Register, operand: LHSop, dst: Register): String = {
-    "movq" + ldrStrAssist(condition, src, operand, dst)
+    "ldr" + ldrStrAssist(condition, src, operand, dst)
   }
 
   def ldrStrAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
-    var str = condition + " " + src.toString + ", "
+    var str = condition + " " + dst.toString + ", "
     operand match {
       case ImmediateInt(x) => {
-        str = str + x + "(" + src.toString + ")"
+        str = str + "[" + src.toString + ", #" + x + "]"
       }
       case LabelString(x) => {
-        str = "leaq" + x + "(%rip), " + dst.toString //%rip is instruction pointer
+        str = str + "=" + x
       }
     }
     str
   }
 
   def assemblePush(condition: String, registers: List[Register]): String = {
-    "pushq" + pushPopAssist(condition, registers)
+    "push" + pushPopAssist(condition, registers)
   }
 
   def assemblePop(condition: String, registers: List[Register]): String = {
-    "popq" + pushPopAssist(condition, registers)
+    "pop" + pushPopAssist(condition, registers)
   }
 
   def pushPopAssist(condition: String, registers: List[Register]): String = {
@@ -105,32 +99,32 @@ object X86Assembler {
   }
 
   def assembleAdd(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "addq" + addSubMulAssist(condition, setflag, op1, op2, dst)
+    "add" + addSubMulAssist(condition, setflag, op1, op2, dst)
   }
 
   def assembleSub(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "subq" + addSubMulAssist(condition, setflag, op1, op2, dst)
+    "sub" + addSubMulAssist(condition, setflag, op1, op2, dst)
   }
 
   def assembleRsb(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "rsbq" + addSubMulAssist(condition, setflag, op1, op2, dst)
+    "rsb" + addSubMulAssist(condition, setflag, op1, op2, dst)
   }
 
   def assembleMul(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "mulq" + addSubMulAssist(condition, setflag, op1, op2, dst)
+    "mul" + addSubMulAssist(condition, setflag, op1, op2, dst)
   }
 
-  def assembleSmull(condition: String, setflag: Suffi, src: LHSop, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "smullq" + fourMulAssist(condition, setflag, dst, src, op1, op2)
+  def assembleSmull(condition: String, setflag: Suffi, dst: LHSop, op11: LHSop, op1: LHSop, op2: LHSop): String = {
+    "smull" + fourMulAssist(condition, setflag, dst, op11, op1, op2)
   }
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
-                    sourceRegister: LHSop, operand: LHSop): String = {
+                    op1: LHSop, op2: LHSop): String = {
     addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
     addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
-    condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
-      "," + " " + operand +
+    condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + op1 +
+      "," + " " + op2 +
       "\ncmp " + destinationHigh + ", " + destinationLow + ", asr #31" +
       "\nbne _errOverflow"
   }
@@ -143,7 +137,7 @@ object X86Assembler {
   }
 
   def assembleCmp(condition: String, op1: LHSop, op2: LHSop): String = {
-    "cmpq" + condition + " " + op1.toString + ", " + op2.toString
+    "cmp" + condition + " " + op1.toString + ", " + op2.toString
   }
 
   // Determine when a mov is allowed
@@ -159,9 +153,9 @@ object X86Assembler {
   }
 
   def assembleMove(condition: String, src: LHSop, dst: Register): String = {
-    src match { //x86 should only use mov
-      // case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
-      case _ => "movq" + condition + " " + dst.toString + ", " + src.toString()
+    src match {
+      case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
+      case _ => "mov" + condition + " " + dst.toString + ", " + src.toString()
     }
   }
 
@@ -170,11 +164,11 @@ object X86Assembler {
   }
 
   def assembleBranchLink(condition: String, name: LHSop): String = {
-    "call" + condition + " " + name
+    "bl" + condition + " " + name
   }
 
   def assembleGlobal(name: String) = {
-    ".globl " + name
+    ".global " + name
   }
 
   def assembleLabel(name: String): String = {
@@ -182,11 +176,11 @@ object X86Assembler {
   }
 
   def assembleComment(comment: String): String = {
-    "# " + comment
+    "@ " + comment
   }
 
   def assembleDataSeg(): String = {
-    ".section .rodata"
+    ".data"
   }
 
   def assembleTextSeg(): String = {

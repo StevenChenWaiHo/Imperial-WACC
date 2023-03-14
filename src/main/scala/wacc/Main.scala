@@ -14,6 +14,10 @@ import wacc.ARM11Assembler
 import wacc.TAC._
 import wacc.PeepholeOptimisation.PeepholeOptimise
 import wacc.ArchitectureType.getArchitecture
+import wacc.ARM11HighLevelAssembler
+import wacc.ARM11LowLevelAssembler
+import wacc.X86HighLevelAssembler
+import wacc.X86LowLevelAssembler
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -121,13 +125,25 @@ object Main {
     var asm = new String()
     target match {
       case ArchitectureType.ARM11 => {
+        // Convert the TAC to IR
+        val assembler = new ARM11HighLevelAssembler()
+        val (result, funcs) = assembler.assembleProgram(tac)
+        // Apply optimisations here
+        // TODO: only optimise based on cmdline flags
+        // val result = PeepholeOptimise(ir)
         // Convert the IR to ARM11
-        asm = ARM11Assembler.assemble(result, funcs)
+        asm = ARM11LowLevelAssembler.assemble(result, funcs)
         println("--- ARM ---")
       }
       case ArchitectureType.X86 => {
+        // Convert the TAC to IR
+        val assembler = new X86HighLevelAssembler()
+        val (result, funcs) = assembler.assembleProgram(tac)
+        // Apply optimisations here
+        // TODO: only optimise based on cmdline flags
+        // val result = PeepholeOptimise(ir)
         // Convert the IR to X86_64
-        asm = X86Assembler.assemble(result, funcs)
+        asm = X86LowLevelAssembler.assemble(result, funcs)
         println("--- X86_64 ---")
       }
     }
