@@ -1,7 +1,7 @@
 package wacc.Optimisations
 
-import wacc.FinalIR._
-import wacc.AssemblerTypes._
+// import wacc.FinalIR._
+// import wacc.AssemblerTypes._
 
 object PeepholeOptimisation {
   def PeepholeOptimise(code: List[FinalIR]): List[FinalIR] = {
@@ -22,23 +22,23 @@ object PeepholeOptimisation {
     }
   }
 
-  // True if x is a power of 2
-  def isPower2(x: Int): Boolean = {
-    // Using the fact that if x is a power of 2, x & (x-1) = 0
-    x != 0 && (x & (x-1)) == 0
-  }
+//   // True if x is a power of 2
+//   def isPower2(x: Int): Boolean = {
+//     // Using the fact that if x is a power of 2, x & (x-1) = 0
+//     x != 0 && (x & (x-1)) == 0
+//   }
 
-  // Returns n where x = 2^n
-  def getPower2(x: Int): Int = {
-    assert(isPower2(x))
-    var tmp = x
-    var n = 0
-    while (tmp != 0) {
-        tmp -= 2
-        n += 1
-    }
-    n
-  }
+//   // Returns n where x = 2^n
+//   def getPower2(x: Int): Int = {
+//     assert(isPower2(x))
+//     var tmp = x
+//     var n = 0
+//     while (tmp != 0) {
+//         tmp -= 2
+//         n += 1
+//     }
+//     n
+//   }
 
   // Identify if the instruction can be removed entirely
   def isNullOp(instr: FinalIR): Boolean = {

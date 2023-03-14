@@ -7,6 +7,8 @@ import wacc.FinalIR.FinalIR
 import wacc.RegisterAllocator._
 import wacc.TAC._
 import wacc.cfgutils.{Colouring, RegisterAllocator}
+import wacc.FinalIR.FinalIR // TODO: change this to not import everything
+import wacc.X86HelperFunctions
 
 import scala.collection.mutable.ListBuffer
 
@@ -50,7 +52,7 @@ object x86StatelessAssembler {
 
 }
 
-class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
+class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   var colouring: Colouring[Register] = null
 
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
@@ -229,9 +231,9 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
       }
       case _ => "_readi"
     }
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
-    addEndFunc(bl, new HelperFunctions().assemble_read(bl))
+    addEndFunc("_errOverflow", new X86HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
+    addEndFunc(bl, new X86HelperFunctions().assemble_read(bl))
     FinalIR.BranchLink("", new BranchString(bl)) ::
       FinalIR.Mov("", r0, getRealReg(readReg))
   }
@@ -259,8 +261,8 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): AssemblerState = {
-    addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errNull", new X86HelperFunctions().assemble_errNull())
+    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
       FinalIR.BranchLink("eq", new BranchString("_errNull")) ::
@@ -272,8 +274,8 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
   }
 
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
-    addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errNull", new X86HelperFunctions().assemble_errNull())
+    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
       FinalIR.BranchLink("eq", BranchString("_errNull")) ::
@@ -330,8 +332,8 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
         List(FinalIR.Smull("", Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res)))
       }
       case BinaryOpType.Div => {
-        addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", new X86HelperFunctions().assemble_errDivZero())
+        addEndFunc("_prints", new X86HelperFunctions().assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), r0) ::
           FinalIR.Mov("", getOperand(op2), r1) ::
           FinalIR.Cmp("", r1, new ImmediateInt(0)) ::
@@ -340,8 +342,8 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
           FinalIR.Mov("", r0, getRealReg(res))
       }
       case BinaryOpType.Mod => {
-        addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", new X86HelperFunctions().assemble_errDivZero())
+        addEndFunc("_prints", new X86HelperFunctions().assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), r0) ::
           FinalIR.Mov("", getOperand(op2), r1) ::
           FinalIR.Cmp("", r1, ImmediateInt(0)) ::
@@ -458,9 +460,9 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
 
           case ArrayType(t, _) if t is BaseType(Char_T) => "_prints"
         }
-        addEndFunc(bl, new HelperFunctions().assemble_print(bl))
+        addEndFunc(bl, new X86HelperFunctions().assemble_print(bl))
         if (cmd == CmdT.PrintLn) {
-          addEndFunc("_println", new HelperFunctions().assemble_print("_println"))
+          addEndFunc("_println", new X86HelperFunctions().assemble_print("_println"))
           FinalIR.Mov("", getOperand(operand), r0) ::
             FinalIR.BranchLink("", new BranchString(bl)) ::
             FinalIR.BranchLink("", new BranchString("_println"))
@@ -487,9 +489,9 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
               FinalIR.BranchLink("", new BranchString("free"))
           }
           case PairType(fstType, sndType) => {
-            addEndFunc("_freepair", new HelperFunctions().assemble_freepair())
-            addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
-            addEndFunc("_prints", new HelperFunctions().assemble_prints())
+            addEndFunc("_freepair", new X86HelperFunctions().assemble_freepair())
+            addEndFunc("_errNull", new X86HelperFunctions().assemble_errNull())
+            addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
 
             FinalIR.Mov("", getOperand(operand), r0) ::
               FinalIR.BranchLink("", new BranchString("_freepair"))
@@ -528,8 +530,8 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
   }
 
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
-    addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
-    addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
+    addEndFunc("_arrLoad", new X86HelperFunctions().assemble_arrLoad())
+    addEndFunc("_boundsCheck", new X86HelperFunctions().assemble_boundsCheck())
     var regs = List(getRealReg(arrReg), getRealReg(dstReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     var output: AssemblerState = (FinalIR.Push("", regs) ::
@@ -547,9 +549,9 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): AssemblerState = {
-    addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
-    addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
-
+    addEndFunc("_arrStore", new X86HelperFunctions().assemble_arrStore())
+    addEndFunc("_boundsCheck", new X86HelperFunctions().assemble_boundsCheck())
+    
     var regs = List(getRealReg(arrReg), getRealReg(srcReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     var output = (FinalIR.Push("", regs) ::

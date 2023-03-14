@@ -2,6 +2,7 @@ package wacc
 
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
+import wacc.ARM11HelperFunctions
 import wacc.AssemblerTypes._
 import wacc.FinalIR.FinalIR
 import wacc.RegisterAllocator._
@@ -228,9 +229,9 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
       }
       case _ => "_readi"
     }
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
-    addEndFunc(bl, new HelperFunctions().assemble_read(bl))
+    addEndFunc("_errOverflow", new ARM11HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new ARM11HelperFunctions().assemble_prints())
+    addEndFunc(bl, new ARM11HelperFunctions().assemble_read(bl))
     FinalIR.BranchLink("", new BranchString(bl)) ::
       FinalIR.Mov("", r0, getRealReg(readReg)) :: List()
   }
@@ -258,8 +259,8 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[FinalIR] = {
-    addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errNull", new ARM11HelperFunctions().assemble_errNull())
+    addEndFunc("_prints", new ARM11HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
       FinalIR.BranchLink("eq", new BranchString("_errNull")) ::
@@ -271,8 +272,8 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   }
 
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): List[FinalIR] = {
-    addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errNull", new ARM11HelperFunctions().assemble_errNull())
+    addEndFunc("_prints", new ARM11HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
       FinalIR.BranchLink("eq", BranchString("_errNull")) ::
@@ -330,8 +331,8 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
         List(FinalIR.Smull("", Status(), getRealReg(res), getOperand(op1), getOperand(op1), getOperand(op2)))
       }
       case BinaryOpType.Div => {
-        addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", new ARM11HelperFunctions().assemble_errDivZero())
+        addEndFunc("_prints", new ARM11HelperFunctions().assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), r0) ::
           FinalIR.Mov("", getOperand(op2), r1) ::
           FinalIR.Cmp("", r1, new ImmediateInt(0)) ::
@@ -340,8 +341,8 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
           FinalIR.Mov("", r0, getRealReg(res)) :: List()
       }
       case BinaryOpType.Mod => {
-        addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", new ARM11HelperFunctions().assemble_errDivZero())
+        addEndFunc("_prints", new ARM11HelperFunctions().assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), r0) ::
           FinalIR.Mov("", getOperand(op2), r1) ::
           FinalIR.Cmp("", r1, ImmediateInt(0)) ::
@@ -460,9 +461,9 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
 
           case ArrayType(t, _) if t is BaseType(Char_T) => "_prints"
         }
-        addEndFunc(bl, new HelperFunctions().assemble_print(bl))
+        addEndFunc(bl, new ARM11HelperFunctions().assemble_print(bl))
         if (cmd == CmdT.PrintLn) {
-          addEndFunc("_println", new HelperFunctions().assemble_print("_println"))
+          addEndFunc("_println", new ARM11HelperFunctions().assemble_print("_println"))
           FinalIR.Mov("", getOperand(operand), r0) ::
             FinalIR.BranchLink("", new BranchString(bl)) ::
             FinalIR.BranchLink("", new BranchString("_println")) :: List()
@@ -488,9 +489,9 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
               FinalIR.BranchLink("", new BranchString("free")) :: List()
           }
           case PairType(fstType, sndType) => {
-            addEndFunc("_freepair", new HelperFunctions().assemble_freepair())
-            addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
-            addEndFunc("_prints", new HelperFunctions().assemble_prints())
+            addEndFunc("_freepair", new ARM11HelperFunctions().assemble_freepair())
+            addEndFunc("_errNull", new ARM11HelperFunctions().assemble_errNull())
+            addEndFunc("_prints", new ARM11HelperFunctions().assemble_prints())
 
             FinalIR.Mov("", getOperand(operand), r0) ::
               FinalIR.BranchLink("", new BranchString("_freepair")) :: List()
