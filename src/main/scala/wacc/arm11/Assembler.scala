@@ -10,6 +10,7 @@ import wacc.cfgutils.{Colouring, RegisterAllocator}
 
 import scala.collection.mutable.ListBuffer
 
+import wacc.HelperFunctions
 object StatelessAssembler {
   val argRegs = List(r0, r1, r2, r3)
 
@@ -53,7 +54,7 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
   val endFuncs = collection.mutable.Map[String, List[FinalIR]]()
   var labelCount = 0
-  val argRegs = StatelessAssembler.argRegs
+  val argRegs = List(r0, r1, r2, r3)
   val POINTER_BYTE_SIZE = 4
 
   // Add predefined function to end of assembly code (.e.g _prints)
