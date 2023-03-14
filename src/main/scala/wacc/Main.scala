@@ -5,6 +5,7 @@ import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
 import wacc.ARM11Assembler
+import wacc.ArchitectureType.getArchitecture
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -28,8 +29,8 @@ object Main {
 
     println(inputProgram + "\n\n")
 
-    val target = getArchitecture(args(2))
-      .getOrElse(throw new FileNotFoundException("Architecture: " + args(2) + " does not exist."))
+    val target = getArchitecture(args(1))
+      .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
 
     /* Compile */
     val ast = program.parse(inputProgram)
@@ -60,31 +61,29 @@ object Main {
     // Convert the TAC to IR
     val assembler = new Assembler()
     val (result, funcs) = assembler.assembleProgram(tac)
+    var asm = new String()
 
     target match {
-      case ARM11 => {
+      case ArchitectureType.ARM11 => {
         // Convert the IR to ARM11
-        val arm = ARM11Assembler.assemble(result, funcs)
+        asm = ARM11Assembler.assemble(result, funcs)
         println("--- ARM ---")
-        print(arm)
       }
-      case X86 => {
+      case ArchitectureType.X86 => {
         // Convert the IR to X86_64
         val x86 = X86Assembler.assemble(result, funcs)
         println("--- X86_64 ---")
-        print(x86)
       }
     }
-
-    
+    print(asm)
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
-      val inputFilename = args.last.split("/").last
+      val inputFilename = args.head.split("/").last
       val outputFilename = inputFilename.replace(".wacc", ".s")
       val outputFile = new File(outputFilename)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))
-      fileWriter.write(arm + "\n")
+      fileWriter.write(asm + "\n")
       fileWriter.close()
     }
     println("\n\nCompilation Successful!")
