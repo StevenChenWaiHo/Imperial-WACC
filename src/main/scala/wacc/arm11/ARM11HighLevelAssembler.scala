@@ -3,6 +3,7 @@ package wacc
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
 import wacc.ARM11HelperFunctions
+import wacc.ARM11AssemblerTypes._
 import wacc.AssemblerTypes._
 import wacc.FinalIR.FinalIR
 import wacc.RegisterAllocator._

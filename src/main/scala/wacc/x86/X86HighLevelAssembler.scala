@@ -2,6 +2,7 @@ package wacc
 
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
+import wacc.X86AssemblerTypes._
 import wacc.AssemblerTypes._
 import wacc.FinalIR.FinalIR
 import wacc.RegisterAllocator._
