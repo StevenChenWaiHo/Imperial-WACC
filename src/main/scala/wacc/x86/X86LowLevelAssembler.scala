@@ -1,5 +1,6 @@
 package wacc
 
+import wacc.X86AssemblerTypes._
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
 import wacc.TAC.ReservedPushTAC
