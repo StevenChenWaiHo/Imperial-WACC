@@ -10,48 +10,12 @@ import wacc.FinalIR.FinalIR
 import scala.collection.mutable.ListBuffer
 
 import wacc.HelperFunctions
-object StatelessAssembler {
-  val argRegs = List(r0, r1, r2, r3)
-
-  def pushPopAssist(condition: String, registers: List[Register]): String = {
-    var str = condition + " {"
-    for (register <- registers) {
-      if (register != registers.last) {
-        str = str + register.toString + ", "
-      } else {
-        str = str + register.toString
-      }
-    }
-    str + "}"
-  }
-
-  def assemblePush(condition: String, registers: List[Register]): FinalIR = {
-    FinalIR.Push(condition, registers)
-  }
-
-  def assembleLdr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): FinalIR = {
-    FinalIR.Ldr(condition, sourceRegister, operand, destinationRegister)
-  }
-
-  def assembleStr(condition: String, destinationRegister: Register, sourceRegister: Register, operand: LHSop): FinalIR = {
-    FinalIR.Str(condition, sourceRegister, operand, destinationRegister)
-  }
-
-  def assembleAdd(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: LHSop, operand: LHSop): FinalIR = {
-    FinalIR.Add(condition, setflag, sourceRegister, operand, destinationRegister)
-  }
-
-  def assembleSub(condition: String, setflag: Suffi, destinationRegister: Register, sourceRegister: LHSop, operand: LHSop): FinalIR = {
-    FinalIR.Sub(condition, setflag, sourceRegister, operand, destinationRegister)
-  }
-
-}
 
 class Assembler {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
   val endFuncs = collection.mutable.Map[String, AssemblerState]()
   var labelCount = 0
-  val argRegs = StatelessAssembler.argRegs
+  val argRegs = List(r0, r1, r2, r3)
   val POINTER_BYTE_SIZE = 4
 
   // Add predefined function to end of assembly code (.e.g _prints)
