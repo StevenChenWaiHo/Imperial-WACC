@@ -1,27 +1,52 @@
-package wacc
+package wacc.cfgutils
 
 import wacc.TAC._
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-object CFG {
-  type Id = Int
+type Id = Int
 
-  sealed trait CFGReg
+case class CFGNode(val id: Id, instr: TAC, uses: Set[TRegister], defs: Set[TRegister],
+                   succs: Set[Id], liveIn: Set[TRegister] = Set(), liveOut: Set[TRegister] = Set(), depth: Int = 0) {
+  def withLiveIns(newLiveIns: Set[TRegister]): CFGNode = this.copy(liveIn = liveIn union newLiveIns)
 
-  // Real Register
-  case class RReg[A](x: A) extends CFGReg
+  def withLiveOuts(newLiveOuts: Set[TRegister]): CFGNode = this.copy(liveOut = liveOut union newLiveOuts)
+}
 
-  // Temporary Register
-  case class TReg(x: Int) extends CFGReg
+class CFG(val tacs: Vector[TAC], val nodeInfo: CFGNodeInfo) {
 
-  case class CFGNode(val id: Id, instr: TAC, uses: Set[CFGReg], defs: Set[CFGReg],
-                     succs: Set[Id], liveIn: Set[CFGReg] = Set(), liveOut: Set[CFGReg] = Set()) {
-    def addLiveIns(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn union regs, liveOut)
-
-    def addLiveOuts(regs: Set[CFGReg]): CFGNode = CFGNode(id, instr, uses, defs, succs, liveIn, liveOut union regs)
+  val nodes: Vector[CFGNode] = {
+    val initialNodes = tacs.zipWithIndex.map(x => {
+      val (instr, id) = x
+      val (uses, defs, succs) = nodeInfo.getInfo(instr, tacs)
+      CFGNode(id, instr, uses, defs, succs)
+    })
+    computeGraph(initialNodes)
   }
+
+  val tRegisterCount = nodes.foldRight(Set[TRegister]()) {
+    (node, set) => (node.uses union node.defs) union set
+  }.size
+
+  def getSuccs(node: CFGNode): Set[CFGNode] = node.succs.map(nodes(_))
+
+  private def updateLiveIns(node: CFGNode): CFGNode = node withLiveIns (node.uses union (node.liveIn diff node.defs))
+
+  private def updateLiveOuts(node: CFGNode): CFGNode = node withLiveOuts getSuccs(node).flatMap(_.liveIn)
+
+  @tailrec
+  private def computeGraph(current: Vector[CFGNode]): Vector[CFGNode] = {
+    val next: Vector[CFGNode] = current.map(x => updateLiveOuts(updateLiveIns(x)))
+    if (current != next) computeGraph(next)
+    else current
+  }
+
+  def getInfo(tac: TAC): (Set[TRegister], Set[TRegister], Set[Id]) = nodeInfo.getInfo(tac, tacs)
+}
+
+object CFG {
 
   class CFG[A](instrs: Vector[TAC], regLimit: Int) {
     var nodes: Vector[CFGNode] = instrs.zipWithIndex.map(x => makeNode(x._1, x._2))
@@ -29,6 +54,7 @@ object CFG {
     val interferences: InterferenceGraph[A] = buildInterferenceGraph
 
     implicit def toCFGReg(tReg: TRegister): TReg = TReg(tReg.num)
+
     implicit def toUsedRegisters(ops: List[Operand]): Set[CFGReg] = ops.collect {
       case TRegister(num) => TReg(num)
     }.toSet
@@ -73,10 +99,10 @@ object CFG {
           succs = List(id + 1, getId(lbl)) //TODO: does this work?
         case GOTO(lbl) =>
           succs = List(getId(lbl))
-        case CreatePairElem(_, _, ptr, value) =>  //TODO: These pair-related ones could be wrong:
+        case CreatePairElem(_, _, ptr, value) => //TODO: These pair-related ones could be wrong:
           uses = List(value)
           defs = List(ptr)
-        case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) =>  //TODO
+        case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) => //TODO
           print("CreatePair not yet translated in CFG.scala")
         case _ =>
 
@@ -119,23 +145,25 @@ object CFG {
     def findColouring(regs: List[A]): Option[Map[CFGReg, A]] = {
       // Extremely inefficient:
       def colour(rRegs: List[A], ints: InterferenceGraph[A]): Option[Map[CFGReg, A]] = {
-        if(ints.tRegisters.isEmpty) return Some(Map())
-        for(t <- ints.tRegisters) {
-          for(r <- rRegs) {
-            if(ints.canAssign(t, RReg(r))) {
+        if (ints.tRegisters.isEmpty) return Some(Map())
+        for (t <- ints.tRegisters) {
+          for (r <- rRegs) {
+            if (ints.canAssign(t, RReg(r))) {
               val result = colour(rRegs, ints.assign(t, RReg(r))).map(_.updated(t, r))
-              if(result.isDefined) return result
+              if (result.isDefined) return result
             }
           }
         }
         None
       }
+
       colour(regs, interferences)
     }
   }
 
   class InterferenceGraph[A](interferences: Map[CFGReg, Set[CFGReg]]) {
     def tRegisters = interferences.keys
+
     // no interference when assigning r to t
     def canAssign(t: CFGReg, r: CFGReg): Boolean = !(interferences(t).excl(t) contains r)
 
