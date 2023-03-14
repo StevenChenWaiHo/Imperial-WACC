@@ -7,7 +7,7 @@ import wacc.TAC.ReservedPushTAC
 import collection.mutable
 
 
-object x86Assembler {
+object X86Assembler {
 
   def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
     endFuncsIR = endFuncs
