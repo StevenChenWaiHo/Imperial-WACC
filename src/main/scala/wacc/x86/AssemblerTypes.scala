@@ -111,7 +111,7 @@ object x86AssemblerTypes {
       arch match {
         case "arm" => Some(ARM11)
         case "x86" => Some(X86)
-        //case _ => None()
+        case _ => None()
       }
     }
   }
