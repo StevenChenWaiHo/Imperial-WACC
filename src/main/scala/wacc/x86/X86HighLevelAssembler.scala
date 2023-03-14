@@ -16,7 +16,6 @@ import scala.collection.mutable.ListBuffer
 
 //TODO Change all to x86_64 Architecture
 
-import wacc.HelperFunctions
 
 class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   var colouring: Colouring[Register] = null

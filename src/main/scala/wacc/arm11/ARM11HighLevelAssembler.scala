@@ -16,7 +16,7 @@ import wacc.X86HelperFunctions
 import scala.collection.mutable.ListBuffer
 
 import wacc.HelperFunctions
-object x86StatelessAssembler {
+object ARM11StatelessAssembler {
   val argRegs = List(r0, r1, r2, r3)
 
   def pushPopAssist(condition: String, registers: List[Register]): String = {
