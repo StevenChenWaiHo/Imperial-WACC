@@ -5,13 +5,7 @@ import wacc.AssemblerTypes._
 import wacc.FinalIR._
 import collection.mutable
 
-<<<<<<<< HEAD:src/main/scala/wacc/arm11/ARM11LowLevelAssembler.scala
 object ARM11LowLevelAssembler {
-========
-//TODO Change all to x86_64 Architecture
-
-object X86Assembler {
->>>>>>>> 53ca949 (Renamed x86asm):src/main/scala/wacc/x86/X86Assembler.scala
 
   def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
     endFuncsIR = endFuncs

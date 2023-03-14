@@ -190,6 +190,7 @@ object X86LowLevelAssembler {
     } else {
       condition match { //x86 should only use mov or cmov
         // case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
+        // helper needed
         case "ne" => ins = ins + "e"
         case "e" => ins = ins + "ne"
         case "nz" => ins = ins + "z"
@@ -208,7 +209,7 @@ object X86LowLevelAssembler {
       count += 1
       ins + " skip" + count + "\n" +
         "mov" + " " + dst.toString + ", " + src.toString() + "\n" + //src must be register
-        "skip" + count + ":" //change
+        "skip" + count + ":"
     }
   }
 

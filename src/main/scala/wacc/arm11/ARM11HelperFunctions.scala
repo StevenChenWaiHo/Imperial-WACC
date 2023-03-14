@@ -1,8 +1,8 @@
-package wacc
 
 import wacc.ARM11HighLevelAssembler._
 import wacc.ARM11AssemblerTypes._
 import wacc.ArchitectureType._
+import wacc.ARM11HighLevelAssembler
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._

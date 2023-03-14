@@ -10,11 +10,13 @@ import wacc.FinalIR.FinalIR
 import wacc.RegisterAllocator._
 import wacc.TAC._
 import wacc.cfgutils.{Colouring, RegisterAllocator}
+import wacc.FinalIR.FinalIR // TODO: change this to not import everything
+import wacc.X86HelperFunctions
 
 import scala.collection.mutable.ListBuffer
 
 import wacc.HelperFunctions
-object StatelessAssembler {
+object x86StatelessAssembler {
   val argRegs = List(r0, r1, r2, r3)
 
   def pushPopAssist(condition: String, registers: List[Register]): String = {
