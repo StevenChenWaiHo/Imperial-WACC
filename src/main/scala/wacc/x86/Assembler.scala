@@ -321,7 +321,7 @@ class x86TempAssembler {
         FinalIR.Sub("", Status(), getOperand(op1), getOperand(op2),  getRealReg(res))
       }
       case BinaryOpType.Mul => {
-        FinalIR.Smull("", Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res))
+        List(FinalIR.Smull("", Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res)))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())

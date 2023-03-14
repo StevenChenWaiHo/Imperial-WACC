@@ -63,11 +63,11 @@ object Main {
 
     // Convert the TAC to IR
     val assembler = new Assembler()
-    val (ir, funcs) = assembler.assembleProgram(tac)
+    val (result, funcs) = assembler.assembleProgram(tac)
 
     // Apply optimisations here
     // TODO: only optimise based on cmdline flags
-    val result = PeepholeOptimise(ir)
+    // val result = PeepholeOptimise(ir)
 
     var asm = new String()
     target match {
