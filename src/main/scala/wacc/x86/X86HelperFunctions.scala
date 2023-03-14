@@ -1,4 +1,4 @@
-
+package wacc
 
 import wacc.X86HighLevelAssembler
 import wacc.AssemblerTypes._
