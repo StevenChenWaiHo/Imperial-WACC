@@ -1,4 +1,4 @@
-
+package wacc
 
 import wacc.ARM11HighLevelAssembler
 import wacc.AssemblerTypes._

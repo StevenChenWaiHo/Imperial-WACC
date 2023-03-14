@@ -1,4 +1,4 @@
-
+package wacc
 
 //TODO Change all to x86_64 Architecture
 
@@ -10,11 +10,11 @@ object x86AssemblerTypes {
   }
 
   case class ImmediateInt(i: Int) extends LHSop {
-    override def toString(): String = "#" + i.toString()
+    override def toString(): String = i.toString()
   }
 
   case class LabelString(name: String) extends LHSop {
-    override def toString(): String = "=" + name
+    override def toString(): String = name
   }
 
   case class BranchString(name: String) extends LHSop {

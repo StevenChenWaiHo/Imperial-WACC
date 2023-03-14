@@ -1,4 +1,4 @@
-
+package wacc
 
 object AssemblerTypes {
   sealed trait LHSop
