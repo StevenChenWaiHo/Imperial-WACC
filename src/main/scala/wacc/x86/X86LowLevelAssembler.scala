@@ -72,6 +72,10 @@ object X86LowLevelAssembler {
 
   //TODO split out leaq
   def ldrStrAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
+    println(condition)
+    println(src)
+    println(operand)
+    println(dst)
     var str = condition + " " + src.toString + ", "
     operand match {
       case ImmediateInt(x) => {
@@ -126,8 +130,8 @@ object X86LowLevelAssembler {
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
                     sourceRegister: LHSop, operand: LHSop): String = {
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errOverflow", new X86HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
 
     condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
       "," + " " + operand +
@@ -137,8 +141,8 @@ object X86LowLevelAssembler {
 
 
   def addSubMulAssist(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errOverflow", new X86HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
     condition + setflag + " " + dst + ", " + op1 + ", " + op2 + "\nblvs _errOverflow"
   }
 

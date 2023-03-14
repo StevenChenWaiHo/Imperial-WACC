@@ -4,7 +4,7 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
-import wacc.PeepholeOptimisation.PeepholeOptimise
+// import wacc.PeepholeOptimisation.PeepholeOptimise
 import wacc.ArchitectureType.getArchitecture
 import wacc.ARM11HighLevelAssembler
 import wacc.ARM11LowLevelAssembler
@@ -69,25 +69,23 @@ object Main {
     target match {
       case ArchitectureType.ARM11 => {
         // Convert the TAC to IR
-        val assembler = new ARM11HighLevelAssembler()
-        val (result, funcs) = assembler.assembleProgram(tac)
+        val (result, funcs) = ARM11HighLevelAssembler.assembleProgram(tac)
         // Apply optimisations here
         // TODO: only optimise based on cmdline flags
         // val result = PeepholeOptimise(ir)
         // Convert the IR to ARM11
-        asm = ARM11LowLevelAssembler.assemble(result, funcs)
         println("--- ARM ---")
+        asm = ARM11LowLevelAssembler.assemble(result, funcs)
       }
       case ArchitectureType.X86 => {
         // Convert the TAC to IR
-        val assembler = new X86HighLevelAssembler()
-        val (result, funcs) = assembler.assembleProgram(tac)
+        val (result, funcs) = X86HighLevelAssembler.assembleProgram(tac)
         // Apply optimisations here
         // TODO: only optimise based on cmdline flags
         // val result = PeepholeOptimise(ir)
         // Convert the IR to X86_64
-        asm = X86LowLevelAssembler.assemble(result, funcs)
         println("--- X86_64 ---")
+        asm = X86LowLevelAssembler.assemble(result, funcs)
       }
     }
     print(asm)

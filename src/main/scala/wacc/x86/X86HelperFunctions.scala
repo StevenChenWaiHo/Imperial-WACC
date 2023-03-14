@@ -1,6 +1,6 @@
 package wacc
 
-import wacc.X86HighLevelAssembler
+import wacc.X86HighLevelAssembler._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
@@ -10,7 +10,7 @@ import scala.collection.mutable.ListBuffer
 
 //TODO Change all to x86_64 Architecture
 
-class X86HelperFunctions extends Assembler {
+class X86HelperFunctions {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
 
   implicit private[this] def toStrings(state: AssemblerState) = state.code.toList

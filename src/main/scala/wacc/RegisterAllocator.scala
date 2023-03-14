@@ -1,6 +1,6 @@
 package wacc
 
-import wacc.AssemblerTypes.{ImmediateInt, Register, fp, sp}
+import wacc.AssemblerTypes._
 import wacc.TAC._
 import wacc.FinalIR.FinalIR
 
