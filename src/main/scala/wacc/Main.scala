@@ -86,7 +86,7 @@ object Main {
         // TODO: only optimise based on cmdline flags
         // val result = PeepholeOptimise(ir)
         // Convert the IR to X86_64
-        val x86 = X86LowLevelAssembler.assemble(result, funcs)
+        asm = X86LowLevelAssembler.assemble(result, funcs)
         println("--- X86_64 ---")
       }
     }
