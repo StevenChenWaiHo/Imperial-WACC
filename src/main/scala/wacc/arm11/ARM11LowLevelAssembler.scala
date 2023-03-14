@@ -4,7 +4,7 @@ import wacc.AssemblerTypes._
 import wacc.FinalIR._
 import collection.mutable
 
-object ARM11Assembler {
+object ARM11LowLevelAssembler {
 
   def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
     endFuncsIR = endFuncs

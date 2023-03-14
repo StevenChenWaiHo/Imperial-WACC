@@ -11,7 +11,7 @@ import scala.collection.mutable.ListBuffer
 
 import wacc.HelperFunctions
 
-class Assembler {
+class ARM11HighLevelAssembler {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
   val endFuncs = collection.mutable.Map[String, AssemblerState]()
   var labelCount = 0

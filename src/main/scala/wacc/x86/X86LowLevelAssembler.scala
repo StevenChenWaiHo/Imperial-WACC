@@ -1,4 +1,4 @@
-package wacc
+
 
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
@@ -6,7 +6,7 @@ import collection.mutable
 
 //TODO Change all to x86_64 Architecture
 
-object X86Assembler {
+object X86LowLevelAssembler {
 
   def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
     endFuncsIR = endFuncs
