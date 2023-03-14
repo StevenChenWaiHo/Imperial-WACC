@@ -1,4 +1,4 @@
-
+package wacc
 
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
