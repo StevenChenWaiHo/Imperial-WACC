@@ -1,5 +1,7 @@
 package wacc
 
+//TODO Change all to x86_64 Architecture
+
 object x86AssemblerTypes {
   sealed trait LHSop
 
@@ -102,19 +104,6 @@ object x86AssemblerTypes {
 
   val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 1, r2 -> 2, r3 -> 3, r4 -> 4, r5 -> 5, r6 -> 6,
     r7 -> 7, r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14)
-
-  object ArchitectureType extends Enumeration {
-    type Architecture = Value
-    val ARM11, X86 = Value
-
-    def getArchitecture(arch: String): Option[Architecture] = {
-      arch match {
-        case "arm" => Some(ARM11)
-        case "x86" => Some(X86)
-        case _ => None()
-      }
-    }
-  }
 
   sealed trait Operand2 //is this needed?
 
