@@ -105,9 +105,8 @@ object x86AssemblerTypes {
   val listOfRegisters = Map[Register, Int](r0 -> 0, r1 -> 1, r2 -> 2, r3 -> 3, r4 -> 4, r5 -> 5, r6 -> 6,
     r7 -> 7, r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14)
 
-  sealed trait Operand2 //is this needed?
 
-  //TODO move these to ARM11 specific file
+  sealed trait Operand2 //is this needed?
 
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends LHSop {
     @Override
