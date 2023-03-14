@@ -4,6 +4,7 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
+import wacc.PeepholeOptimisation.PeepholeOptimise
 import wacc.ARM11Assembler
 import wacc.ArchitectureType.getArchitecture
 
@@ -27,12 +28,13 @@ object Main {
     val inputProgram = file.mkString
     file.close
 
-    println(inputProgram + "\n\n")
+    println(inputProgram)
 
     val target = getArchitecture(args(1))
       .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
 
     /* Compile */
+    // Parse input file
     val ast = program.parse(inputProgram)
     ast match {
       case Failure(err) => {
@@ -42,6 +44,7 @@ object Main {
       case Success(x) =>
     }
 
+    // Apply semantic analysis
     val verified = verifyProgram(ast.get)
     if (verified.isLeft) {
       print("Semantic Error: ")
@@ -60,9 +63,13 @@ object Main {
 
     // Convert the TAC to IR
     val assembler = new Assembler()
-    val (result, funcs) = assembler.assembleProgram(tac)
-    var asm = new String()
+    val (ir, funcs) = assembler.assembleProgram(tac)
 
+    // Apply optimisations here
+    // TODO: only optimise based on cmdline flags
+    val result = PeepholeOptimise(ir)
+
+    var asm = new String()
     target match {
       case ArchitectureType.ARM11 => {
         // Convert the IR to ARM11

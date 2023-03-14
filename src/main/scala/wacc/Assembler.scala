@@ -5,7 +5,7 @@ import wacc.AbstractSyntaxTree._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
-import wacc.FinalIR.FinalIR // TODO: change this to not import everything
+import wacc.FinalIR.FinalIR
 
 import scala.collection.mutable.ListBuffer
 
@@ -319,7 +319,7 @@ class Assembler {
         FinalIR.Sub("", Status(), getOperand(op1), getOperand(op2),  getRealReg(res))
       }
       case BinaryOpType.Mul => {
-        FinalIR.Smull("", Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res))
+        List(FinalIR.Smull("", Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res)))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
