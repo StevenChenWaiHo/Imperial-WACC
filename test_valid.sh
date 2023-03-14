@@ -1,7 +1,7 @@
 #!/bin/bash
 ERRORS=0
 TOTAL=0
-for f in $(find ../wacc_examples/valid -name '*.wacc');
+for f in $(find src/test/wacc_examples/valid -name '*.wacc');
 do 
     echo $f
     let TOTAL++

@@ -1,6 +1,5 @@
 package wacc
 
-import wacc.StatelessAssembler.{assembleAdd, assembleLdr, assemblePush, assembleStr, assembleSub}
 import wacc.AssemblerTypes.{ImmediateInt, Register, fp, sp}
 import wacc.TAC._
 import wacc.FinalIR.FinalIR
@@ -13,7 +12,7 @@ object RegisterAllocator {
                        var available: ListBuffer[Register],
                        var used: ListBuffer[(TRegister, Register)],
                        var memory: ListBuffer[ListBuffer[TRegister]]) {
-    //var assembler: Assembler[Register]) extends StateTracker[Register, TRegister] {
+    
     val offset = 1024
 
     def storeRegister = {
@@ -32,7 +31,7 @@ object RegisterAllocator {
     /** When entering and exiting a function, the scope is completely redefined.
     * allocate some stack space by moving the stack pointer, and add 'memory(0)' to track it. */
     def enterFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(assembleSub("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      code.addOne(FinalIR.Sub("", AssemblerTypes.None(), sp, ImmediateInt(offset), sp))
       memory.addOne(ListBuffer[TRegister]())
       this
     }
@@ -44,7 +43,7 @@ object RegisterAllocator {
     }
 
     def exitFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(assembleAdd("", AssemblerTypes.None(), sp, sp, ImmediateInt(offset)))
+      code.addOne(FinalIR.Add("", AssemblerTypes.None(), sp, ImmediateInt(offset), sp))
       this
     }
 
@@ -91,7 +90,7 @@ object RegisterAllocator {
       /* Check memory */
       val index: Int = memory.head.indexOf(target)
       if (index != (-1)) {
-        code = code.addOne(assembleLdr("", available.head, fp, new ImmediateInt(-offset + (4 * index))))
+        code = code.addOne(FinalIR.Ldr("", available.head, new ImmediateInt(-offset + (4 * index)), fp))
       }
 
       logicallyAllocateRegisterTo(target)

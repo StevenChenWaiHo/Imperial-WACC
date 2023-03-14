@@ -6,6 +6,7 @@ import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
 import wacc.PeepholeOptimisation.PeepholeOptimise
 import wacc.ARM11Assembler
+import wacc.ArchitectureType.getArchitecture
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -19,8 +20,8 @@ object Main {
   val SuccessCode = 0
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 1) throw new IllegalArgumentException(
-      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 1."
+    if (args.length != 2) throw new IllegalArgumentException(
+      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 2."
     )
     val file = Option(Source.fromFile(args.head))
       .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
@@ -28,6 +29,9 @@ object Main {
     file.close
 
     println(inputProgram)
+
+    val target = getArchitecture(args(1))
+      .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
 
     /* Compile */
     // Parse input file
@@ -65,18 +69,28 @@ object Main {
     // TODO: only optimise based on cmdline flags
     val result = PeepholeOptimise(ir)
 
-    // Convert the IR to ARM
-    val arm = ARM11Assembler.assemble(result, funcs)
-    println("--- ARM ---")
-    print(arm)
+    var asm = new String()
+    target match {
+      case ArchitectureType.ARM11 => {
+        // Convert the IR to ARM11
+        asm = ARM11Assembler.assemble(result, funcs)
+        println("--- ARM ---")
+      }
+      case ArchitectureType.X86 => {
+        // Convert the IR to X86_64
+        val x86 = X86Assembler.assemble(result, funcs)
+        println("--- X86_64 ---")
+      }
+    }
+    print(asm)
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
-      val inputFilename = args.last.split("/").last
+      val inputFilename = args.head.split("/").last
       val outputFilename = inputFilename.replace(".wacc", ".s")
       val outputFile = new File(outputFilename)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))
-      fileWriter.write(arm + "\n")
+      fileWriter.write(asm + "\n")
       fileWriter.close()
     }
     println("\n\nCompilation Successful!")
