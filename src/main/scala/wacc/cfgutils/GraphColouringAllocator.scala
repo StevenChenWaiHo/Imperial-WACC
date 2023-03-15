@@ -1,6 +1,7 @@
 package wacc.cfgutils
 
 import wacc.TAC._
+import wacc.cfgutils.CFG.{CFG, CFGBuilder, CFGNode, Id}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
@@ -16,8 +17,7 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
 
   /* nextTacs determines the next state at each iteration */
   private var nextTacs: Vector[TAC] = tacs
-
-  recolour
+  recolour()
 
   override def allocateRegisters: (Vector[TAC], Colouring[A]) = {
     while (colouring.uncoloured.nonEmpty) {
@@ -50,7 +50,6 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
 
     nextTacs = modifyGraph(cfg.nodes, Vector[TAC]())
   }
-
 }
 
 class GraphColourer[A](val regs: List[A], interferenceGraph: InterferenceGraph) {
@@ -115,11 +114,16 @@ private class InterferenceGraph(cfg: CFG) {
       case (node, index) =>
         val (_, _, succs) = cfg.getInfo(node.instr)
         node.instr match {
-          // succs.size > 1: the instruction is a branch.
-          case Label(_) | succs.size > 1 =>
+          case Label(_) =>
             tempEnds.addOne(start, index)
             start = index + 1
         }
+        // succs.size > 1: the instruction is a branch.
+        if (succs.size > 1) {
+          tempEnds.addOne(start, index)
+          start = index + 1
+        }
+
     }
     // Adding the final block
     val lastBlockStart = tempEnds(cfg.nodes.last.id)._2 + 1
@@ -127,7 +131,6 @@ private class InterferenceGraph(cfg: CFG) {
       tempEnds.addOne((lastBlockStart, cfg.nodes.length - 1))
     tempEnds.toVector
   }
-
 
   def block(id: Id): (Id, Id) = blocks.find {
     b => {

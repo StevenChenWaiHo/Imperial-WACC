@@ -1,6 +1,7 @@
 package wacc.cfgutils
 
 import wacc.TAC.TRegister
+import wacc.cfgutils.CFG.CFG
 
 import scala.collection.mutable
 

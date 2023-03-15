@@ -3,7 +3,7 @@ package wacc
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
 import wacc.AssemblerTypes._
-import wacc.cfgutils.CFG.CFG
+import wacc.cfgutils.CFG
 import wacc.RegisterAllocator._
 import wacc.TAC._
 import wacc.FinalIR.FinalIR // TODO: change this to not import everything

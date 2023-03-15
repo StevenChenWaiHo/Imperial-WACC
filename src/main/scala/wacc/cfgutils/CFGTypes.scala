@@ -1,6 +1,7 @@
 package wacc.cfgutils
 
 import wacc.TAC.{TAC, TRegister}
+import wacc.cfgutils.CFG.Id
 
 trait CFGNodeInfo {
   /** Given a TAC, return:
