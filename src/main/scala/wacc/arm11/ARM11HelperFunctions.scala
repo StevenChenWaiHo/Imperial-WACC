@@ -26,10 +26,10 @@ class ARM11HelperFunctions {
     assembleTAC(StringDefinitionTAC("fatal error: null pair dereferenced or freed\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errNull")) ++
-    (FinalIR.Ldr("", r0, new LabelString(".L._errNull_str0"), r0) ::
-    FinalIR.BranchLink("", new BranchString("_prints")) ::
-    FinalIR.Mov("", new ImmediateInt(255), r0) ::
-    FinalIR.BranchLink("", new BranchString("exit")))
+    (FinalIR.Ldr("", r0, ARM11LabelString(".L._errNull_str0"), r0) ::
+    FinalIR.BranchLink("", ARM11BranchString("_prints")) ::
+    FinalIR.Mov("", ARM11ImmediateInt(255), r0) ::
+    FinalIR.BranchLink("", ARM11BranchString("exit")))
   }
 
   def assemble_freepair(): List[FinalIR] = {
@@ -37,19 +37,19 @@ class ARM11HelperFunctions {
     assembleTAC(Label("_freepair")) ++
     (FinalIR.Push("", List(lr)) ::
     FinalIR.Mov("", r0, r1) ::
-    FinalIR.Cmp("", r1, ImmediateInt(0)) ::
-    FinalIR.BranchLink("eq", new BranchString("_errNull")) ::
-    FinalIR.Ldr("", r1, ImmediateInt(0), r0) ::
+    FinalIR.Cmp("", r1, ARM11ImmediateInt(0)) ::
+    FinalIR.BranchLink("eq", ARM11BranchString("_errNull")) ::
+    FinalIR.Ldr("", r1, ARM11ImmediateInt(0), r0) ::
     FinalIR.Push("", List(r1)) ::
-    FinalIR.BranchLink("", new BranchString("free")) ::
+    FinalIR.BranchLink("", ARM11BranchString("free")) ::
     FinalIR.Pop("", List(r1)) ::
-    FinalIR.Ldr("", r1, ImmediateInt(POINTER_BYTE_SIZE), r0) ::
+    FinalIR.Ldr("", r1, ARM11ImmediateInt(POINTER_BYTE_SIZE), r0) ::
     FinalIR.Push("", List(r1)) ::
-    FinalIR.BranchLink("", new BranchString("free")) ::
+    FinalIR.BranchLink("", ARM11BranchString("free")) ::
     FinalIR.Pop("", List(r1)) ::
     FinalIR.Mov("", r1, r0) ::
     FinalIR.Push("", List(r1)) ::
-    FinalIR.BranchLink("", new BranchString("free")) ::
+    FinalIR.BranchLink("", ARM11BranchString("free")) ::
     FinalIR.Pop("", List(r1)) ::
     FinalIR.Pop("", List(pc)))
   }
@@ -63,10 +63,10 @@ class ARM11HelperFunctions {
     assembleTAC(StringDefinitionTAC("fatal error: division or modulo by zero\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errDivZero")) ++
-    (FinalIR.Ldr("", null, LabelString(sLbl.name), r0) ::
-    FinalIR.BranchLink("", BranchString("_prints")) ::
-    FinalIR.Mov("", ImmediateInt(255), r0) ::
-    FinalIR.BranchLink("", BranchString("exit")))
+    (FinalIR.Ldr("", null, ARM11LabelString(sLbl.name), r0) ::
+    FinalIR.BranchLink("", ARM11BranchString("_prints")) ::
+    FinalIR.Mov("", ARM11ImmediateInt(255), r0) ::
+    FinalIR.BranchLink("", ARM11BranchString("exit")))
   }
 
   def assemble_errOverflow(): List[FinalIR] = {
@@ -77,10 +77,10 @@ class ARM11HelperFunctions {
     assembleTAC(StringDefinitionTAC("fatal error: integer overflow or underflow\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errOverflow")) ++
-    (FinalIR.Ldr("", null, LabelString(sLbl.name), r0) ::
-    FinalIR.BranchLink("", new BranchString("_prints")) ::
-    FinalIR.Mov("", new ImmediateInt(255), r0) ::
-    FinalIR.BranchLink("", new BranchString("exit")))
+    (FinalIR.Ldr("", null, ARM11LabelString(sLbl.name), r0) ::
+    FinalIR.BranchLink("", ARM11BranchString("_prints")) ::
+    FinalIR.Mov("", ARM11ImmediateInt(255), r0) ::
+    FinalIR.BranchLink("", ARM11BranchString("exit")))
   }
 
   // Special calling convention: array ptr passed in R3, index in R10, LR (R14) is used as general register, and return into R3
@@ -89,13 +89,13 @@ class ARM11HelperFunctions {
   def assemble_arrLoad(): List[FinalIR] = {
     assembleTAC(Label("_arrLoad")) ++
     (FinalIR.Push("", List(lr)) ::
-      FinalIR.Cmp("", r2, new ImmediateInt(0)) ::
+      FinalIR.Cmp("", r2, ARM11ImmediateInt(0)) ::
       FinalIR.Mov("", r2, r1) ::
-      FinalIR.BranchLink("lt", new BranchString("_boundsCheck")) ::
-      FinalIR.Ldr("", r3, new ImmediateInt(-POINTER_BYTE_SIZE), lr) ::
+      FinalIR.BranchLink("lt", ARM11BranchString("_boundsCheck")) ::
+      FinalIR.Ldr("", r3, ARM11ImmediateInt(-POINTER_BYTE_SIZE), lr) ::
       FinalIR.Cmp("", r2, lr) ::
       FinalIR.Mov("ge", r2, r1) ::
-      FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
+      FinalIR.BranchLink("ge", ARM11BranchString("_boundsCheck")) ::
       FinalIR.Ldr("", r3, LogicalShiftLeft(r2, Right(2)), r0) ::
       FinalIR.Pop("", List(pc)))
   }
@@ -106,13 +106,13 @@ class ARM11HelperFunctions {
   def assemble_arrStore(): List[FinalIR] = {
     assembleTAC(Label("_arrStore")) ++
     (FinalIR.Push("", List(lr)) ::
-      FinalIR.Cmp("", r0, new ImmediateInt(0)) ::
+      FinalIR.Cmp("", r0, ARM11ImmediateInt(0)) ::
       FinalIR.Mov("lt", r0, r1) :: // r0 < 0
-      FinalIR.BranchLink("lt", new BranchString("_boundsCheck")) ::
-      FinalIR.Ldr("", r3, new ImmediateInt(-POINTER_BYTE_SIZE), lr) ::
+      FinalIR.BranchLink("lt", ARM11BranchString("_boundsCheck")) ::
+      FinalIR.Ldr("", r3, ARM11ImmediateInt(-POINTER_BYTE_SIZE), lr) ::
       FinalIR.Cmp("", r0, lr) ::
       FinalIR.Mov("ge", r0, r1) :: // r0 >= lr
-      FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
+      FinalIR.BranchLink("ge", ARM11BranchString("_boundsCheck")) ::
       FinalIR.Str("", LogicalShiftLeft(r0, Right(2)), r2, r3) :: // TODO: Logical shift does not work
       FinalIR.Pop("", List(pc)))
   }
@@ -125,12 +125,12 @@ class ARM11HelperFunctions {
     assembleTAC(StringDefinitionTAC("fatal error: array index %d out of bounds\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_boundsCheck")) ++
-    (FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
-      FinalIR.BranchLink("", new BranchString("printf")) ::
-      FinalIR.Mov("", new ImmediateInt(0), r0) ::
-      FinalIR.BranchLink("", new BranchString("fflush")) ::
-      FinalIR.Mov("", new ImmediateInt(255), r0) ::
-      FinalIR.BranchLink("", new BranchString("exit")))
+    (FinalIR.Ldr("", r0, ARM11LabelString(sLbl.name), r0) ::
+      FinalIR.BranchLink("", ARM11BranchString("printf")) ::
+      FinalIR.Mov("", ARM11ImmediateInt(0), r0) ::
+      FinalIR.BranchLink("", ARM11BranchString("fflush")) ::
+      FinalIR.Mov("", ARM11ImmediateInt(255), r0) ::
+      FinalIR.BranchLink("", ARM11BranchString("exit")))
   }
 
   def assemble_print(pType: String): List[FinalIR] = {
@@ -155,10 +155,10 @@ class ARM11HelperFunctions {
     assembleTAC(Label("_printp")) ++
     (FinalIR.Push("", List(lr)) ::
         FinalIR.Mov("", r0, r1) ::
-        FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
-        FinalIR.BranchLink("", new BranchString("printf")) ::
-        FinalIR.Mov("", ImmediateInt(0), r0) ::
-        FinalIR.BranchLink("", new BranchString("fflush")) ::
+        FinalIR.Ldr("", r0, ARM11LabelString(sLbl.name), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("printf")) ::
+        FinalIR.Mov("", ARM11ImmediateInt(0), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("fflush")) ::
         FinalIR.Pop("", List(pc)))
    }
 
@@ -172,11 +172,11 @@ class ARM11HelperFunctions {
       assembleTAC(Label("_prints")) ++
       (FinalIR.Push("", List(lr)) ::
         FinalIR.Mov("", r0, r2) ::
-        FinalIR.Ldr("", r0, ImmediateInt(-POINTER_BYTE_SIZE), r1) ::
-        FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
-        FinalIR.BranchLink("", new BranchString("printf")) ::
-        FinalIR.Mov("", new ImmediateInt(0), r0) ::
-        FinalIR.BranchLink("", new BranchString("fflush")) ::
+        FinalIR.Ldr("", r0, ARM11ImmediateInt(-POINTER_BYTE_SIZE), r1) ::
+        FinalIR.Ldr("", r0, ARM11LabelString(sLbl.name), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("printf")) ::
+        FinalIR.Mov("", ARM11ImmediateInt(0), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("fflush")) ::
         FinalIR.Pop("", List(pc)))
   }
 
@@ -190,10 +190,10 @@ class ARM11HelperFunctions {
       assembleTAC(Label("_printc")) ++
       (FinalIR.Push("", List(lr)) ::
         FinalIR.Mov("", r0, r1) ::
-        FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
-        FinalIR.BranchLink("", new BranchString("printf")) ::
-        FinalIR.Mov("", new ImmediateInt(0), r0) ::
-        FinalIR.BranchLink("", new BranchString("fflush")) ::
+        FinalIR.Ldr("", r0, ARM11LabelString(sLbl.name), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("printf")) ::
+        FinalIR.Mov("", ARM11ImmediateInt(0), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("fflush")) ::
         FinalIR.Pop("", List(pc)))
   }
 
@@ -207,10 +207,10 @@ class ARM11HelperFunctions {
       assembleTAC(Label("_printi")) ++
       (FinalIR.Push("", List(lr)) ::
         FinalIR.Mov("", r0, r1) ::
-        FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
-        FinalIR.BranchLink("", new BranchString("printf")) ::
-        FinalIR.Mov("", new ImmediateInt(0), r0) ::
-        FinalIR.BranchLink("", new BranchString("fflush")) ::
+        FinalIR.Ldr("", r0, ARM11LabelString(sLbl.name), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("printf")) ::
+        FinalIR.Mov("", ARM11ImmediateInt(0), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("fflush")) ::
         FinalIR.Pop("", List(pc)))
   }
 
@@ -223,10 +223,10 @@ class ARM11HelperFunctions {
       assembleTAC(TextSegmentTAC()) ++
       assembleTAC(Label("_println")) ++
       (FinalIR.Push("", List(lr)) ::
-        FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
-        FinalIR.BranchLink("", new BranchString("puts")) ::
-        FinalIR.Mov("", new ImmediateInt(0), r0) ::
-        FinalIR.BranchLink("", new BranchString("fflush")) ::
+        FinalIR.Ldr("", r0, ARM11LabelString(sLbl.name), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("puts")) ::
+        FinalIR.Mov("", ARM11ImmediateInt(0), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("fflush")) ::
         FinalIR.Pop("", List(pc)))
   }
 
@@ -248,18 +248,18 @@ class ARM11HelperFunctions {
       assembleTAC(TextSegmentTAC()) ++
       assembleTAC(Label("_printb")) ++
       (FinalIR.Push("", List(lr)) ::
-        FinalIR.Cmp("", r0, new ImmediateInt(0)) ::
+        FinalIR.Cmp("", r0, ARM11ImmediateInt(0)) ::
         FinalIR.Branch("ne", ".L_printb0") ::
-        FinalIR.Ldr("", r0, new LabelString(fLbl.name), r2) ::
+        FinalIR.Ldr("", r0, ARM11LabelString(fLbl.name), r2) ::
         FinalIR.Branch("", ".L_printb1") ::
         assembleTAC(Label(".L_printb0"))) ++
-      (FinalIR.Ldr("", r0, new LabelString(tLbl.name), r2) ::
+      (FinalIR.Ldr("", r0, ARM11LabelString(tLbl.name), r2) ::
         assembleTAC(Label(".L_printb1"))) ++
-      (FinalIR.Ldr("", r2, ImmediateInt(-POINTER_BYTE_SIZE), r1) ::
-        FinalIR.Ldr("", r0, new LabelString(sLbl.name), r0) ::
-        FinalIR.BranchLink("", new BranchString("printf")) ::
-        FinalIR.Mov("", new ImmediateInt(0), r0) ::
-        FinalIR.BranchLink("", new BranchString("fflush")) ::
+      (FinalIR.Ldr("", r2, ARM11ImmediateInt(-POINTER_BYTE_SIZE), r1) ::
+        FinalIR.Ldr("", r0, ARM11LabelString(sLbl.name), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("printf")) ::
+        FinalIR.Mov("", ARM11ImmediateInt(0), r0) ::
+        FinalIR.BranchLink("", ARM11BranchString("fflush")) ::
         FinalIR.Pop("", List(pc)))
   }
 
@@ -280,12 +280,12 @@ class ARM11HelperFunctions {
       assembleTAC(TextSegmentTAC()) ++
       assembleTAC(Label("_readi")) ++
       (FinalIR.Push("", List(lr)) ::
-      FinalIR.StrPre("", sp, new ImmediateInt(-POINTER_BYTE_SIZE), r0) ::
+      FinalIR.StrPre("", sp, ARM11ImmediateInt(-POINTER_BYTE_SIZE), r0) ::
       FinalIR.Mov("", sp, r1) ::
-      FinalIR.Ldr("", null, new LabelString(lbl.name), r0) ::
-      FinalIR.BranchLink("", new BranchString("scanf")) ::
-      FinalIR.Ldr("", sp, new ImmediateInt(0), r0) ::
-      FinalIR.Add("", None(), sp, new ImmediateInt(POINTER_BYTE_SIZE), sp) ::
+      FinalIR.Ldr("", null, ARM11LabelString(lbl.name), r0) ::
+      FinalIR.BranchLink("", ARM11BranchString("scanf")) ::
+      FinalIR.Ldr("", sp, ARM11ImmediateInt(0), r0) ::
+      FinalIR.Add("", None(), sp, ARM11ImmediateInt(POINTER_BYTE_SIZE), sp) ::
       FinalIR.Pop("", List(pc)))
   }
 
@@ -298,12 +298,12 @@ class ARM11HelperFunctions {
       assembleTAC(TextSegmentTAC()) ++
       assembleTAC(Label("_readc")) ++
       (FinalIR.Push("", List(lr)) :: 
-      FinalIR.StrPre("b", sp, new ImmediateInt(-1), r0) ::
+      FinalIR.StrPre("b", sp, ARM11ImmediateInt(-1), r0) ::
       FinalIR.Mov("", sp, r1) :: 
-      FinalIR.Ldr("", null, new LabelString(lbl.name), r0) ::
-      FinalIR.BranchLink("", new BranchString("scanf")) ::
-      FinalIR.Ldr("sb", sp, new ImmediateInt(0), r0) ::
-      FinalIR.Add("", None(), sp, new ImmediateInt(1), sp) ::
+      FinalIR.Ldr("", null, ARM11LabelString(lbl.name), r0) ::
+      FinalIR.BranchLink("", ARM11BranchString("scanf")) ::
+      FinalIR.Ldr("sb", sp, ARM11ImmediateInt(0), r0) ::
+      FinalIR.Add("", None(), sp, ARM11ImmediateInt(1), sp) ::
       FinalIR.Pop("", List(pc)))
   }
 
