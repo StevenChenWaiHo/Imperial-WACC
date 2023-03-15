@@ -19,7 +19,7 @@ object ARM11AssemblerTypes {
     override def toString(): String = name
   }
 
-  sealed trait ARM11Register extends Register {
+  sealed trait ARM11Register extends GeneralRegister {
     import scala.math.Ordered.orderingToOrdered
     def compare(that: ARM11Register): Int = listOfRegisters.get(this) compare listOfRegisters.get(that)
   }
@@ -77,27 +77,27 @@ object ARM11AssemblerTypes {
   }
 
   object r13 extends ARM11Register {
-    override def toString(): String = "r13"
+    override def toString(): String = "r13" // is this used?
   }
 
   object r14 extends ARM11Register {
-    override def toString(): String = "r14"
+    override def toString(): String = "r14" // is this used?
   }
 
-  object fp extends ARM11Register {
+  object sp extends SPRegister {
+    override def toString(): String = "sp"
+  }
+
+  object fp extends FPRegister {
     override def toString(): String = "fp"
   }
 
-  object lr extends ARM11Register {
+  object lr extends LinkRegister {
     override def toString(): String = "lr"
   }
 
-  object pc extends ARM11Register {
+  object pc extends PCRegister {
     override def toString(): String = "pc"
-  }
-
-  object sp extends ARM11Register {
-    override def toString(): String = "sp"
   }
 
   val listOfRegisters = Map[ARM11Register, Int](r0 -> 0, r1 -> 1, r2 -> 2, r3 -> 3, r4 -> 4, r5 -> 5, r6 -> 6,
@@ -174,34 +174,32 @@ object ARM11AssemblerTypes {
       sourceRegister + ", " + "rrx"
     }
   }
-  
-  sealed trait ARM11Suffi extends Suffi
 
-  case class Control() extends ARM11Suffi {
+  case class ARM11Control() extends Control {
     override def toString: String = {
       "c"
     }
   }
 
-  case class Extension() extends ARM11Suffi {
+  case class ARM11Extension() extends Extension {
     override def toString: String = {
       "x"
     }
   }
 
-  case class Status() extends ARM11Suffi {
+  case class ARM11Status() extends Status {
     override def toString: String = {
       "s"
     }
   }
 
-  case class Flags() extends ARM11Suffi {
+  case class ARM11Flags() extends Flags {
     override def toString: String = {
       "f"
     }
   }
 
-  case class None() extends ARM11Suffi {
+  case class ARM11None() extends None {
     override def toString: String = {
       ""
     }

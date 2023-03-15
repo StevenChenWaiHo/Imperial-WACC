@@ -201,7 +201,7 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): List[FinalIR] = {
     op match {
       case UnaryOpType.Neg => {
-        FinalIR.Rsb("", Status(), getOperand(t1), ARM11ImmediateInt(0), getRealReg(res))
+        FinalIR.Rsb("", ARM11Status(), getOperand(t1), ARM11ImmediateInt(0), getRealReg(res))
       }
       case UnaryOpType.Not => {
         FinalIR.Cmp("", getOperand(t1), ARM11ImmediateInt(1)) ::
@@ -253,7 +253,7 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
 
     /* Decrement the stack pointer for each argument pushed to the stack */
     if (args.length > argRegs.length)
-      output = output ++ FinalIR.Sub("", None(), sp, ARM11ImmediateInt(POINTER_BYTE_SIZE * (argRegs.length - args.length)), sp)
+      output = output ++ FinalIR.Sub("", ARM11None(), sp, ARM11ImmediateInt(POINTER_BYTE_SIZE * (argRegs.length - args.length)), sp)
 
     // move the result into dst before r0 is popped back
     output ++ List(FinalIR.Mov("", r0, getRealReg(dstReg)))
@@ -323,13 +323,13 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   def assembleBinOp(operation: BinaryOpType.BinOp, op1: Operand, op2: Operand, res: TRegister): List[FinalIR] = {
     operation match {
       case BinaryOpType.Add => {
-        List(FinalIR.Add("", Status(), getOperand(op1), getOperand(op2), getRealReg(res)))
+        FinalIR.Add("", ARM11Status(), getOperand(op1), getOperand(op2), getRealReg(res))
       }
       case BinaryOpType.Sub => {
-        List(FinalIR.Sub("", Status(), getOperand(op1), getOperand(op2), getRealReg(res)))
+        FinalIR.Sub("", ARM11Status(), getOperand(op1), getOperand(op2),  getRealReg(res))
       }
       case BinaryOpType.Mul => {
-        List(FinalIR.Smull("", Status(), getRealReg(res), getOperand(op1), getOperand(op1), getOperand(op2)))
+        List(FinalIR.Smull("", ARM11Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res)))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new ARM11HelperFunctions().assemble_errDivZero())
@@ -481,7 +481,7 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
       case CmdT.Free => {
         opType match {
           case ArrayType(dataType, length) => {
-            FinalIR.Sub("", Status(), r4, ARM11ImmediateInt(POINTER_BYTE_SIZE), r8) ::
+            FinalIR.Sub("", ARM11Status(), r4, ARM11ImmediateInt(POINTER_BYTE_SIZE), r8) ::
             FinalIR.Push("", List(r8)) ::
             FinalIR.Pop("", List(r8)) ::
             FinalIR.Mov("", r8, r8) ::
@@ -508,7 +508,7 @@ class ARM11HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
     FinalIR.BranchLink("", ARM11BranchString("malloc")) ::
     FinalIR.Mov("", r0, getRealReg(dstReg)) ::
     FinalIR.Pop("", List(r0)) ::
-    FinalIR.Add("", Status(), getRealReg(dstReg), ARM11ImmediateInt(POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
+    FinalIR.Add("", ARM11Status(), getRealReg(dstReg), ARM11ImmediateInt(POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
     FinalIR.Mov("", ARM11ImmediateInt(arrLen), getRealReg(lenReg)) ::
     FinalIR.Str("", getRealReg(lenReg), ARM11ImmediateInt(-POINTER_BYTE_SIZE), getRealReg(dstReg))
   }
