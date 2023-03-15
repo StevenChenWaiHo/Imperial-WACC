@@ -78,10 +78,10 @@ object X86LowLevelAssembler {
     println(dst)
     var str = condition + " " + dst.toString + ", " //src null issue
     operand match {
-      case ImmediateInt(x) => {
+      case X86ImmediateInt(x) => {
         str + x + "[" + src.toString + ", #" + x + "]"
       }
-      case LabelString(x) => {
+      case X86LabelString(x) => {
         " lea" + x + "(%rip), " + dst.toString //%rip is instruction pointer
       }
     }
