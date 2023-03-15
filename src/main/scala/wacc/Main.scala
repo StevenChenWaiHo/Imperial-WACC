@@ -58,6 +58,9 @@ object Main {
     val assembler = new Assembler()
     val (result, funcs) = assembler.assembleProgram(tac)
 
+    println("--- FinalIR ---")
+    result.foreach{x => println(x)}
+
     // Convert the IR to ARM
     val arm = ARM11Assembler.assemble(result, funcs)
     println("--- ARM ---")
