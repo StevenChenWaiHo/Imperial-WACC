@@ -32,7 +32,7 @@ class RegisterSplittingAllocator {
       }
 
       for (id <- Range.inclusive(end, start)) {
-        val (uses, defs, _) = cfg.getInfo(cfg.nodes(id).instr)
+        val (uses, defs, _) = cfg.getInfo(cfg.nodes(id).instr, id)
 
         /* Update split costs */
         val weight = Math.pow(EstimatedLoopIterations, cfg.nodes(id).depth).toInt

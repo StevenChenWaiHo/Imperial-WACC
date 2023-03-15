@@ -112,7 +112,7 @@ private class InterferenceGraph(cfg: CFG) {
     var start = cfg.nodes.head.id
     cfg.nodes.zipWithIndex.foreach {
       case (node, index) =>
-        val (_, _, succs) = cfg.getInfo(node.instr)
+        val (_, _, succs) = cfg.getInfo(node.instr, index)
         node.instr match {
           case Label(_) =>
             tempEnds.addOne(start, index)

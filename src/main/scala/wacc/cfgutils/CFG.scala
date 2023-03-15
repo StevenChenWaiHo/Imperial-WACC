@@ -21,32 +21,42 @@ object CFG {
 
   class CFG(val tacs: Vector[TAC], val nodeInfo: CFGNodeInfo) {
 
-    val nodes: Vector[CFGNode] = {
-      val initialNodes = tacs.zipWithIndex.map(x => {
-        val (instr, id) = x
-        val (uses, defs, succs) = nodeInfo.getInfo(instr, tacs)
-        CFGNode(id, instr, uses, defs, succs)
-      })
-      computeGraph(initialNodes)
-    }
+    private var currentNodes: Vector[CFGNode] = tacs.zipWithIndex.map(x => {
+      val (instr, id) = x
+      val (uses, defs, succs) = nodeInfo.getInfo(instr, tacs, id)
+      CFGNode(id, instr, uses, defs, succs)
+    })
 
-    val tRegisterCount = nodes.foldRight(Set[TRegister]()) {
+    val nodes: Vector[CFGNode] = computeGraph()
+
+    val tRegisterCount: Int = nodes.foldRight(Set[TRegister]()) {
       (node, set) => (node.uses union node.defs) union set
     }.size
 
-    def getSuccs(node: CFGNode): Set[CFGNode] = node.succs.map(nodes(_))
+    def getSuccs(node: CFGNode): Set[CFGNode] = node.succs.map(currentNodes(_))
 
-    private def updateLiveIns(node: CFGNode): CFGNode = node withLiveIns (node.uses union (node.liveIn diff node.defs))
+    private def updateLiveIns(node: CFGNode): CFGNode = node withLiveIns (node.uses union (node.liveOut diff node.defs))
 
     private def updateLiveOuts(node: CFGNode): CFGNode = node withLiveOuts getSuccs(node).flatMap(_.liveIn)
 
     @tailrec
-    private def computeGraph(current: Vector[CFGNode]): Vector[CFGNode] = {
-      val next: Vector[CFGNode] = current.map(x => updateLiveOuts(updateLiveIns(x)))
-      if (current != next) computeGraph(next)
-      else current
+    private def computeGraph(): Vector[CFGNode] = {
+      val next: Vector[CFGNode] = currentNodes.map(x => updateLiveOuts(updateLiveIns(x)))
+      println("\nUpdate graph:")
+      println(currentNodes)
+      println(next)
+      if (currentNodes != next) {
+        currentNodes = next
+        computeGraph()
+      }
+      else currentNodes
     }
 
-    def getInfo(tac: TAC): (Set[TRegister], Set[TRegister], Set[Id]) = nodeInfo.getInfo(tac, tacs)
+    def getInfo(tac: TAC, id: Id): (Set[TRegister], Set[TRegister], Set[Id]) = nodeInfo.getInfo(tac, tacs, id)
+
+    override def toString: String = nodes.foldLeft("") {
+      (s, x) => s + x.toString + "\n"
+    }
   }
+
 }

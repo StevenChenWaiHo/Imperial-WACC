@@ -7,7 +7,7 @@ import wacc.cfgutils.CFG.Id
 import scala.language.implicitConversions
 
 
-class CfgTacInfo extends CFGNodeInfo {
+object CfgTacInfo extends CFGNodeInfo {
   /** Given a TAC, return:
    * (the set of tRegisters it uses, the set of tRegisters it defines, the indices of its successor TACs). */
   override def getInfo(instr: TAC.TAC, program: Vector[TAC.TAC], id: Id): (Set[TAC.TRegister], Set[TAC.TRegister], Set[Id]) = {
@@ -62,6 +62,6 @@ class CfgTacInfo extends CFGNodeInfo {
         print("CreatePair not yet translated in CFG.scala")
       case _ =>
     }
-    (defs, uses, succs.toSet)
+    (uses, defs, succs.toSet)
   }
 }
