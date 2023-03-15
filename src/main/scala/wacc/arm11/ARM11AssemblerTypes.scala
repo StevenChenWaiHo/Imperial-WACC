@@ -3,25 +3,27 @@ package wacc
 import wacc.AssemblerTypes._
 
 object ARM11AssemblerTypes {
-  case class ARM11StackOffset(offset: Int) extends StackOffset {
+  case class ARM11StackOffset(offset: Int) extends StackOffset(offset: Int) {
     override def toString(): String = "STACK" + offset.toString()
   }
 
-  case class ARM11ImmediateInt(i: Int) extends ImmediateInt {
+  case class ARM11ImmediateInt(i: Int) extends ImmediateInt(i: Int) {
     override def toString(): String = "#" + i.toString()
   }
 
-  case class ARM11LabelString(name: String) extends LabelString {
+  case class ARM11LabelString(name: String) extends LabelString(name: String) {
     override def toString(): String = "=" + name
   }
 
-  case class ARM11BranchString(name: String) extends BranchString {
+  case class ARM11BranchString(name: String) extends BranchString(name: String) {
     override def toString(): String = name
   }
 
   sealed trait ARM11Register extends GeneralRegister {
     import scala.math.Ordered.orderingToOrdered
     def compare(that: ARM11Register): Int = listOfRegisters.get(this) compare listOfRegisters.get(that)
+    val listOfRegisters = Map[GeneralRegister, Int](r0 -> 0, r1 -> 1, r2 -> 2, r3 -> 3, r4 -> 4, r5 -> 5, r6 -> 6,
+    r7 -> 7, r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14)
   }
 
   object r0 extends ARM11Register {
@@ -99,9 +101,6 @@ object ARM11AssemblerTypes {
   object pc extends PCRegister {
     override def toString(): String = "pc"
   }
-
-  val listOfRegisters = Map[ARM11Register, Int](r0 -> 0, r1 -> 1, r2 -> 2, r3 -> 3, r4 -> 4, r5 -> 5, r6 -> 6,
-    r7 -> 7, r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14)
 
   case class ImmediateValueOrRegister(operand: Either[ARM11Register, Int]) extends LHSop {
     @Override
