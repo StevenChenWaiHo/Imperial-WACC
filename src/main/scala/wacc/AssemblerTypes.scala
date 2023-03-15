@@ -3,31 +3,21 @@ package wacc
 object AssemblerTypes {
   trait LHSop
 
-  trait StackOffset extends LHSop {
-    def offset: Int
-  }
+  class StackOffset(offset: Int) extends LHSop
+  class ImmediateInt(i: Int) extends LHSop
+  class LabelString(name: String) extends LHSop
+  class BranchString(name: String) extends LHSop
 
-  trait ImmediateInt extends LHSop {
-    def i: Int
-  }
-
-  trait LabelString extends LHSop {
-    def name: String
-  }
-
-  trait BranchString extends LHSop {
-    def name: String
-  }
-
-  trait Register extends LHSop with Ordered[Register] {
-    import scala.math.Ordered.orderingToOrdered
-    def compare(that: Register): Int
-  }
+  trait Register extends LHSop
 
   // ARM/X86
-  trait GeneralRegister extends Register // r0-14?/other regs
-  trait SPRegister extends Register // sp/rsp
-  trait FPRegister extends Register // fp/rbp
+  trait GeneralRegister extends Register with Ordered[GeneralRegister] {
+    import scala.math.Ordered.orderingToOrdered
+    def compare(that: GeneralRegister): Int = listOfRegisters.get(this) compare listOfRegisters.get(that)
+    val listOfRegisters: Map[GeneralRegister, Int]
+  } // r0-14?/other regs
+  class SPRegister extends Register // sp/rsp
+  class FPRegister extends Register // fp/rbp
   // are the below needed
   trait LinkRegister extends Register // lr/??
   trait PCRegister extends Register // pc/??
@@ -37,9 +27,9 @@ object AssemblerTypes {
 
   trait Suffi
 
-  trait Control extends Suffi
-  trait Extension extends Suffi
-  trait Status extends Suffi
-  trait Flags extends Suffi
-  trait None extends Suffi
+  class Control extends Suffi
+  class Extension extends Suffi
+  class Status extends Suffi
+  class Flags extends Suffi
+  class None extends Suffi
 }

@@ -9,8 +9,8 @@ import scala.collection.mutable.ListBuffer
 object RegisterAllocator {
 
   class AssemblerState(var code: ListBuffer[FinalIR],
-                       var available: ListBuffer[Register],
-                       var used: ListBuffer[(TRegister, Register)],
+                       var available: ListBuffer[GeneralRegister],
+                       var used: ListBuffer[(TRegister, GeneralRegister)],
                        var memory: ListBuffer[ListBuffer[TRegister]]) {
     
     val offset = 1024
@@ -22,7 +22,7 @@ object RegisterAllocator {
         index = currentScope.length
         currentScope.addOne(used.head._1)
       }
-      code = code.addOne(FinalIR.Str("", fp, ImmediateInt(-offset + (4 * index)), used.head._2))
+      code = code.addOne(FinalIR.Str("", new FPRegister, new ImmediateInt(-offset + (4 * index)), used.head._2))
       available.addOne(used.head._2)
       used = used.tail
       this
@@ -31,7 +31,7 @@ object RegisterAllocator {
     /** When entering and exiting a function, the scope is completely redefined.
     * allocate some stack space by moving the stack pointer, and add 'memory(0)' to track it. */
     def enterFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(FinalIR.Sub("", AssemblerTypes.None(), sp, ImmediateInt(offset), sp))
+      code.addOne(FinalIR.Sub("", new AssemblerTypes.None, new SPRegister, new ImmediateInt(offset), new SPRegister))
       memory.addOne(ListBuffer[TRegister]())
       this
     }
@@ -43,7 +43,7 @@ object RegisterAllocator {
     }
 
     def exitFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(FinalIR.Add("", AssemblerTypes.None(), sp, ImmediateInt(offset), sp))
+      code.addOne(FinalIR.Add("", new AssemblerTypes.None, new SPRegister, new ImmediateInt(offset), new SPRegister))
       this
     }
 
@@ -55,7 +55,7 @@ object RegisterAllocator {
       }
       this
     }
-    def this(available: ListBuffer[Register]) = //, assembler: Assembler[Register]) =
+    def this(available: ListBuffer[GeneralRegister]) = //, assembler: Assembler[GeneralRegister]) =
       this(ListBuffer(), available, ListBuffer(), ListBuffer(ListBuffer()))
 
     def addInstruction(instr: FinalIR): AssemblerState = {
@@ -70,7 +70,7 @@ object RegisterAllocator {
 
     /** Move a register from 'available' to 'used', declaring that 'target' is stored within it.
      * Note that this does not modify the code: there's no guarantee that 'target' really is stored there. */
-    private def logicallyAllocateRegisterTo(target: TRegister): Register = {
+    private def logicallyAllocateRegisterTo(target: TRegister): GeneralRegister = {
       val reg = available.head
       used = used.addOne((target, reg))
       available = available.tail
@@ -79,7 +79,7 @@ object RegisterAllocator {
 
     /** Get a guaranteed register. If 'target' already exists in memory or in the registers, returns a register
      containing its value; otherwise returns a random unallocated register. */
-    def getRegister(target: TRegister): Register = {
+    def getRegister(target: TRegister): GeneralRegister = {
       /* Check currently-loaded registers */
       val inReg = used.find(x => x._1 == target)
       if (inReg.isDefined) return inReg.get._2
@@ -90,7 +90,7 @@ object RegisterAllocator {
       /* Check memory */
       val index: Int = memory.head.indexOf(target)
       if (index != (-1)) {
-        code = code.addOne(FinalIR.Ldr("", available.head, new ImmediateInt(-offset + (4 * index)), fp))
+        code = code.addOne(FinalIR.Ldr("", available.head, new ImmediateInt(-offset + (4 * index)), new FPRegister))
       }
 
       logicallyAllocateRegisterTo(target)
