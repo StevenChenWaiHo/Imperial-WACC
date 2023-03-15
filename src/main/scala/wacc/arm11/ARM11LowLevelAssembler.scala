@@ -69,10 +69,10 @@ object ARM11LowLevelAssembler {
   def ldrStrAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
     var str = condition + " " + dst.toString + ", "
     operand match {
-      case ImmediateInt(x) => {
+      case ARM11ImmediateInt(x) => {
         str = str + "[" + src.toString + ", #" + x + "]"
       }
-      case LabelString(x) => {
+      case ARM11LabelString(x) => {
         str = str + "=" + x
       }
     }
@@ -155,7 +155,7 @@ object ARM11LowLevelAssembler {
 
   def assembleMove(condition: String, src: LHSop, dst: Register): String = {
     src match {
-      case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
+      case ARM11ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
       case _ => "mov" + condition + " " + dst.toString + ", " + src.toString()
     }
   }

@@ -3,23 +3,19 @@ package wacc
 import wacc.AssemblerTypes._
 
 object ARM11AssemblerTypes {
-  case class ARM11StackOffset(offsetIn: Int) extends StackOffset {
-    this.offset = offsetIn
+  case class ARM11StackOffset(offset: Int) extends StackOffset {
     override def toString(): String = "STACK" + offset.toString()
   }
 
-  case class ARM11ImmediateInt(iIn: Int) extends ImmediateInt {
-    this.i = iIn
+  case class ARM11ImmediateInt(i: Int) extends ImmediateInt {
     override def toString(): String = "#" + i.toString()
   }
 
-  case class ARM11LabelString(nameIn: String) extends LabelString {
-    this.name = nameIn
+  case class ARM11LabelString(name: String) extends LabelString {
     override def toString(): String = "=" + name
   }
 
-  case class ARM11BranchString(nameIn: String) extends BranchString {
-    this.name = nameIn
+  case class ARM11BranchString(name: String) extends BranchString {
     override def toString(): String = name
   }
 

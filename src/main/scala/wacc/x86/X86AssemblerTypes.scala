@@ -5,23 +5,19 @@ import wacc.AssemblerTypes._
 object X86AssemblerTypes {
   //TODO change these to x86 format
   //TODO change all calls to LHSop instances in ALL files
-  case class X86StackOffset(offsetIn: Int) extends StackOffset {
-    this.offset = offsetIn
+  case class X86StackOffset(offset: Int) extends StackOffset {
     override def toString(): String = "STACK" + offset.toString()
   }
 
-  case class X86ImmediateInt(iIn: Int) extends ImmediateInt {
-    this.i = iIn
+  case class X86ImmediateInt(i: Int) extends ImmediateInt {
     override def toString(): String = "#" + i.toString()
   }
 
-  case class X86LabelString(nameIn: String) extends LabelString {
-    this.name = nameIn
+  case class X86LabelString(name: String) extends LabelString {
     override def toString(): String = "=" + name
   }
 
-  case class X86BranchString(nameIn: String) extends BranchString {
-    this.name = nameIn
+  case class X86BranchString(name: String) extends BranchString {
     override def toString(): String = name
   }
 
