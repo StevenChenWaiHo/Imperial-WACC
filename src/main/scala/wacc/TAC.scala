@@ -20,6 +20,9 @@ object TAC {
 
   sealed trait TAC
 
+  case class ReservedPushTAC(t1: TRegister) extends TAC
+  case class ReservedPopTAC(res: TRegister) extends TAC
+
   case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC {
     override def toString(): String = res + " = " + t1 + " " + op + " " + t2
   }

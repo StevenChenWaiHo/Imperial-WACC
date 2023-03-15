@@ -8,6 +8,10 @@ import scala.language.implicitConversions
 
 type Id = Int
 
+class CFGBuilder(nodeInfo: CFGNodeInfo) {
+  def build(tacs: Vector[TAC]): CFG = new CFG(tacs, nodeInfo)
+}
+
 case class CFGNode(val id: Id, instr: TAC, uses: Set[TRegister], defs: Set[TRegister],
                    succs: Set[Id], liveIn: Set[TRegister] = Set(), liveOut: Set[TRegister] = Set(), depth: Int = 0) {
   def withLiveIns(newLiveIns: Set[TRegister]): CFGNode = this.copy(liveIn = liveIn union newLiveIns)
