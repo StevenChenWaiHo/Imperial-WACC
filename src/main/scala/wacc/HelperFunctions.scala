@@ -28,7 +28,7 @@ class HelperFunctions extends Assembler {
     (FinalIR.Ldr("", r0, new LabelString(".L._errNull_str0"), r0) ::
     FinalIR.BranchLink("", new BranchString("_prints")) ::
     FinalIR.Mov("", new ImmediateInt(255), r0) ::
-    FinalIR.BranchLink("", new BranchString("exit")))
+    FinalIR.BranchLink("", new BranchString("exit")) :: List())
   }
 
   def assemble_freepair(): List[FinalIR] = {
@@ -50,7 +50,7 @@ class HelperFunctions extends Assembler {
     FinalIR.Push("", List(r1)) ::
     FinalIR.BranchLink("", new BranchString("free")) ::
     FinalIR.Pop("", List(r1)) ::
-    FinalIR.Pop("", List(pc)))
+    FinalIR.Pop("", List(pc)) :: List())
   }
 
   
@@ -65,7 +65,7 @@ class HelperFunctions extends Assembler {
     (FinalIR.Ldr("", null, LabelString(sLbl.name), r0) ::
     FinalIR.BranchLink("", BranchString("_prints")) ::
     FinalIR.Mov("", ImmediateInt(255), r0) ::
-    FinalIR.BranchLink("", BranchString("exit")))
+    FinalIR.BranchLink("", BranchString("exit")) :: List())
   }
 
   def assemble_errOverflow(): List[FinalIR] = {
@@ -79,7 +79,7 @@ class HelperFunctions extends Assembler {
     (FinalIR.Ldr("", null, LabelString(sLbl.name), r0) ::
     FinalIR.BranchLink("", new BranchString("_prints")) ::
     FinalIR.Mov("", new ImmediateInt(255), r0) ::
-    FinalIR.BranchLink("", new BranchString("exit")))
+    FinalIR.BranchLink("", new BranchString("exit")) :: List())
   }
 
   // Special calling convention: array ptr passed in R3, index in R10, LR (R14) is used as general register, and return into R3
@@ -96,7 +96,7 @@ class HelperFunctions extends Assembler {
       FinalIR.Mov("ge", r2, r1) ::
       FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
       FinalIR.Ldr("", r3, LogicalShiftLeft(r2, Right(2)), r0) ::
-      FinalIR.Pop("", List(pc)))
+      FinalIR.Pop("", List(pc)) :: List())
   }
 
   // Special calling convention: array ptr passed in R3, index in R10, value to store in R8, LR (R14) is used as general register
@@ -113,7 +113,7 @@ class HelperFunctions extends Assembler {
       FinalIR.Mov("ge", r0, r1) :: // r0 >= lr
       FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
       FinalIR.Str("", LogicalShiftLeft(r0, Right(2)), r2, r3) :: // TODO: Logical shift does not work
-      FinalIR.Pop("", List(pc)))
+      FinalIR.Pop("", List(pc)) :: List())
   }
 
   def assemble_boundsCheck(): List[FinalIR] = {
@@ -129,7 +129,7 @@ class HelperFunctions extends Assembler {
       FinalIR.Mov("", new ImmediateInt(0), r0) ::
       FinalIR.BranchLink("", new BranchString("fflush")) ::
       FinalIR.Mov("", new ImmediateInt(255), r0) ::
-      FinalIR.BranchLink("", new BranchString("exit")))
+      FinalIR.BranchLink("", new BranchString("exit")) :: List())
   }
 
   def assemble_print(pType: String): List[FinalIR] = {
@@ -158,7 +158,7 @@ class HelperFunctions extends Assembler {
         FinalIR.BranchLink("", new BranchString("printf")) ::
         FinalIR.Mov("", ImmediateInt(0), r0) ::
         FinalIR.BranchLink("", new BranchString("fflush")) ::
-        FinalIR.Pop("", List(pc)))
+        FinalIR.Pop("", List(pc)) :: List())
    }
 
   def assemble_prints(): List[FinalIR] = {
@@ -176,7 +176,7 @@ class HelperFunctions extends Assembler {
         FinalIR.BranchLink("", new BranchString("printf")) ::
         FinalIR.Mov("", new ImmediateInt(0), r0) ::
         FinalIR.BranchLink("", new BranchString("fflush")) ::
-        FinalIR.Pop("", List(pc)))
+        FinalIR.Pop("", List(pc)) :: List())
   }
 
   def assemble_printc(): List[FinalIR] = {
@@ -193,7 +193,7 @@ class HelperFunctions extends Assembler {
         FinalIR.BranchLink("", new BranchString("printf")) ::
         FinalIR.Mov("", new ImmediateInt(0), r0) ::
         FinalIR.BranchLink("", new BranchString("fflush")) ::
-        FinalIR.Pop("", List(pc)))
+        FinalIR.Pop("", List(pc)) :: List())
   }
 
   def assemble_printi(): List[FinalIR] = {
@@ -210,7 +210,7 @@ class HelperFunctions extends Assembler {
         FinalIR.BranchLink("", new BranchString("printf")) ::
         FinalIR.Mov("", new ImmediateInt(0), r0) ::
         FinalIR.BranchLink("", new BranchString("fflush")) ::
-        FinalIR.Pop("", List(pc)))
+        FinalIR.Pop("", List(pc)) :: List())
   }
 
   def assemble_println(): List[FinalIR] = {
@@ -226,7 +226,7 @@ class HelperFunctions extends Assembler {
         FinalIR.BranchLink("", new BranchString("puts")) ::
         FinalIR.Mov("", new ImmediateInt(0), r0) ::
         FinalIR.BranchLink("", new BranchString("fflush")) ::
-        FinalIR.Pop("", List(pc)))
+        FinalIR.Pop("", List(pc)) :: List())
   }
 
   def assemble_printb(): List[FinalIR] = {
@@ -259,7 +259,7 @@ class HelperFunctions extends Assembler {
         FinalIR.BranchLink("", new BranchString("printf")) ::
         FinalIR.Mov("", new ImmediateInt(0), r0) ::
         FinalIR.BranchLink("", new BranchString("fflush")) ::
-        FinalIR.Pop("", List(pc)))
+        FinalIR.Pop("", List(pc)) :: List())
   }
 
   def assemble_read(rType: String): List[FinalIR] = {
@@ -272,30 +272,32 @@ class HelperFunctions extends Assembler {
 
   def assemble_readi(): List[FinalIR] = {
     val lbl = new Label(".L._readi_str0")
-      assembleTAC(DataSegmentTAC()) ++
-      assembleTAC(Comments("length of " + lbl.name)) ++
-      assembleTAC(StringLengthDefinitionTAC(2, lbl)) ++
-      assembleTAC(StringDefinitionTAC("%d", lbl)) ++
-      assembleTAC(TextSegmentTAC()) ++
-      assembleTAC(Label("_readi")) ++
+    List(
+      DataSegmentTAC(),
+      Comments("length of " + lbl.name),
+      StringLengthDefinitionTAC(2, lbl),
+      StringDefinitionTAC("%d", lbl),
+      TextSegmentTAC(),
+      Label("_readi")).map(tac => assembleTAC(tac)).flatten ++
       (FinalIR.Push("", List(lr)) ::
       FinalIR.StrPre("", sp, new ImmediateInt(-POINTER_BYTE_SIZE), r0) ::
       FinalIR.Mov("", sp, r1) ::
       FinalIR.Ldr("", null, new LabelString(lbl.name), r0) ::
       FinalIR.BranchLink("", new BranchString("scanf")) ::
       FinalIR.Ldr("", sp, new ImmediateInt(0), r0) ::
-      FinalIR.Add("", None(), sp, new ImmediateInt(POINTER_BYTE_SIZE), sp) ::
-      FinalIR.Pop("", List(pc)))
+      FinalIR.Add("", None(), sp, new ImmediateInt(4), sp) ::
+      FinalIR.Pop("", List(pc)) :: List())
   }
 
   def assemble_readc(): List[FinalIR] = {
     val lbl = new Label(".L._readc_str0")
-      assembleTAC(DataSegmentTAC()) ++
-      assembleTAC(Comments("length of " + lbl.name)) ++
-      assembleTAC(StringLengthDefinitionTAC(3, lbl)) ++ 
-      assembleTAC(StringDefinitionTAC(" %c", lbl)) ++
-      assembleTAC(TextSegmentTAC()) ++
-      assembleTAC(Label("_readc")) ++
+    List(
+      DataSegmentTAC(),
+      Comments("length of " + lbl.name),
+      StringLengthDefinitionTAC(3, lbl),
+      StringDefinitionTAC(" %c", lbl),
+      TextSegmentTAC(),
+      Label("_readc")).map(tac => assembleTAC(tac)).flatten ++
       (FinalIR.Push("", List(lr)) :: 
       FinalIR.StrPre("b", sp, new ImmediateInt(-1), r0) ::
       FinalIR.Mov("", sp, r1) :: 
@@ -303,7 +305,7 @@ class HelperFunctions extends Assembler {
       FinalIR.BranchLink("", new BranchString("scanf")) ::
       FinalIR.Ldr("sb", sp, new ImmediateInt(0), r0) ::
       FinalIR.Add("", None(), sp, new ImmediateInt(1), sp) ::
-      FinalIR.Pop("", List(pc)))
+      FinalIR.Pop("", List(pc)) :: List())
   }
 
 }
