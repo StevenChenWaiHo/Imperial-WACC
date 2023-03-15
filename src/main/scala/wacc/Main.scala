@@ -19,10 +19,9 @@ object Main {
   val SemanticErrorCode = 200
   val SuccessCode = 0
 
+  var target = ArchitectureType.ARM11
+
   def main(args: Array[String]): Unit = {
-    if (args.length != 2) throw new IllegalArgumentException(
-      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 2."
-    )
     val file = Option(Source.fromFile(args.head))
       .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
     val inputProgram = file.mkString
@@ -30,8 +29,10 @@ object Main {
 
     println(inputProgram)
 
-    val target = getArchitecture(args(1))
+    if (args.length == 2) {
+    target = getArchitecture(args(1))
       .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
+    }
 
     /* Compile */
     // Parse input file
