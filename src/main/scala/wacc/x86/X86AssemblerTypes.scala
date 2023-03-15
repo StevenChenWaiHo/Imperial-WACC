@@ -21,89 +21,86 @@ object X86AssemblerTypes {
     override def toString(): String = name
   }
 
-  sealed trait X86Register extends Register {
+  sealed trait X86Register extends GeneralRegister {
     import scala.math.Ordered.orderingToOrdered
     def compare(that: X86Register): Int = listOfRegisters.get(this) compare listOfRegisters.get(that)
   }
 
-  object r0 extends X86Register {
-    override def toString(): String = "r0"
+  object rax extends X86Register {
+    override def toString(): String = "rax" // r0 equiv.
   }
 
-  object r1 extends X86Register {
-    override def toString(): String = "r1"
+  object rcx extends X86Register {
+    override def toString(): String = "rcx" // 4th arg (assume r4 equiv.)
   }
 
-  object r2 extends X86Register {
-    override def toString(): String = "r2"
+  object rdx extends X86Register {
+    override def toString(): String = "rdx" // r3 equiv.
   }
 
-  object r3 extends X86Register {
-    override def toString(): String = "r3"
+  object rbx extends LinkRegister with PCRegister {
+    override def toString(): String = "rbx" // base pointer? (lr/pc) PRESERVED
   }
 
-  object r4 extends X86Register {
-    override def toString(): String = "r4"
+  object rsp extends SPRegister {
+    override def toString(): String = "rsp" // sp PRESERVED
   }
 
-  object r5 extends X86Register {
-    override def toString(): String = "r5"
+  object rbp extends FPRegister {
+    override def toString(): String = "rbp" // fp PRESERVED
   }
 
-  object r6 extends X86Register {
-    override def toString(): String = "r6"
+  object rsi extends X86Register {
+    override def toString(): String = "rsi" // r2 equiv.
   }
 
-  object r7 extends X86Register {
-    override def toString(): String = "r7"
+  object rdi extends X86Register {
+    override def toString(): String = "rdi" // r1 equiv.
   }
 
   object r8 extends X86Register {
-    override def toString(): String = "r8"
+    override def toString(): String = "r8" // 5th arg
   }
 
   object r9 extends X86Register {
-    override def toString(): String = "r9"
+    override def toString(): String = "r9" // 6th arg
   }
 
   object r10 extends X86Register {
-    override def toString(): String = "r10"
+    override def toString(): String = "r10" // temp
   }
 
   object r11 extends X86Register {
-    override def toString(): String = "r11"
+    override def toString(): String = "r11" // temp
   }
 
   object r12 extends X86Register {
-    override def toString(): String = "r12"
+    override def toString(): String = "r12" // PRESERVED
   }
 
   object r13 extends X86Register {
-    override def toString(): String = "r13"
+    override def toString(): String = "r13" // PRESERVED
   }
 
   object r14 extends X86Register {
-    override def toString(): String = "r14"
+    override def toString(): String = "r14" // PRESERVED
   }
 
-  object fp extends X86Register {
-    override def toString(): String = "fp"
+  object r15 extends X86Register {
+    override def toString(): String = "r15" // PRESERVED
   }
 
-  object lr extends X86Register {
-    override def toString(): String = "lr"
-  }
+  // object lr extends X86Register {
+  //   override def toString(): String = "lr"
+  // }
 
-  object pc extends X86Register {
-    override def toString(): String = "pc"
-  }
+  // object pc extends X86Register {
+  //   override def toString(): String = "pc"
+  // }
 
-  object sp extends X86Register {
-    override def toString(): String = "sp"
-  }
-
-  val listOfRegisters = Map[X86Register, Int](r0 -> 0, r1 -> 1, r2 -> 2, r3 -> 3, r4 -> 4, r5 -> 5, r6 -> 6,
-    r7 -> 7, r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14)
+  // rbx/rsp/rbp should not be here
+  val listOfRegisters = Map[X86Register, Int](rax -> 0, rcx -> 1, rdx -> 2, rsi -> 6, rdi -> 7,
+    r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14, r15 -> 15)
 
   case class ImmediateValueOrRegister(operand: Either[X86Register, Int]) extends LHSop {
     @Override
@@ -113,7 +110,7 @@ object X86AssemblerTypes {
           value.toString
         }
         case Right(value) => {
-          "#" + value
+          value.toString
         }
       }
     }
@@ -171,39 +168,31 @@ object X86AssemblerTypes {
     }
   }
 
-  case class RotateRightExtended(sourceRegister: X86Register) extends LHSop {
-    override def toString: String = {
-      sourceRegister + ", " + "rrx"
-    }
-  }
-
-  sealed trait X86Suffi extends Suffi
-  
-  case class Control() extends X86Suffi {
+  case class X86Control() extends Control {
     override def toString: String = {
       "c"
     }
   }
 
-  case class Extension() extends X86Suffi {
+  case class X86Extension() extends Extension {
     override def toString: String = {
       "x"
     }
   }
 
-  case class Status() extends X86Suffi {
+  case class X86Status() extends Status {
     override def toString: String = {
       "s"
     }
   }
 
-  case class Flags() extends X86Suffi {
+  case class X86Flags() extends Flags {
     override def toString: String = {
       "f"
     }
   }
 
-  case class None() extends X86Suffi {
+  case class X86None() extends None {
     override def toString: String = {
       ""
     }
