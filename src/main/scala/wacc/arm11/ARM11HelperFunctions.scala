@@ -284,7 +284,7 @@ class ARM11HelperFunctions {
       FinalIR.Ldr("", null, ARM11LabelString(lbl.name), r0) ::
       FinalIR.BranchLink("", ARM11BranchString("scanf")) ::
       FinalIR.Ldr("", sp, ARM11ImmediateInt(0), r0) ::
-      FinalIR.Add("", None(), sp, ARM11ImmediateInt(POINTER_BYTE_SIZE), sp) ::
+      FinalIR.Add("", ARM11None(), sp, ARM11ImmediateInt(POINTER_BYTE_SIZE), sp) ::
       FinalIR.Pop("", List(pc)))
   }
 
@@ -303,7 +303,7 @@ class ARM11HelperFunctions {
       FinalIR.Ldr("", null, ARM11LabelString(lbl.name), r0) ::
       FinalIR.BranchLink("", ARM11BranchString("scanf")) ::
       FinalIR.Ldr("sb", sp, ARM11ImmediateInt(0), r0) ::
-      FinalIR.Add("", None(), sp, ARM11ImmediateInt(1), sp) ::
+      FinalIR.Add("", ARM11None(), sp, ARM11ImmediateInt(1), sp) ::
       FinalIR.Pop("", List(pc)))
   }
 
