@@ -5,25 +5,28 @@ import wacc.AssemblerTypes._
 object X86AssemblerTypes {
   //TODO change these to x86 format
   //TODO change all calls to LHSop instances in ALL files
-  case class X86StackOffset(offset: Int) extends StackOffset {
+  case class X86StackOffset(offset: Int) extends StackOffset(offset: Int) {
     override def toString(): String = "STACK" + offset.toString()
   }
 
-  case class X86ImmediateInt(i: Int) extends ImmediateInt {
+  case class X86ImmediateInt(i: Int) extends ImmediateInt(i: Int) {
     override def toString(): String = "#" + i.toString()
   }
 
-  case class X86LabelString(name: String) extends LabelString {
+  case class X86LabelString(name: String) extends LabelString(name: String) {
     override def toString(): String = "=" + name
   }
 
-  case class X86BranchString(name: String) extends BranchString {
+  case class X86BranchString(name: String) extends BranchString(name: String) {
     override def toString(): String = name
   }
 
   sealed trait X86Register extends GeneralRegister {
     import scala.math.Ordered.orderingToOrdered
     def compare(that: X86Register): Int = listOfRegisters.get(this) compare listOfRegisters.get(that)
+    // rbx/rsp/rbp should not be here
+    val listOfRegisters = Map[GeneralRegister, Int](rax -> 0, rcx -> 1, rdx -> 2, rsi -> 6, rdi -> 7,
+    r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14, r15 -> 15)
   }
 
   object rax extends X86Register {
@@ -97,10 +100,6 @@ object X86AssemblerTypes {
   // object pc extends X86Register {
   //   override def toString(): String = "pc"
   // }
-
-  // rbx/rsp/rbp should not be here
-  val listOfRegisters = Map[X86Register, Int](rax -> 0, rcx -> 1, rdx -> 2, rsi -> 6, rdi -> 7,
-    r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14, r15 -> 15)
 
   case class ImmediateValueOrRegister(operand: Either[X86Register, Int]) extends LHSop {
     @Override
