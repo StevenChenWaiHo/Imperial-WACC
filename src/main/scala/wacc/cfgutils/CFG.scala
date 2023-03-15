@@ -42,9 +42,6 @@ object CFG {
     @tailrec
     private def computeGraph(): Vector[CFGNode] = {
       val next: Vector[CFGNode] = currentNodes.map(x => updateLiveOuts(updateLiveIns(x)))
-      println("\nUpdate graph:")
-      println(currentNodes)
-      println(next)
       if (currentNodes != next) {
         currentNodes = next
         computeGraph()

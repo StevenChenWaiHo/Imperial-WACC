@@ -60,7 +60,10 @@ object CfgTacInfo extends CFGNodeInfo {
         defs = List(ptr)
       case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) => //TODO
         print("CreatePair not yet translated in CFG.scala")
-      case _ =>
+      case ReservedPushTAC(res) => uses = List(res)
+      case ReservedPopTAC(res) => defs = List(res)
+
+      case _ => println("WARNING: Unimplemented TAC in CfgTacInfo: " + instr + "\n\t-Treated as though it does nothing.")
     }
     (uses, defs, succs.toSet)
   }

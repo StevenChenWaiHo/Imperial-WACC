@@ -14,14 +14,16 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
   private var interferenceGraph: InterferenceGraph = null
   private var colourer: GraphColourer[A] = null
   private var colouring: Colouring[A] = null
+  private var spilled: Set[TRegister] = Set()
 
   /* nextTacs determines the next state at each iteration */
   private var nextTacs: Vector[TAC] = tacs
+
   recolour()
 
   override def allocateRegisters: (Vector[TAC], Colouring[A]) = {
     while (colouring.uncoloured.nonEmpty) {
-      spill(colouring.uncoloured)
+      spill(colouring)
     }
     (nextTacs, colouring)
   }
@@ -37,24 +39,36 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     println(interferenceGraph.interferences)
   }
 
-  private def spill(uncoloured: Set[TRegister]): Unit = {
+  private def spill(colouring: Colouring[A]): Unit = {
     //TODO: Currently doesn't use the interference graph
-    /* Simple strategy: spill the uncolourable node with the most interferences */
-    val target = uncoloured.maxBy(x => interferenceGraph.interferences(x).size)
+    /* Simple strategy: spill the node that interferes with the most uncolourable nodes. */
+    val Colouring(coloured, uncoloured) = colouring
+    // Map of tRegisters to how often they interfere with the uncoloured nodes.
+    val interferenceCounts = uncoloured.toVector.flatMap(t => interferenceGraph.interferences(t).toVector)
+      .groupBy(identity).transform((_, t) => t.size).removedAll(spilled)
+    val allTRegs = coloured.keySet union uncoloured
+    // Choose most frequently interfering register. If that doesn't work, pick any register.
+    val target = if(interferenceCounts.nonEmpty) interferenceCounts.maxBy(_._2)._1
+    else (allTRegs diff spilled).head
+    println("TARGET:")
+    println(target)
+      //uncoloured.maxBy(x => interferenceGraph.interferences(x).size)
 
     /* Add a 'push' after each definition, and a 'pop' after each use. */
     @tailrec
     def modifyGraph(initial: Vector[CFGNode], result: Vector[TAC]): Vector[TAC] = initial match {
       case n +: ns if n.defs contains target =>
-        modifyGraph(ns, n.instr +: (ReservedPushTAC(target) +: result))
+        modifyGraph(ns, result ++ Vector(n.instr, ReservedPushTAC(target)))
       case n +: ns if n.uses contains target =>
-        modifyGraph(ns, Vector(ReservedPopTAC(target), n.instr, ReservedPopTAC(target)) ++ result)
+        modifyGraph(ns, result ++ Vector(ReservedPopTAC(target), n.instr, ReservedPushTAC(target)))
       case n +: ns =>
-        modifyGraph(ns, n.instr +: result)
+        modifyGraph(ns, result :+ n.instr)
       case Vector() => result
     }
 
     nextTacs = modifyGraph(cfg.nodes, Vector[TAC]())
+    spilled = spilled incl target
+    recolour()
   }
 }
 

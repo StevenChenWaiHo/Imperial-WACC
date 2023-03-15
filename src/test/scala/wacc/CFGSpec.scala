@@ -15,9 +15,11 @@ class CFGSpec extends AnyFlatSpec {
       |int x = 1;
       |int y = 2;
       |int z = 3;
+      |int k = 4;
       |x = y + z;
       |y = x + z;
-      |z = x + y
+      |z = x + y;
+      |z = z + k
       |end
       |""".stripMargin
   private val testTACs = delegateASTNode(program.parse(testProgram).get)._1.toVector
