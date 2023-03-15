@@ -31,6 +31,10 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     interferenceGraph = new InterferenceGraph(cfg)
     colourer = new GraphColourer[A](regs, interferenceGraph)
     colouring = colourer.attemptColouring
+    println("\n--- Recolour: ---")
+    println(colouring)
+    println
+    println(interferenceGraph.interferences)
   }
 
   private def spill(uncoloured: Set[TRegister]): Unit = {
@@ -45,6 +49,8 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
         modifyGraph(ns, n.instr +: (ReservedPushTAC(target) +: result))
       case n +: ns if n.uses contains target =>
         modifyGraph(ns, Vector(ReservedPopTAC(target), n.instr, ReservedPopTAC(target)) ++ result)
+      case n +: ns =>
+        modifyGraph(ns, n.instr +: result)
       case Vector() => result
     }
 
@@ -53,25 +59,18 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
 }
 
 class GraphColourer[A](val regs: List[A], interferenceGraph: InterferenceGraph) {
-  type IGNode = (TRegister, Set[TRegister])
+  private type IGNode = (TRegister, Set[TRegister])
 
   def attemptColouring: Colouring[A] = {
     val stack = mutable.Stack[(TRegister, Set[TRegister])]()
     val interferences = interferenceGraph.interferences.to(mutable.Map)
 
     if (interferences.isEmpty) {
-      println("Empty program passed to graph colouring allocator! \n")
+      println("WARNING: Attempted to allocate registers to an empty program! \n")
       return Colouring(Map(), Set())
     }
 
-    /* Repeatedly push the smallest-order colourable node to the stack. */
-    do {
-      val fewestInterferences = interferences.minBy(x => remainingArcs(x, interferences))
-      if (fewestInterferences._2.size > regs.size) break
-      interferences.subtractOne(fewestInterferences._1)
-      stack.push(fewestInterferences)
-    }
-    while (interferences.nonEmpty)
+    pushAllToStack(interferences, stack)
 
     // Any interferences not in the stack are uncolourable
     var colouring = Colouring(Map[TRegister, A](), interferences.keySet.toSet)
@@ -94,6 +93,16 @@ class GraphColourer[A](val regs: List[A], interferenceGraph: InterferenceGraph) 
   private def remainingArcs(node: IGNode, remainingInters: mutable.Map[TRegister, Set[TRegister]]): Int =
     node._2.count(x => remainingInters.contains(x))
 
+  private def pushAllToStack(interferences: mutable.Map[TRegister, Set[TRegister]], stack: mutable.Stack[(TRegister, Set[TRegister])]): Unit = {
+  /* Repeatedly push the smallest-order colourable node to the stack. */
+    do {
+      val fewestInterferences = interferences.minBy(x => remainingArcs(x, interferences))
+      if (fewestInterferences._2.size > regs.size) return
+      interferences.subtractOne(fewestInterferences._1)
+      stack.push(fewestInterferences)
+    }
+    while (interferences.nonEmpty)
+  }
 }
 
 private class InterferenceGraph(cfg: CFG) {
@@ -101,7 +110,9 @@ private class InterferenceGraph(cfg: CFG) {
     val inters = mutable.Map[TRegister, Set[TRegister]]()
     cfg.nodes.foreach {
       node: CFGNode =>
-        node.liveOut.foreach(t => inters.update(t, inters(t) union node.liveOut))
+        node.liveOut.foreach(t => inters.update(t, inters.getOrElse(t, Set()) union node.liveOut excl t))
+        // Ensure that every tRegister gets a node (even if it doesn't get used)
+        node.defs.foreach(t => if(!(inters contains t)) inters.update(t, Set()))
     }
     inters.toMap
   }
@@ -117,16 +128,17 @@ private class InterferenceGraph(cfg: CFG) {
           case Label(_) =>
             tempEnds.addOne(start, index)
             start = index + 1
+          case _ =>
         }
         // succs.size > 1: the instruction is a branch.
         if (succs.size > 1) {
           tempEnds.addOne(start, index)
           start = index + 1
         }
-
     }
     // Adding the final block
-    val lastBlockStart = tempEnds(cfg.nodes.last.id)._2 + 1
+    println(tempEnds)
+    val lastBlockStart = tempEnds.last._2 + 1
     if (lastBlockStart < cfg.nodes.length) // This should always be true
       tempEnds.addOne((lastBlockStart, cfg.nodes.length - 1))
     tempEnds.toVector

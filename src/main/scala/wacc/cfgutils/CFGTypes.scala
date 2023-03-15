@@ -9,7 +9,7 @@ trait CFGNodeInfo {
   def getInfo(tac: TAC, program: Vector[TAC], id: Id): (Set[TRegister], Set[TRegister], Set[Id])
 }
 
-case class Colouring[A](coloured: Map[TRegister, A], uncoloured: Set[TRegister])
+case class Colouring[A](coloured: Map[TRegister, A], uncoloured: Set[TRegister]) 
 abstract class RegisterAllocator[A] {
   def allocateRegisters: (Vector[TAC], Colouring[A])
 }
