@@ -167,8 +167,6 @@ class Assembler {
     }
   }
 
-  val POINTER_BYTE_SIZE = 4
-
   def assemblePair(fstType: DeclarationType, sndType: DeclarationType, fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister): List[FinalIR] = {
     FinalIR.Pop("", List(getRealReg(fstReg))) ::
     FinalIR.Pop("", List(getRealReg(sndReg))) ::
