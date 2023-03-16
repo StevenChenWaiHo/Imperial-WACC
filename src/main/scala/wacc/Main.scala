@@ -24,8 +24,23 @@ object Main {
   var target = ArchitectureType.ARM11
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 2) throw new IllegalArgumentException(
-      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 2."
+    var argsNum = 2
+    // Optional Flags
+    val optionalFlagString = args(1)
+    val inlineFlag = optionalFlagString.contains("i")
+    val peepholeFlag = optionalFlagString.contains("p")
+    val crossCompilerFlag = optionalFlagString.contains("c")
+    if (crossCompilerFlag){
+      argsNum=3
+      val archName = args(2)
+      target = archName match{
+        case "x86" => ArchitectureType.X86
+        case _: String => throw new IllegalArgumentException("Cannot find Architecture")
+      }
+    }
+
+    if (args.length != argsNum) throw new IllegalArgumentException(
+      "Incorrect number of arguments provided. Received: " + args.length + ", Expected " + argsNum
     )
     val filename = args.head
     val file = Option(Source.fromFile(filename))
@@ -34,8 +49,8 @@ object Main {
     file.close
 
     println(inputProgram + "\n\n")
-    val optionalFlagString = args(1)
-    val inlineFlag = optionalFlagString.contains("i")
+
+
 
     /* Compile */
     // Parse input file
@@ -84,7 +99,10 @@ object Main {
 
     // Apply optimisations here
     // TODO: only optimise based on cmdline flags
-    val result = PeepholeOptimise(ir)
+    var result = ir 
+    if (peepholeFlag){
+      result = PeepholeOptimise(ir)
+    }
 
     var asm = new String()
     target match {

@@ -1,27 +1,31 @@
-#!/bin/bash
+    #!/bin/bash
 # Bash front-end for your compiler.
 # You are free to change the language used for this script,
 # but do *not* change its name.
 
 optFlag=""
+crossCompiler=false
+arch=""
 
-while getopts 'i' OPTION; do
+while getopts 'ipc:' OPTION; do
   case "$OPTION" in
         i) optFlag+="i" ;;
+        p) optFlag+="p" ;;
+        c) crossCompiler=true; optFlag+="c" ; arch="$OPTARG";;
         :) echo "Missing argument for option -$OPTARG"; exit 1;;
        \?) echo "Unknown option -$OPTARG"; exit 1;;
     esac
 done
 
-shift $(( OPTIND - 1 ))
 
-echo $optFlag
-echo $var
 
-for var in $@
-do
-    java -jar wacc-39-compiler.jar "$var" "$optFlag"
-done
+if $crossCompiler; then 
+    shift $(( OPTIND - 1 ))
+    java -jar wacc-39-compiler.jar "$1" "$optFlag" "$arch"
+else 
+    shift $(( OPTIND - 1 ))
+    java -jar wacc-39-compiler.jar "$1" "$optFlag"
+fi
 
 exit $?
 
