@@ -29,6 +29,7 @@ object FinalIR {
   case class Global(name: String) extends FinalIR
   case class Lbl(name: String) extends FinalIR
   case class Comment(comment: String) extends FinalIR
+  case class Ret() extends FinalIR
   
   case class DataSeg() extends FinalIR
   case class TextSeg() extends FinalIR
