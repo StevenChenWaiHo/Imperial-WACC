@@ -68,7 +68,7 @@ object CfgTacInfo extends LiveRange {
     (uses, defs, succs.toSet)
   }
 
-  /** Replace all instances of a tRegister in the instruciton with a different tRegister */
+  /** Replace all instances of a tRegister in the instruction with a different tRegister */
   def mapTAC(tac: TAC, modification: (TRegister, TRegister)): TAC = {
     tac.getClass.getDeclaredFields.toList.foreach {
       field =>
@@ -83,9 +83,3 @@ object CfgTacInfo extends LiveRange {
     tac.asInstanceOf[tac.type]
   }
 }
-
-
-/*
-Load t as proxy
-
- */
