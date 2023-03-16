@@ -1,6 +1,10 @@
 package wacc
 
-import wacc.AssemblerTypes._
+import wacc.ArchitectureType._
+import wacc.ARM11AssemblerTypes._
+import wacc.X86AssemblerTypes._
+
+object AssemblerTypes {
   trait LHSop
 
   class StackOffset(offset: Int) extends LHSop
@@ -18,10 +22,9 @@ import wacc.AssemblerTypes._
   } // r0-14?/other regs
   class SPRegister extends Register // sp/rsp
   class FPRegister extends Register // fp/rbp
-  // are the below needed
-  trait LinkRegister extends Register // lr/??
-  trait PCRegister extends Register // pc/??
-  //rbx as basepointer?
+  trait LinkRegister extends Register // lr/rbx
+  trait PCRegister extends Register // pc/rbx
+  //rbx as basepointer
 
   trait Suffi
 
