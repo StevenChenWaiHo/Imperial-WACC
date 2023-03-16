@@ -434,7 +434,8 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assembleEndFunc(): AssemblerState = {
     FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-    FinalIR.Pop("", List(rbp, rbx))
+    FinalIR.Pop("", List(rbp, rbx)) ::
+    FinalIR.Ret()
   }
 
   def assembleAssignment(operand: Operand, reg: TRegister): AssemblerState = {
