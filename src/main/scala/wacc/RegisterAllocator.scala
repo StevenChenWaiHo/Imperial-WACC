@@ -2,6 +2,9 @@ package wacc
 
 import wacc.StatelessAssembler.{assembleAdd, assembleLdr, assemblePush, assembleStr, assembleSub}
 import wacc.AssemblerTypes._
+import wacc.ARM11AssemblerTypes._
+import wacc.X86AssemblerTypes._
+import wacc.ArchitectureType._
 import wacc.TAC._
 import wacc.FinalIR.FinalIR
 
@@ -12,8 +15,10 @@ object RegisterAllocator {
   class AssemblerState(var code: ListBuffer[FinalIR],
                        var available: ListBuffer[GeneralRegister],
                        var used: ListBuffer[(TRegister, GeneralRegister)],
-                       var memory: ListBuffer[ListBuffer[TRegister]]) {
-    //var assembler: Assembler[Register]) extends StateTracker[Register, TRegister] {
+                       var memory: ListBuffer[ListBuffer[TRegister]],
+                       val architecture: Architecture) {
+    
+    val offset = 1024
 
     def storeRegister = {
       val currentScope = memory.head
@@ -22,7 +27,11 @@ object RegisterAllocator {
         index = currentScope.length
         currentScope.addOne(used.head._1)
       }
-      code = code.addOne(FinalIR.Str("", new FPRegister, new ImmediateInt(-offset + (4 * index)), used.head._2))
+      // TODO create a helper for this
+      architecture match {
+        case ArchitectureType.ARM11 => code = code.addOne(FinalIR.Str("", fp, ARM11ImmediateInt(-offset + (4 * index)), used.head._2))
+        case ArchitectureType.X86 => code = code.addOne(FinalIR.Str("", rbp, X86ImmediateInt(-offset + (4 * index)), used.head._2))
+      }
       available.addOne(used.head._2)
       used = used.tail
       this
@@ -31,7 +40,11 @@ object RegisterAllocator {
     /** When entering and exiting a function, the scope is completely redefined.
     * allocate some stack space by moving the stack pointer, and add 'memory(0)' to track it. */
     def enterFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(FinalIR.Sub("", new AssemblerTypes.None, new SPRegister, new ImmediateInt(offset), new SPRegister))
+      // TODO create a helper for this
+      architecture match {
+        case ArchitectureType.ARM11 => code.addOne(FinalIR.Sub("", ARM11None(), sp, ARM11ImmediateInt(offset), sp))
+        case ArchitectureType.X86 => code.addOne(FinalIR.Sub("", X86None(), rsp, X86ImmediateInt(offset), rsp))
+      }
       memory.addOne(ListBuffer[TRegister]())
       this
     }
@@ -43,7 +56,11 @@ object RegisterAllocator {
     }
 
     def exitFunction: RegisterAllocator.AssemblerState = {
-      code.addOne(FinalIR.Add("", new AssemblerTypes.None, new SPRegister, new ImmediateInt(offset), new SPRegister))
+      // TODO create a helper for this
+      architecture match {
+        case ArchitectureType.ARM11 => code.addOne(FinalIR.Add("", ARM11None(), sp, ARM11ImmediateInt(offset), sp))
+        case ArchitectureType.X86 => code.addOne(FinalIR.Add("", X86None(), rsp, X86ImmediateInt(offset), rsp))
+      }
       this
     }
 
@@ -55,8 +72,8 @@ object RegisterAllocator {
       }
       this
     }
-    def this(available: ListBuffer[GeneralRegister]) = //, assembler: Assembler[GeneralRegister]) =
-      this(ListBuffer(), available, ListBuffer(), ListBuffer(ListBuffer()))
+    def this(available: ListBuffer[GeneralRegister], architecture: Architecture) = //, assembler: Assembler[GeneralRegister]) =
+      this(ListBuffer(), available, ListBuffer(), ListBuffer(ListBuffer()), architecture)
 
     def addInstruction(instr: FinalIR): AssemblerState = {
       code = code.addOne(instr)
@@ -90,7 +107,11 @@ object RegisterAllocator {
       /* Check memory */
       val index: Int = memory.head.indexOf(target)
       if (index != (-1)) {
-        code = code.addOne(FinalIR.Ldr("", available.head, new ImmediateInt(-offset + (4 * index)), new FPRegister))
+        // TODO create a helper for this
+        architecture match {
+          case ArchitectureType.ARM11 => code.addOne(FinalIR.Ldr("", available.head, ARM11ImmediateInt(-offset + (4 * index)), fp))
+          case ArchitectureType.X86 => code.addOne(FinalIR.Ldr("", available.head, X86ImmediateInt(-offset + (4 * index)), rbp))
+        }
       }
 
       logicallyAllocateRegisterTo(target)
