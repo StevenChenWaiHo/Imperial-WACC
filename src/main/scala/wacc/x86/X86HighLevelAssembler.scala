@@ -77,11 +77,7 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
       }
       case Label(name) => {
         state.enterBranch // TODO: check state here
-        if (name == "main") {
-          FinalIR.Global(name) :: FinalIR.Lbl(name)
-        } else {
-          FinalIR.Lbl(name)
-        }
+        FinalIR.Lbl(name)
       }
       case Comments(str) => FinalIR.Comment(str)
       case DataSegmentTAC() => FinalIR.DataSeg()
