@@ -16,7 +16,7 @@ object Inlining{
     Label("InlineFunc" + inlineLabelCounter.toString)
   }
 
-  class InlineFunc(val param: Stack[TRegister], val tacList: List[TAC], val dstReg: TRegister)
+  class InlineFunc(val param: Stack[TRegister], val tacList: List[TAC], val labelFlag: Boolean,  val dstReg: TRegister)
 
   val INLINE_FUNC_MAX_INSTR = 20
   // funcMap : Map(FunctionName => (FunctionInstr, dstReg))
@@ -33,8 +33,9 @@ object Inlining{
     val inLineFuncTAClist = ListBuffer[TAC]()
     val param = Stack[TRegister]()
     var name: Label = null
-    var dstReg: TRegister = null
-    funcTac.foreach{ tac => tac match {
+    var labelFlag = false
+    val dstReg  = nextRegister()
+    funcTac.zipWithIndex.foreach{ case (tac, i) => tac match {
         case label@Label(lbl) => {
           if (name == null) {
             name = label
@@ -45,15 +46,23 @@ object Inlining{
         }
         case BeginFuncTAC() => null
         case PopParamTAC(datatype, tReg, index) => param.push(tReg)
-        case CommandTAC(CmdT.Ret, tReg, opType) => dstReg = tReg
+        case cmd@CommandTAC(CmdT.Ret, tReg, opType) => {
+          inLineFuncTAClist.addOne(AssignmentTAC(tReg, dstReg))
+          // If return not the last line of the function
+          if (i != funcTac.length - 1){
+            labelFlag = true
+            inLineFuncTAClist.addOne(GOTO(name))
+          }
+        }
         case t => inLineFuncTAClist.addOne(t)
       }
     }
-    funcMap.addOne(name, (new InlineFunc(param, inLineFuncTAClist.toList, dstReg)))
+    funcMap.addOne((name, new InlineFunc(param, inLineFuncTAClist.toList, labelFlag, dstReg)))
   }
 
   def replaceCall(lbl: Label, args: List[TRegister], dstReg: TRegister, inlineFunc: InlineFunc) : List[TAC] = {
     val tacList = ListBuffer[TAC]()
+    tacList.addOne(Comments("Add inline function"))
     for (i <- 0 until args.length){
       tacList.addOne(AssignmentTAC(args(i), inlineFunc.param.toList.reverse(i)))
     }
@@ -92,6 +101,9 @@ object Inlining{
       funcMap.get(lbl) match {
         case Some(inlineFunc) => {
           inlinedTacList.addAll(replaceCall(lbl, args, dstReg, inlineFunc))
+          if (inlineFunc.labelFlag){
+            inlinedTacList.addOne(lbl)
+          }
         }
         case None => inlinedTacList.addOne(call)
       }
