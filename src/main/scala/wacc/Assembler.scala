@@ -3,6 +3,7 @@ package wacc
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
 import wacc.AssemblerTypes._
+import wacc.cfgutils.CFG
 import wacc.RegisterAllocator._
 import wacc.TAC._
 import wacc.FinalIR.FinalIR
@@ -46,7 +47,6 @@ object StatelessAssembler {
   }
 
 }
-
 class Assembler {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
   val endFuncs = collection.mutable.Map[String, List[FinalIR]]()

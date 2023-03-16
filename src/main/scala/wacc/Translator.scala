@@ -17,6 +17,7 @@ object Translator {
   private val strings = Map[String, Label]()
   private val dataList = ListBuffer[TAC]()
   private var labelCount = 0
+  private var tRegCount = 0
 
   def newMap(): Map[ASTNode, TRegister] = {
     // Push scope on to stack when entering new context
@@ -116,7 +117,9 @@ object Translator {
   }
 
   def nextRegister(): TRegister = {
-    val next = new TRegister(regList.length)
+//    val next = new TRegister(regList.length)
+    val next = new TRegister(tRegCount)
+    tRegCount += 1
     regList += next
     next
   }
@@ -414,7 +417,7 @@ object Translator {
   def translateIdentAssignment(lvalue: LVal, rvalue: RVal): (List[TAC], TRegister) = {
     val (lList, lReg) = delegateASTNode(lvalue) // this is the variable: it should have a register assigned to it, but no value. /
     val (rList, rReg) = delegateASTNode(rvalue) // this is the value: it should ALWAYS be assigned to a different node to all variables.
-    (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), lReg)
+    (lList ++ rList ++ List(new AssignmentTAC(rReg, lReg)), nextRegister())
   }
 
   def translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
