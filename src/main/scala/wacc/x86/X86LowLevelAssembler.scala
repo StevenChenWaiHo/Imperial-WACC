@@ -116,6 +116,7 @@ object X86LowLevelAssembler {
         str = str + instr + condition + " " + register.toString
       }
     }
+    str
   }
 
   def assembleAdd(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
