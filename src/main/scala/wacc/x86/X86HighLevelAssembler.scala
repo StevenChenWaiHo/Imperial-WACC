@@ -226,7 +226,7 @@ object X86HighLevelAssembler {
     addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), X86ImmediateInt(0)) ::
-    FinalIR.BranchLink("eq", X86BranchString("_errNull")) ::
+    FinalIR.BranchLink("", X86BranchString("_errNull")) ::
     FinalIR.Ldr("", getRealReg(pairReg), X86ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE),  getRealReg(dstReg)) ::
     FinalIR.Push("", List(getRealReg(pairReg))) ::
     FinalIR.Mov("", getRealReg(dstReg), getRealReg(pairReg)) ::
@@ -239,7 +239,7 @@ object X86HighLevelAssembler {
     addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), X86ImmediateInt(0)) ::
-    FinalIR.BranchLink("eq", X86BranchString("_errNull")) ::
+    FinalIR.BranchLink("", X86BranchString("_errNull")) ::
     FinalIR.Push("", List(getRealReg(pairReg))) ::
     FinalIR.Ldr("", getRealReg(pairReg), X86ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE),  getRealReg(pairReg)) ::
     FinalIR.Str(getInstructionType(datatype), getRealReg(pairReg), X86ImmediateInt(0), getRealReg(srcReg)) ::

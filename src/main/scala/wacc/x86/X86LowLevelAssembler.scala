@@ -57,69 +57,65 @@ object X86LowLevelAssembler {
 
   // Uses mov/lea instead of str/ldr
   def assembleStr(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
-    "mov" + ldrStrAssist(condition, src, operand, dst)
+    ldrStrAssist(condition, src, operand, dst)
   }
 
   def assembleStrPre(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
-    "mov" + ldrStrAssist(condition, src, operand, dst).toString + "!".toString()
+    ldrStrAssist(condition, src, operand, dst).toString + "!".toString()
   }
 
   
   def assembleLdr(condition: String, src: Register, operand: LHSop, dst: Register): String = {
-    "mov" + ldrStrAssist(condition, src, operand, dst)
+    ldrStrAssist(condition, src, operand, dst)
   }
 
   //TODO split out lea
   def ldrStrAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
-    println(condition)
-    println(src)
-    println(operand)
-    println(dst)
-    var str = condition + " " + dst.toString + ", " //src null issue
+    var str = "mov" + condition + " " + dst.toString + ", " //src null issue
     operand match {
       case X86ImmediateInt(x) => {
-        str + x + "[" + src.toString + ", #" + x + "]"
+        str + "[" + src.toString + " + " + x + "]"
       }
       case X86LabelString(x) => {
-        " lea" + x + "(%rip), " + dst.toString //%rip is instruction pointer
+        "lea " + dst.toString + ", [rip + " + x + "]" //rip is instruction pointer
       }
     }
   }
 
   def assemblePush(condition: String, registers: List[Register]): String = {
-    "push" + pushPopAssist(condition, registers)
+    pushPopAssist("push", condition, registers)
   }
 
   def assemblePop(condition: String, registers: List[Register]): String = {
-    "pop" + pushPopAssist(condition, registers)
+    pushPopAssist("pop", condition, registers)
   }
 
-  def pushPopAssist(condition: String, registers: List[Register]): String = {
-    var str = condition + " {"
+  def pushPopAssist(instr: String, condition: String, registers: List[Register]): String = {
+    var str = ""
     for (register <- registers) {
       if (register != registers.last) {
-        str = str + register.toString + ", "
+        str = str + instr + condition + " " + register.toString + "\n"
       } else {
-        str = str + register.toString
+        str = str + instr + condition + " " + register.toString
       }
     }
-    str + "}"
+    str
   }
 
   def assembleAdd(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "add" + addSubMulAssist(condition, setflag, op1, op2, dst)
+    addSubMulAssist("add", condition, setflag, op1, op2, dst)
   }
 
   def assembleSub(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "sub" + addSubMulAssist(condition, setflag, op1, op2, dst)
+    addSubMulAssist("sub", condition, setflag, op1, op2, dst)
   }
 
   def assembleRsb(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "rsb" + addSubMulAssist(condition, setflag, op1, op2, dst)
+    addSubMulAssist("rsb", condition, setflag, op1, op2, dst)
   }
 
   def assembleMul(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "mul" + addSubMulAssist(condition, setflag, op1, op2, dst)
+    addSubMulAssist("mul", condition, setflag, op1, op2, dst)
   }
 
   def assembleSmull(condition: String, setflag: Suffi, src: LHSop, op1: LHSop, op2: LHSop, dst: LHSop): String = {
@@ -138,10 +134,14 @@ object X86LowLevelAssembler {
   }
 
 
-  def addSubMulAssist(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
+  def addSubMulAssist(instr: String, condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
     addEndFunc("_errOverflow", new X86HelperFunctions().assemble_errOverflow())
     addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
-    condition + setflag + " " + dst + ", " + op1 + ", " + op2 + "\nblvs _errOverflow"
+    if (op1 == dst) {
+      instr + condition + setflag + " " + dst + ", " + op2 + "\njo _errOverflow"
+    }
+    "mov " + dst + ", " + op1 + "\n" +
+      instr + condition + setflag + " " + dst + ", " + op2 + "\njo _errOverflow"
   }
 
   def assembleCmp(condition: String, op1: LHSop, op2: LHSop): String = {
