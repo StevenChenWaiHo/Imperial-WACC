@@ -33,6 +33,7 @@ object X86LowLevelAssembler {
         case Global(name) => assembleGlobal(name)
         case Lbl(name) => assembleLabel(name)
         case Comment(str) => assembleComment(str)
+        case Ret() => assembleRet()
         case DataSeg() => assembleDataSeg()
         case TextSeg() => assembleTextSeg()
         case AsciiZ(str) => assembleAsciiZ(str)
@@ -186,6 +187,10 @@ object X86LowLevelAssembler {
 
   def assembleComment(comment: String): String = {
     "# " + comment
+  }
+
+  def assembleRet(): String = {
+    "ret"
   }
 
   def assembleDataSeg(): String = {
