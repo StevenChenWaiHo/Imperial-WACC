@@ -74,7 +74,7 @@ object PeepholeOptimisation {
         case Mov(cond1, src1, dst1) => {
             instr2 match {
                 case Mov(cond2, dst2, src2) => 
-                    cond1.equals(cond2) && dst1.equals(dst2) && src1.equals(dst2)
+                    cond1.equals(cond2) && dst1.equals(dst2) && src1.equals(src2)
                 case _ => false
             }
         }
