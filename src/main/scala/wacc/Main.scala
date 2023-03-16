@@ -20,15 +20,18 @@ object Main {
   val SuccessCode = 0
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 1) throw new IllegalArgumentException(
-      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 1."
+    if (args.length != 2) throw new IllegalArgumentException(
+      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 2."
     )
-    val file = Option(Source.fromFile(args.head))
-      .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
+    val filename = args.head
+    val file = Option(Source.fromFile(filename))
+      .getOrElse(throw new FileNotFoundException("File: " + filename + " does not exist."))
     val inputProgram = file.mkString
     file.close
 
     println(inputProgram + "\n\n")
+    val optionalFlagString = args(1)
+    val inlineFlag = optionalFlagString.contains("i")
 
     /* Compile */
     val ast = program.parse(inputProgram)
@@ -52,7 +55,6 @@ object Main {
     }
     
     // Translate the ast to TAC
-    val inlineFlag = true
     var tac = List[TAC]()
     if (inlineFlag){
       println("--- INLINED TAC ---")
@@ -80,7 +82,7 @@ object Main {
 
     /* Output the assembly file */
     if(OutputAssemblyFile) {
-      val inputFilename = args.last.split("/").last
+      val inputFilename = filename.split("/").last
       val outputFilename = inputFilename.replace(".wacc", ".s")
       val outputFile = new File(outputFilename)
       val fileWriter = new BufferedWriter(new FileWriter(outputFile))

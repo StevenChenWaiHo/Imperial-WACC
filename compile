@@ -3,9 +3,24 @@
 # You are free to change the language used for this script,
 # but do *not* change its name.
 
+optFlag=""
+
+while getopts 'i' OPTION; do
+  case "$OPTION" in
+        i) optFlag+="i" ;;
+        :) echo "Missing argument for option -$OPTARG"; exit 1;;
+       \?) echo "Unknown option -$OPTARG"; exit 1;;
+    esac
+done
+
+shift $(( OPTIND - 1 ))
+
+echo $optFlag
+echo $var
+
 for var in $@
 do
-    java -jar wacc-39-compiler.jar "$var"
+    java -jar wacc-39-compiler.jar "$var" "$optFlag"
 done
 
 exit $?
