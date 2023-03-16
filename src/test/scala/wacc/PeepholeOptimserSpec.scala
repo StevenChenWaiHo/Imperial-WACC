@@ -79,6 +79,12 @@ class PeepholeOptimserSpec extends AnyFlatSpec {
     assert(PeepholeOptimise(testCode) == testOutput)
   }
 
+  def testReduceStrength() = {
+    assert(strengthReduction(
+      Mul("", None(), r1, ImmediateInt(4), r1))
+      == Mov("", LogicalShiftLeft(r1, Right(2)), r1))
+  }
+
   "Peephole Optimiser" can "identify null operations" in {
     testNullOpIdentify()
   }
@@ -95,4 +101,7 @@ class PeepholeOptimserSpec extends AnyFlatSpec {
     testRemoveRedundant()
   }
 
+  "Peephole Optimiser" can "reduce instruction strength" in {
+    testReduceStrength()
+  }
 }
