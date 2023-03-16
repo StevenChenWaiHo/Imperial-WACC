@@ -35,7 +35,6 @@ class PeepholeOptimserSpec extends AnyFlatSpec {
       Push("", List(fp, lr)),
       Mov("", sp, fp),
       Mov("", ImmediateInt(3), r1),
-      Add("", None(), r1, ImmediateInt(0), r1),
       Mov("", r1, r0),
       Pop("", List(fp, pc))
     )
