@@ -1,12 +1,15 @@
 package wacc
 
 import org.scalatest.flatspec.AnyFlatSpec
+import wacc.AssemblerTypes.ImmediateInt
 import wacc.Parser.ProgramParser.program
+import wacc.TAC.{BinaryOpTAC, TRegister}
 import wacc.Translator.delegateASTNode
 import wacc.cfgutils.CFG.CFGBuilder
 import wacc.cfgutils.{CfgTacInfo, GraphColouringAllocator}
 
 import scala.language.postfixOps
+import scala.sys.exit
 
 class CFGSpec extends AnyFlatSpec {
   private val testProgram =
@@ -31,8 +34,9 @@ class CFGSpec extends AnyFlatSpec {
     println(new CFGBuilder(CfgTacInfo).build(testTACs))
 
     println("\n\n\n\n--- Colouring ---\n")
-    try {
-      println(new GraphColouringAllocator[String](List("aaa", "bbb", "ccc"), testTACs, new CFGBuilder(CfgTacInfo)).allocateRegisters)
-    }
+    val (ts, cs) = (new GraphColouringAllocator[String](List("aaa", "bbb", "ccc", "ddd"), testTACs, new CFGBuilder(CfgTacInfo)).allocateRegisters)
+    println(cs)
+    println
+    ts.foreach(println)
   }
 }

@@ -29,14 +29,18 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
   }
 
   private def recolour(): Unit = {
+    nextTacs.foreach(println)
+    println
+    println
+    println
     cfg = cfgBuilder.build(nextTacs)
     interferenceGraph = new InterferenceGraph(cfg)
     colourer = new GraphColourer[A](regs, interferenceGraph)
     colouring = colourer.attemptColouring
-    println("\n--- Recolour: ---")
-    println(colouring)
-    println
-    println(interferenceGraph.interferences)
+//    println("\n--- Recolour: ---")
+//    println(colouring)
+//    println
+//    println(interferenceGraph.interferences)
   }
 
   private def spill(colouring: Colouring[A]): Unit = {
@@ -54,20 +58,29 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     println(target)
       //uncoloured.maxBy(x => interferenceGraph.interferences(x).size)
 
-    /* Add a 'push' after each definition, and a 'pop' after each use. */
-    @tailrec
-    def modifyGraph(initial: Vector[CFGNode], result: Vector[TAC]): Vector[TAC] = initial match {
-      case n +: ns if n.defs contains target =>
-        modifyGraph(ns, result ++ Vector(n.instr, ReservedPushTAC(target)))
-      case n +: ns if n.uses contains target =>
-        modifyGraph(ns, result ++ Vector(ReservedPopTAC(target), n.instr, ReservedPushTAC(target)))
-      case n +: ns =>
-        modifyGraph(ns, result :+ n.instr)
-      case Vector() => result
+    var highestTReg = allTRegs.maxBy(_.num)
+    def nextTReg = {
+      highestTReg.copy(num = highestTReg.num + 1)
+      highestTReg
     }
 
-    nextTacs = modifyGraph(cfg.nodes, Vector[TAC]())
-    spilled = spilled incl target
+    /* Add a 'push' after each definition, and a 'pop' after each use. */
+    @tailrec
+    def modifyGraph(initial: Vector[CFGNode], result: Vector[TAC], targetReg: TRegister): Vector[TAC] = {
+      val newInstr = if(initial.nonEmpty) CfgTacInfo.mapTAC(initial.head.instr, (target, targetReg)) else null
+      spilled = spilled incl targetReg
+      initial match {
+        case n +: ns if n.defs contains target =>
+          modifyGraph(ns, result ++ Vector(newInstr, AliasedPushTAC(targetReg, target)), nextTReg)
+        case n +: ns if n.uses contains target =>
+          modifyGraph(ns, result ++ Vector(AliasedPopTAC(target, targetReg), newInstr, AliasedPushTAC(targetReg, target)), nextTReg)
+        case n +: ns =>
+          modifyGraph(ns, result :+ newInstr, targetReg)
+        case Vector() => result
+      }
+    }
+
+    nextTacs = modifyGraph(cfg.nodes, Vector[TAC](), target)
     recolour()
   }
 }

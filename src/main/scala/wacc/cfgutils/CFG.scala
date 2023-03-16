@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 object CFG {
   type Id = Integer
 
-  class CFGBuilder(nodeInfo: CFGNodeInfo) {
+  class CFGBuilder(nodeInfo: LiveRange) {
     def build(tacs: Vector[TAC]): CFG = new CFG(tacs, nodeInfo)
   }
 
@@ -19,7 +19,7 @@ object CFG {
     def withLiveOuts(newLiveOuts: Set[TRegister]): CFGNode = this.copy(liveOut = liveOut union newLiveOuts)
   }
 
-  class CFG(val tacs: Vector[TAC], val nodeInfo: CFGNodeInfo) {
+  class CFG(val tacs: Vector[TAC], val nodeInfo: LiveRange) {
 
     private var currentNodes: Vector[CFGNode] = tacs.zipWithIndex.map(x => {
       val (instr, id) = x

@@ -7,7 +7,7 @@ import wacc.cfgutils.CFG.Id
 import scala.language.implicitConversions
 
 
-object CfgTacInfo extends CFGNodeInfo {
+object CfgTacInfo extends LiveRange {
   /** Given a TAC, return:
    * (the set of tRegisters it uses, the set of tRegisters it defines, the indices of its successor TACs). */
   override def getInfo(instr: TAC.TAC, program: Vector[TAC.TAC], id: Id): (Set[TAC.TRegister], Set[TAC.TRegister], Set[Id]) = {
@@ -60,11 +60,32 @@ object CfgTacInfo extends CFGNodeInfo {
         defs = List(ptr)
       case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) => //TODO
         print("CreatePair not yet translated in CFG.scala")
-      case ReservedPushTAC(res) => uses = List(res)
-      case ReservedPopTAC(res) => defs = List(res)
+      case AliasedPushTAC(alias, _) => uses = List(alias)
+      case AliasedPopTAC(_, alias) => defs = List(alias)
 
       case _ => println("WARNING: Unimplemented TAC in CfgTacInfo: " + instr + "\n\t-Treated as though it does nothing.")
     }
     (uses, defs, succs.toSet)
   }
+
+  /** Replace all instances of a tRegister in the instruciton with a different tRegister */
+  def mapTAC(tac: TAC, modification: (TRegister, TRegister)): TAC = {
+    tac.getClass.getDeclaredFields.toList.foreach {
+      field =>
+        field.setAccessible(true)
+        val currentVal = field.get(tac)
+        val newVal: AnyRef = currentVal match {
+          case reg: TRegister if (reg == modification._1) => modification._2
+          case _ => currentVal
+        }
+        field.set(tac, newVal)
+    }
+    tac.asInstanceOf[tac.type]
+  }
 }
+
+
+/*
+Load t as proxy
+
+ */

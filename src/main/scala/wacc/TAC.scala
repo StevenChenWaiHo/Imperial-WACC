@@ -1,11 +1,9 @@
 package wacc
 
-import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
 import wacc.AbstractSyntaxTree.BinaryOpType.BinOp
 import wacc.AbstractSyntaxTree.CmdT.Cmd
-import wacc.AbstractSyntaxTree.DeclarationType
-import wacc.AbstractSyntaxTree.Expr
-import wacc.AbstractSyntaxTree.PairElemT
+import wacc.AbstractSyntaxTree.UnaryOpType.UnOp
+import wacc.AbstractSyntaxTree.{DeclarationType, PairElemT}
 
 object TAC {
 
@@ -18,45 +16,74 @@ object TAC {
     id
   }
 
+  sealed trait defines {
+    val res: TRegister
+  }
+  sealed trait uses {
+    print("hi")
+  }
+
+  /*
+  * TAC -> copy() with name = param
+  * */
+
   sealed trait TAC
 
-  case class ReservedPushTAC(res: TRegister) extends TAC
-  case class ReservedPopTAC(res: TRegister) extends TAC
+
+  type StackLocation = TRegister
+  /** Alias: A new name for the same value. Can be pushed to the same place in memory as the old value */
+  case class AliasedPushTAC(alias: TRegister, location: StackLocation) extends TAC
+  case class AliasedPopTAC(location: StackLocation, alias: TRegister) extends TAC
 
   case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC {
     override def toString(): String = res + " = " + t1 + " " + op + " " + t2
   }
+
   case class UnaryOpTAC(op: UnOp, t1: Operand, res: TRegister) extends TAC
+
   final case class AssignmentTAC(t1: Operand, res: TRegister) extends TAC {
     override def toString(): String = res + " = " + t1
   }
+
   case class IfTAC(t1: Operand, goto: Label) extends TAC {
     override def toString(): String = "if " + t1 + " then goto " + goto.name
   }
+
   case class CommandTAC(cmd: Cmd, t1: Operand, opType: DeclarationType) extends TAC
+
   case class PushParamTAC(t1: Operand) extends TAC
+
   case class PopParamTAC(datatype: DeclarationType, t1: TRegister, index: Int) extends TAC
-  case class CallTAC(lbl: Label, args: List[TRegister], dstReg: TRegister) extends TAC 
+
+  case class CallTAC(lbl: Label, args: List[TRegister], dstReg: TRegister) extends TAC
+
   case class BeginFuncTAC() extends TAC
+
   case class EndFuncTAC() extends TAC
+
   case class DataSegmentTAC() extends TAC {
     override def toString(): String = ".data"
   }
+
   case class TextSegmentTAC() extends TAC {
     override def toString(): String = ".text"
   }
+
   case class StringDefinitionTAC(str: String, lbl: Label) extends TAC {
-     override def toString(): String = lbl.toString() + "\n\t.asciz \"" + str + "\""
+    override def toString(): String = lbl.toString() + "\n\t.asciz \"" + str + "\""
   }
+
   case class StringLengthDefinitionTAC(len: Int, lbl: Label) extends TAC {
-     override def toString(): String = "\t.word " + len.toString
+    override def toString(): String = "\t.word " + len.toString
   }
+
   case class GOTO(label: Label) extends TAC {
     override def toString(): String = "goto: " + label.name
   }
 
   case class Label(var name: String = "label") extends TAC with Operand {
-    this.name = name 
+    this.name = name
+
     override def toString(): String = name + ":"
   }
 
@@ -84,13 +111,15 @@ object TAC {
   // str srcReg [ptrReg, #0]
   // mov dstReg r12
   case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElemReg: TRegister) extends TAC
-  case class CreatePair(fstType: DeclarationType, sndType: DeclarationType, 
+
+  case class CreatePair(fstType: DeclarationType, sndType: DeclarationType,
                         fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister) extends TAC
 
   // StorePairElem
   // ldr pairReg [pairReg, pairPos]
   // str srcReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
   case class StorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister) extends TAC
+
   // GetPairElem
   // Check Null
   // ldr dstReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
@@ -98,7 +127,7 @@ object TAC {
   // ldr(type) dstReg [pairReg, 0]
   case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister) extends TAC
 
-  
+
   /* array declaration in assembly
     @ 4 element array, 4 per element and 4 for array pointer
 		mov r0, #20
@@ -118,14 +147,17 @@ object TAC {
 		str r8, [r12, #12]
   */
   case class InitialiseArray(arrLen: Int, lenReg: TRegister, dstReg: TRegister) extends TAC
+
   //delegates each element in an array
   case class CreateArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister) extends TAC
+
   //delegates an array with all of its elements
   case class CreateArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
-  
+
   // StoreArrayElem
   // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
   case class StoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister) extends TAC
+
   // LoadArrayElem
   // ldr dstReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)
   case class LoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister) extends TAC
@@ -140,27 +172,35 @@ object TAC {
   case class TRegister(num: Int) extends Operand {
     override def toString(): String = "_T" + num
   }
+
   class LiteralTAC() extends Operand
-    case class IdentLiteralTAC(name: String) extends LiteralTAC {
-      override def toString(): String = name
-    }
-    case class PairLiteralTAC() extends LiteralTAC {
-      override def toString(): String = "null"
-    }
-    case class IntLiteralTAC(value: Int) extends LiteralTAC {
-      override def toString(): String = value.toString()
-    }
-    case class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
-      override def toString(): String = b.toString()
-    }
-    case class CharLiteralTAC(c: Char) extends LiteralTAC {
-      override def toString(): String = "\'" + c + "\'"
-    }
+
+  case class IdentLiteralTAC(name: String) extends LiteralTAC {
+    override def toString(): String = name
+  }
+
+  case class PairLiteralTAC() extends LiteralTAC {
+    override def toString(): String = "null"
+  }
+
+  case class IntLiteralTAC(value: Int) extends LiteralTAC {
+    override def toString(): String = value.toString()
+  }
+
+  case class BoolLiteralTAC(b: Boolean) extends LiteralTAC {
+    override def toString(): String = b.toString()
+  }
+
+  case class CharLiteralTAC(c: Char) extends LiteralTAC {
+    override def toString(): String = "\'" + c + "\'"
+  }
+
   case class ArrayOp(elems: List[Operand]) extends Operand {
     override def toString(): String = elems.toString()
   }
+
   case class ArrayElemTAC(arr: Operand, indices: List[Operand]) extends Operand {
     override def toString(): String = arr + "[" + indices + "]"
   }
-  
+
 }
