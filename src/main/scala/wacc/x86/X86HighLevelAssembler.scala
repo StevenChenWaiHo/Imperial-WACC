@@ -2,6 +2,7 @@ package wacc
 
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
+import wacc.ArchitectureType._
 import wacc.X86AssemblerTypes._
 import wacc.AssemblerTypes._
 import wacc.FinalIR.FinalIR
@@ -55,7 +56,7 @@ object x86StatelessAssembler {
 
 class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   var colouring: Colouring[Register] = null
-  private[this] val state = new AssemblerState(ListBuffer(rcx, r8, r9, r10, r11, r12, r13, r14, r15))
+  private[this] val state = new AssemblerState(ListBuffer(rcx, r8, r9, r10, r11, r12, r13, r14, r15), X86)
   val endFuncs = collection.mutable.Map[String, AssemblerState]()
   var labelCount = 0
   val argRegs = List(rax, rdi, rsi, rdx)

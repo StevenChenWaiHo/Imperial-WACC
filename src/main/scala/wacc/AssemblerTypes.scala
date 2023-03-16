@@ -1,5 +1,9 @@
 package wacc
 
+import wacc.ArchitectureType._
+import wacc.ARM11AssemblerTypes._
+import wacc.X86AssemblerTypes._
+
 object AssemblerTypes {
   trait LHSop
 
@@ -19,11 +23,9 @@ object AssemblerTypes {
   class SPRegister extends Register // sp/rsp
   class FPRegister extends Register // fp/rbp
   // are the below needed
-  trait LinkRegister extends Register // lr/??
-  trait PCRegister extends Register // pc/??
-  //rbx as basepointer?
-
-  //registers should be defined here? (in ARM format, more registers)
+  trait LinkRegister extends Register // lr/rbx
+  trait PCRegister extends Register // pc/rbx
+  //rbx as basepointer
 
   trait Suffi
 
