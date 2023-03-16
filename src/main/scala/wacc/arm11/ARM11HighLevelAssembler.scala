@@ -2,6 +2,7 @@ package wacc
 
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
+import wacc.ArchitectureType._
 import wacc.ARM11HelperFunctions
 import wacc.ARM11AssemblerTypes._
 import wacc.AssemblerTypes._
@@ -13,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 
 
 object ARM11HighLevelAssembler {
-  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
+  private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10), ARM11)
   val endFuncs = collection.mutable.Map[String, AssemblerState]()
   var labelCount = 0
   val argRegs = List(r0, r1, r2, r3)
