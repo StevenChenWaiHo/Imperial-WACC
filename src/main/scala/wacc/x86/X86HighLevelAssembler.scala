@@ -69,13 +69,12 @@ object X86HighLevelAssembler {
   // Convert TAC into next IR
   def assembleTAC(tripleAddressCode: TAC): AssemblerState = {
     tripleAddressCode match {
+      case Global(name) => {
+        FinalIR.Global(name)
+      }
       case Label(name) => {
         state.enterBranch // TODO: check state here
-        if (name == "main") {
-          FinalIR.Global(name) :: FinalIR.Lbl(name)
-        } else {
-          FinalIR.Lbl(name)
-        }
+        FinalIR.Lbl(name)
       }
       case Comments(str) => FinalIR.Comment(str)
       case DataSegmentTAC() => FinalIR.DataSeg()
@@ -249,7 +248,8 @@ object X86HighLevelAssembler {
 
   // Returns tuple containing the main program and helper functions
   def assembleProgram(tacList: List[TAC]): (List[FinalIR], collection.mutable.Map[String, List[FinalIR]]) = {
-    tacList.map(assembleTAC)
+    val tacListGlobal = Global("main") :: tacList
+    tacListGlobal.map(assembleTAC)
     (state.code.toList, endFuncs.map(elem => elem match {
       case (name, state) => (name, state.code.toList)
     }))
