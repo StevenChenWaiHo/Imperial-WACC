@@ -1,3 +1,5 @@
+package wacc
+
 import org.scalatest.flatspec.AnyFlatSpec
 
 import wacc.FinalIR._
