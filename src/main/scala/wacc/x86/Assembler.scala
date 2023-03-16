@@ -5,13 +5,13 @@ import wacc.AbstractSyntaxTree._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
-import wacc.FinalIR.FinalIR // TODO: change this to not import everything
+import wacc.FinalIR.FinalIR
+import wacc.cfgutils.{Colouring, RegisterAllocator}
 
 import scala.collection.mutable.ListBuffer
 
 //TODO Change all to x86_64 Architecture
 
-import wacc.HelperFunctions
 object x86StatelessAssembler {
   val argRegs = List(r0, r1, r2, r3)
 
@@ -49,7 +49,9 @@ object x86StatelessAssembler {
 
 }
 
-class x86TempAssembler {
+class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
+  var colouring: Colouring[Register] = null
+
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
   val endFuncs = collection.mutable.Map[String, AssemblerState]()
   var labelCount = 0
@@ -63,7 +65,7 @@ class x86TempAssembler {
     }
   }
 
-  def getRealReg(t: TRegister) = state.getRegister(t)
+  def getRealReg(t: TRegister) = colouring.coloured(t)
 
   implicit private[this] def updateState(instr: FinalIR): AssemblerState = {
     state.addInstruction(instr)
@@ -283,7 +285,11 @@ class x86TempAssembler {
 
   // Returns tuple containing the main program and helper functions
   def assembleProgram(tacList: List[TAC]): (List[FinalIR], collection.mutable.Map[String, List[FinalIR]]) = {
-    tacList.map(assembleTAC)
+    val (spilledCode, colouring) = allocationScheme.allocateRegisters
+    this.colouring = colouring
+    val finalCode = cfgutils.StackAssignment(spilledCode.toList)
+
+    finalCode.map(assembleTAC)
     (state.code.toList, endFuncs.map(elem => elem match {
       case (name, state) => (name, state.code.toList)
     }))

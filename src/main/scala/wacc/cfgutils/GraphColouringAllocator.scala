@@ -21,6 +21,8 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
 
   recolour()
 
+  /** Allocates registers, returning:
+   * (Modified TACs, Colouring). */
   override def allocateRegisters: (Vector[TAC], Colouring[A]) = {
     while (colouring.uncoloured.nonEmpty) {
       spill(colouring)
