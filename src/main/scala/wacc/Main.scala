@@ -4,7 +4,9 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
+import wacc.Inlining.inline_delegateASTNode
 import wacc.ARM11Assembler
+import wacc.TAC._
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -50,19 +52,29 @@ object Main {
     }
     
     // Translate the ast to TAC
-    val tac = delegateASTNode(ast.get)._1
-    println("--- TAC ---")
+    val inlineFlag = true
+    var tac = List[TAC]()
+    if (inlineFlag){
+      println("--- INLINED TAC ---")
+      tac = inline_delegateASTNode(ast.get)._1
+    }
+    else {
+      println("--- TAC ---")
+      tac = delegateASTNode(ast.get)._1
+    }
+    
+  
     tac.foreach(l => println(l))
 
     // Convert the TAC to IR
     val assembler = new Assembler()
-    val (result, funcs) = assembler.assembleProgram(tac)
+    val (result, helperFuncs) = assembler.assembleProgram(tac)
 
     println("--- FinalIR ---")
     result.foreach{x => println(x)}
 
     // Convert the IR to ARM
-    val arm = ARM11Assembler.assemble(result, funcs)
+    val arm = ARM11Assembler.assemble(result, helperFuncs)
     println("--- ARM ---")
     print(arm)
 
