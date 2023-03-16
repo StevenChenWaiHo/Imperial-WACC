@@ -93,6 +93,15 @@ object X86AssemblerTypes {
     override def toString(): String = "r15" // PRESERVED
   }
 
+  object dil extends X86Register {
+    override def toString(): String = "dil"
+  }
+
+  object al extends X86Register {
+    override def toString(): String = "al"
+  }
+
+
   // object lr extends X86Register {
   //   override def toString(): String = "lr"
   // }

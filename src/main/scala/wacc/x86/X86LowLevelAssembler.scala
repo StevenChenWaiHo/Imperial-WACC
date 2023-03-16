@@ -71,12 +71,18 @@ object X86LowLevelAssembler {
     ldrStrAssist(condition, src, operand, dst)
   }
 
-  //TODO split out lea
+  //split out lea?
   def ldrStrAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
     var str = "mov" + condition + " " + dst.toString + ", " //src null issue
     operand match {
       case X86ImmediateInt(x) => {
-        str + "[" + src.toString + " + " + x + "]"
+        str = str + "[" + src.toString + " "
+        if (x < 0) {
+          str = str + "-"
+        } else {
+          str = str + "+"
+        }
+        str + " " + (x).abs + "]"
       }
       case X86LabelString(x) => {
         "lea " + dst.toString + ", [rip + " + x + "]" //rip is instruction pointer
@@ -171,7 +177,7 @@ object X86LowLevelAssembler {
   }
 
   def assembleBranch(condition: String, name: String): String = {
-    "b" + condition + " " + name
+    "j" + condition + " " + name // jmp treated as condition of "j"
   }
 
   def assembleBranchLink(condition: String, name: LHSop): String = {
