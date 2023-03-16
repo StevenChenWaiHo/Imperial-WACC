@@ -4,8 +4,10 @@ import parsley.{Failure, Success}
 import wacc.Parser.ProgramParser.program
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
-import wacc.PeepholeOptimisation.PeepholeOptimise
+import wacc.Inlining.inline_delegateASTNode
 import wacc.ARM11Assembler
+import wacc.TAC._
+import wacc.PeepholeOptimisation.PeepholeOptimise
 import wacc.ArchitectureType.getArchitecture
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
@@ -22,17 +24,18 @@ object Main {
   var target = ArchitectureType.ARM11
 
   def main(args: Array[String]): Unit = {
-    val file = Option(Source.fromFile(args.head))
-      .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
+    if (args.length != 2) throw new IllegalArgumentException(
+      "Incorrect number of arguments provided. Received: " + args.length + ", Expected 2."
+    )
+    val filename = args.head
+    val file = Option(Source.fromFile(filename))
+      .getOrElse(throw new FileNotFoundException("File: " + filename + " does not exist."))
     val inputProgram = file.mkString
     file.close
 
-    println(inputProgram)
-
-    if (args.length == 2) {
-    target = getArchitecture(args(1))
-      .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
-    }
+    println(inputProgram + "\n\n")
+    val optionalFlagString = args(1)
+    val inlineFlag = optionalFlagString.contains("i")
 
     /* Compile */
     // Parse input file
@@ -58,13 +61,26 @@ object Main {
     }
     
     // Translate the ast to TAC
-    val tac = delegateASTNode(ast.get)._1
-    println("--- TAC ---")
+    var tac = List[TAC]()
+    if (inlineFlag){
+      println("--- INLINED TAC ---")
+      tac = inline_delegateASTNode(ast.get)._1
+    }
+    else {
+      println("--- TAC ---")
+      tac = delegateASTNode(ast.get)._1
+    }
+    
+  
     tac.foreach(l => println(l))
 
     // Convert the TAC to IR
     val assembler = new Assembler()
+
     val (ir, funcs) = assembler.assembleProgram(tac)
+
+    println("--- FinalIR ---")
+    ir.foreach{x => println(x)}
 
     // Apply optimisations here
     // TODO: only optimise based on cmdline flags

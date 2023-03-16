@@ -18,6 +18,14 @@ object Translator {
   private val dataList = ListBuffer[TAC]()
   private var labelCount = 0
 
+  def getDataList() : ListBuffer[TAC] = {
+    dataList
+  }
+
+  def addOneDataList(tac : TAC) = {
+    dataList.addOne(tac)
+  }
+
   def newMap(): Map[ASTNode, TRegister] = {
     // Push scope on to stack when entering new context
     val map = Map[ASTNode, TRegister]()
