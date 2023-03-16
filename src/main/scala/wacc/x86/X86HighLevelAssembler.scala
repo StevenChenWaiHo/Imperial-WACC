@@ -109,7 +109,11 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   // Convert TAC into next IR
   def assembleTAC(tripleAddressCode: TAC): AssemblerState = {
     tripleAddressCode match {
+      case Global(name) => {
+        FinalIR.Global(name)
+      }
       case Label(name) => {
+        state.enterBranch // TODO: check state here
         if (name == "main") {
           FinalIR.Global(name) :: FinalIR.Lbl(name)
         } else {
@@ -290,7 +294,7 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   def assembleProgram(tacList: List[TAC]): (List[FinalIR], collection.mutable.Map[String, List[FinalIR]]) = {
     val (spilledCode, colouring) = allocationScheme.allocateRegisters
     this.colouring = colouring
-    val finalCode = cfgutils.StackAssignment(spilledCode.toList)
+    val finalCode = Global("main") :: cfgutils.StackAssignment(spilledCode.toList)
 
     finalCode.map(assembleTAC)
     (state.code.toList, endFuncs.map(elem => elem match {
