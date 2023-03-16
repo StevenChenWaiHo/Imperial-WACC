@@ -10,7 +10,7 @@ object X86AssemblerTypes {
   }
 
   case class X86ImmediateInt(i: Int) extends ImmediateInt(i: Int) {
-    override def toString(): String = "#" + i.toString()
+    override def toString(): String = i.toString()
   }
 
   case class X86LabelString(name: String) extends LabelString(name: String) {
@@ -119,10 +119,10 @@ object X86AssemblerTypes {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "lsl " + x
+          sourceRegister + ", " + "shl " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "lsl " + "#" + value
+          sourceRegister + ", " + "shl " + value
         }
       }
     }
@@ -132,10 +132,10 @@ object X86AssemblerTypes {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "lsr " + x
+          sourceRegister + ", " + "shr " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "lsr " + " " + "#" + value
+          sourceRegister + ", " + "shr " + " " + value
         }
       }
     }
@@ -145,10 +145,10 @@ object X86AssemblerTypes {
     override def toString: String = {
       operand match {
         case Left(x) => {
-          sourceRegister + ", " + "asr " + x
+          sourceRegister + ", " + "sar " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "asr " + "#" + value
+          sourceRegister + ", " + "sar " + value
         }
       }
     }
@@ -161,33 +161,34 @@ object X86AssemblerTypes {
           sourceRegister + ", " + "ror " + x
         }
         case Right(value) => {
-          sourceRegister + ", " + "ror " + "#" + value
+          sourceRegister + ", " + "ror " + value
         }
       }
     }
   }
 
+  // dont think its used
   case class X86Control() extends Control {
     override def toString: String = {
-      "c"
+      ""
     }
   }
 
   case class X86Extension() extends Extension {
     override def toString: String = {
-      "x"
+      ""
     }
   }
 
   case class X86Status() extends Status {
     override def toString: String = {
-      "s"
+      ""
     }
   }
 
   case class X86Flags() extends Flags {
     override def toString: String = {
-      "f"
+      ""
     }
   }
 
