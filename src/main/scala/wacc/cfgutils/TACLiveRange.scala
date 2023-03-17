@@ -1,5 +1,6 @@
 package wacc.cfgutils
 
+import wacc.AbstractSyntaxTree.CmdT.{Exit, Ret}
 import wacc.TAC
 import wacc.TAC._
 import wacc.cfgutils.CFG.Id
@@ -43,8 +44,13 @@ object TACLiveRange extends LiveRange {
       case EndFuncTAC() => {
         succs = Nil
       }
-      case CommandTAC(_, t1, _) =>
+      case CommandTAC(cmd, t1, _) =>
         uses = List(t1)
+        cmd match {
+          case Ret | Exit => succs = Nil
+          case _ =>
+        }
+
       case PushParamTAC(t1) =>
         uses = List(t1)
       case PopParamTAC(_, t1, _) =>
