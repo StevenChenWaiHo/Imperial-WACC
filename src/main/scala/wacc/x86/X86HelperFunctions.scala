@@ -1,9 +1,6 @@
 package wacc
 
-import wacc.X86HighLevelAssembler._
 import wacc.X86AssemblerTypes._
-import wacc.ArchitectureType._
-import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
 import wacc.FinalIR.FinalIR
@@ -13,7 +10,7 @@ import scala.collection.mutable.ListBuffer
 //TODO Change all to x86_64 Architecture, most comments are currently outdated
 
 class X86HelperFunctions extends Assembler(null) {
-  private[this] val state = new AssemblerState(ListBuffer(rcx, r8, r9, r10, r11, r12, r13, r14, r15), ArchitectureType.X86)
+  private[this] val state = new AssemblerState(ListBuffer(rcx, r8, r9, r10, r11, r12, r13, r14, r15))
 
   implicit private[this] def toStrings(state: AssemblerState) = state.code.toList
 
@@ -27,10 +24,10 @@ class X86HelperFunctions extends Assembler(null) {
     assembleTAC(StringDefinitionTAC("fatal error: null pair dereferenced or freed\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errNull")) ++
-    (FinalIR.Ldr("", rax, X86LabelString(".L._errNull_str0"), rax) ::
-    FinalIR.BranchLink("", X86BranchString("_prints")) ::
-    FinalIR.Mov("", X86ImmediateInt(255), rax) ::
-    FinalIR.BranchLink("", X86BranchString("exit")))
+    (FinalIR.Ldr("", rax, new X86LabelString(".L._errNull_str0"), rax) ::
+    FinalIR.BranchLink("", new X86BranchString("_prints")) ::
+    FinalIR.Mov("", new X86ImmediateInt(255), rax) ::
+    FinalIR.BranchLink("", new X86BranchString("exit")))
   }
 
   def assemble_freepair(): List[FinalIR] = {
@@ -38,19 +35,19 @@ class X86HelperFunctions extends Assembler(null) {
     assembleTAC(Label("_freepair")) ++
     (FinalIR.Push("", List(rbx)) ::
     FinalIR.Mov("", rax, rdi) ::
-    FinalIR.Cmp("", rdi, X86ImmediateInt(0)) ::
-    FinalIR.BranchLink("e", X86BranchString("_errNull")) ::
-    FinalIR.Ldr("", rdi, X86ImmediateInt(0), rax) ::
+    FinalIR.Cmp("", rdi, new X86ImmediateInt(0)) ::
+    FinalIR.BranchLink("e", new X86BranchString("_errNull")) ::
+    FinalIR.Ldr("", rdi, new X86ImmediateInt(0), rax) ::
     FinalIR.Push("", List(rdi)) ::
-    FinalIR.BranchLink("", X86BranchString("free")) ::
+    FinalIR.BranchLink("", new X86BranchString("free")) ::
     FinalIR.Pop("", List(rdi)) ::
-    FinalIR.Ldr("", rdi, X86ImmediateInt(POINTER_BYTE_SIZE), rax) ::
+    FinalIR.Ldr("", rdi, new X86ImmediateInt(POINTER_BYTE_SIZE), rax) ::
     FinalIR.Push("", List(rdi)) ::
-    FinalIR.BranchLink("", X86BranchString("free")) ::
+    FinalIR.BranchLink("", new X86BranchString("free")) ::
     FinalIR.Pop("", List(rdi)) ::
     FinalIR.Mov("", rdi, rax) ::
     FinalIR.Push("", List(rdi)) ::
-    FinalIR.BranchLink("", X86BranchString("free")) ::
+    FinalIR.BranchLink("", new X86BranchString("free")) ::
     FinalIR.Pop("", List(rdi)) ::
     FinalIR.Pop("", List(rbx)))
   }
@@ -64,10 +61,10 @@ class X86HelperFunctions extends Assembler(null) {
     assembleTAC(StringDefinitionTAC("fatal error: division or modulo by zero\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errDivZero")) ++
-    (FinalIR.Ldr("", null, X86LabelString(sLbl.name), rax) ::
-    FinalIR.BranchLink("", X86BranchString("_prints")) ::
-    FinalIR.Mov("", X86ImmediateInt(255), rax) ::
-    FinalIR.BranchLink("", X86BranchString("exit")))
+    (FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rax) ::
+    FinalIR.BranchLink("", new X86BranchString("_prints")) ::
+    FinalIR.Mov("", new X86ImmediateInt(255), rax) ::
+    FinalIR.BranchLink("", new X86BranchString("exit")))
   }
 
   def assemble_errOverflow(): List[FinalIR] = {
@@ -78,10 +75,10 @@ class X86HelperFunctions extends Assembler(null) {
     assembleTAC(StringDefinitionTAC("fatal error: integer overflow or underflow\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errOverflow")) ++
-    (FinalIR.Ldr("", null, X86LabelString(sLbl.name), rax) ::
-    FinalIR.BranchLink("", X86BranchString("_prints")) ::
-    FinalIR.Mov("", X86ImmediateInt(255), rax) ::
-    FinalIR.BranchLink("", X86BranchString("exit")))
+    (FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rax) ::
+    FinalIR.BranchLink("", new X86BranchString("_prints")) ::
+    FinalIR.Mov("", new X86ImmediateInt(255), rax) ::
+    FinalIR.BranchLink("", new X86BranchString("exit")))
   }
 
   // Special calling convention: array ptr passed in R9, index in R10, and return into R9
@@ -90,14 +87,14 @@ class X86HelperFunctions extends Assembler(null) {
   def assemble_arrLoad(): List[FinalIR] = {
     assembleTAC(Label("_arrLoad")) ++
     (FinalIR.Push("", List(rbx)) ::
-      FinalIR.Cmp("", rsi, X86ImmediateInt(0)) ::
+      FinalIR.Cmp("", rsi, new X86ImmediateInt(0)) ::
       FinalIR.Mov("l", rsi, rdi) ::
-      FinalIR.BranchLink("l", X86BranchString("_boundsCheck")) ::
-      FinalIR.Ldr("", rdx, X86ImmediateInt(-POINTER_BYTE_SIZE), rbx) ::
+      FinalIR.BranchLink("l", new X86BranchString("_boundsCheck")) ::
+      FinalIR.Ldr("", rdx, new X86ImmediateInt(-POINTER_BYTE_SIZE), rbx) ::
       FinalIR.Cmp("", rsi, rbx) ::
       FinalIR.Mov("ge", rsi, rdi) ::
-      FinalIR.BranchLink("ge", X86BranchString("_boundsCheck")) ::
-      FinalIR.Ldr("sx", rdx, LogicalShiftLeft(rsi, Right(2)), rax) ::
+      FinalIR.BranchLink("ge", new X86BranchString("_boundsCheck")) ::
+      FinalIR.Ldr("sx", rdx, AssemblerTypes.LogicalShiftLeft(rsi, Right(2)), rax) ::
       FinalIR.Pop("", List(rbx)) ::
       FinalIR.Ret())
   }
@@ -108,14 +105,14 @@ class X86HelperFunctions extends Assembler(null) {
   def assemble_arrStore(): List[FinalIR] = {
     assembleTAC(Label("_arrStore")) ++
     (FinalIR.Push("", List(rbx)) ::
-      FinalIR.Cmp("", rax, X86ImmediateInt(0)) ::
+      FinalIR.Cmp("", rax, new X86ImmediateInt(0)) ::
       FinalIR.Mov("l", rax, rdi) :: // rax < 0
-      FinalIR.BranchLink("l", X86BranchString("_boundsCheck")) ::
-      FinalIR.Ldr("", rdx, X86ImmediateInt(-POINTER_BYTE_SIZE), rbx) ::
+      FinalIR.BranchLink("l", new X86BranchString("_boundsCheck")) ::
+      FinalIR.Ldr("", rdx, new X86ImmediateInt(-POINTER_BYTE_SIZE), rbx) ::
       FinalIR.Cmp("", rax, rbx) ::
       FinalIR.Mov("ge", rax, rdi) :: // rax >= rbx
-      FinalIR.BranchLink("ge", X86BranchString("_boundsCheck")) ::
-      FinalIR.Str("", LogicalShiftLeft(rax, Right(2)), rsi, rdx) :: // TODO: Logical shift does not work
+      FinalIR.BranchLink("ge", new X86BranchString("_boundsCheck")) ::
+      FinalIR.Str("", AssemblerTypes.LogicalShiftLeft(rax, Right(2)), rsi, rdx) :: // TODO: Logical shift does not work
       FinalIR.Pop("", List(rbx)) ::
       FinalIR.Ret())
   }
@@ -128,20 +125,20 @@ class X86HelperFunctions extends Assembler(null) {
     assembleTAC(StringDefinitionTAC("fatal error: array index %d out of bounds\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_boundsCheck")) ++
-    (FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
-      FinalIR.Ldr("", null, X86LabelString(sLbl.name), rax) ::
-      FinalIR.BranchLink("", X86BranchString("printf@plt")) ::
-      FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-      FinalIR.BranchLink("", X86BranchString("fflush@plt")) ::
-      FinalIR.Mov("", X86ImmediateInt(-1), rdi) ::
-      FinalIR.BranchLink("", X86BranchString("exit@plt")))
+    (FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+      FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rax) ::
+      FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
+      FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
+      FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
+      FinalIR.Mov("", new X86ImmediateInt(-1), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("exit@plt")))
   }
 
   def assemble_malloc(): List[FinalIR] = {
     FinalIR.Push("", List(rbp)) ::
       FinalIR.Mov("", rsp, rbp) ::
-      FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
-      FinalIR.BranchLink("", X86BranchString("malloc@plt")) ::
+      FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+      FinalIR.BranchLink("", new X86BranchString("malloc@plt")) ::
       FinalIR.Mov("", rbp, rsp) ::
       FinalIR.Pop("", List(rbp)) ::
       FinalIR.Ret()
@@ -169,13 +166,13 @@ class X86HelperFunctions extends Assembler(null) {
       assembleTAC(Label("_printp")) ++
       (FinalIR.Push("", List(rbp)) ::
         FinalIR.Mov("", rsp, rbp) ::
-        FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
+        FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
         FinalIR.Mov("", rdi, rsi) ::
-        FinalIR.Ldr("", null, X86LabelString(sLbl.name), rdx) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-        FinalIR.BranchLink("", X86BranchString("printf@plt")) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rdi) ::
-        FinalIR.BranchLink("", X86BranchString("fflush@plt")) ::
+        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdx) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
+        FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::
+        FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
         FinalIR.Ret())
@@ -191,14 +188,14 @@ class X86HelperFunctions extends Assembler(null) {
       assembleTAC(Label("_prints")) ++
       (FinalIR.Push("", List(rbp)) ::
         FinalIR.Mov("", rsp, rbp) ::
-        FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
+        FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
         FinalIR.Mov("", rdi, rdx) ::
-        FinalIR.Str("", rdi, X86ImmediateInt(-4), rsi) ::
-        FinalIR.Ldr("", null, X86LabelString(sLbl.name), rdi) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-        FinalIR.BranchLink("", X86BranchString("printf@plt")) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rdi) ::
-        FinalIR.BranchLink("", X86BranchString("fflush@plt")) ::
+        FinalIR.Str("", rdi, new X86ImmediateInt(-4), rsi) ::
+        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
+        FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::
+        FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
         FinalIR.Ret())
@@ -214,13 +211,13 @@ class X86HelperFunctions extends Assembler(null) {
       assembleTAC(Label("_printc")) ++
       (FinalIR.Push("", List(rbp)) ::
         FinalIR.Mov("", rsp, rbp) ::
-        FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
+        FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
         FinalIR.Mov("", rdi, rsi) ::
-        FinalIR.Ldr("", null, X86LabelString(sLbl.name), rdi) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-        FinalIR.BranchLink("", X86BranchString("printf@plt")) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rdi) ::
-        FinalIR.BranchLink("", X86BranchString("fflush@plt")) ::
+        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
+        FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::
+        FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
         FinalIR.Ret())
@@ -236,13 +233,13 @@ class X86HelperFunctions extends Assembler(null) {
       assembleTAC(Label("_printi")) ++
       (FinalIR.Push("", List(rbp)) ::
         FinalIR.Mov("", rsp, rbp) ::
-        FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
+        FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
         FinalIR.Mov("", rdi, rsi) ::
-        FinalIR.Ldr("", null, X86LabelString(sLbl.name), rdi) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-        FinalIR.BranchLink("", X86BranchString("printf@plt")) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rdi) ::
-        FinalIR.BranchLink("", X86BranchString("fflush@plt")) ::
+        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
+        FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::
+        FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
         FinalIR.Ret())
@@ -258,11 +255,11 @@ class X86HelperFunctions extends Assembler(null) {
       assembleTAC(Label("_println")) ++
       (FinalIR.Push("", List(rbp)) ::
         FinalIR.Mov("", rsp, rbp) ::
-        FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
-        FinalIR.Ldr("", null, X86LabelString(sLbl.name), rdi) ::
-        FinalIR.BranchLink("", X86BranchString("printf@plt")) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rdi) ::
-        FinalIR.BranchLink("", X86BranchString("fflush@plt")) ::
+        FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
+        FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::
+        FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
         FinalIR.Ret())
@@ -287,20 +284,20 @@ class X86HelperFunctions extends Assembler(null) {
       assembleTAC(Label("_printb")) ++
       (FinalIR.Push("", List(rbp)) ::
         FinalIR.Mov("", rsp, rbp) ::
-        FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
-        FinalIR.Cmp("", rdi, X86ImmediateInt(0)) ::
+        FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+        FinalIR.Cmp("", rdi, new X86ImmediateInt(0)) ::
         FinalIR.Branch("ne", ".L_printb0") ::
-        FinalIR.Ldr("", null, X86LabelString(fLbl.name), rdx) ::
+        FinalIR.Ldr("", null, new X86LabelString(fLbl.name), rdx) ::
         FinalIR.Branch("mp", ".L_printb1") ::
         assembleTAC(Label(".L_printb0"))) ++
-      (FinalIR.Ldr("", null, X86LabelString(tLbl.name), rdx) ::
+      (FinalIR.Ldr("", null, new X86LabelString(tLbl.name), rdx) ::
         assembleTAC(Label(".L_printb1"))) ++
-      (FinalIR.Ldr("", rsi, X86ImmediateInt(-POINTER_BYTE_SIZE), rdx) ::
-        FinalIR.Ldr("", null, X86LabelString(sLbl.name), rax) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-        FinalIR.BranchLink("", X86BranchString("printf@plt")) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rdi) ::
-        FinalIR.BranchLink("", X86BranchString("fflush@plt")) ::
+      (FinalIR.Ldr("", rsi, new X86ImmediateInt(-POINTER_BYTE_SIZE), rdx) ::
+        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rax) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
+        FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::
+        FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
         FinalIR.Ret())
@@ -324,15 +321,15 @@ class X86HelperFunctions extends Assembler(null) {
       assembleTAC(Label("_readi")) ++
       (FinalIR.Push("", List(rbp)) :: 
         FinalIR.Mov("", rsp, rbp) ::
-        FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
-        FinalIR.Sub("", X86None(), rsp, X86ImmediateInt(16), rsp) ::
+        FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+        FinalIR.Sub("", new X86None(), rsp, new X86ImmediateInt(16), rsp) ::
         FinalIR.StrPre("", rsp, null, rax) ::
         FinalIR.Lea("", rsp, rsi) :: 
-        FinalIR.Ldr("", null, X86LabelString(lbl.name), rdi) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-        FinalIR.BranchLink("", X86BranchString("scanf@plt")) ::
+        FinalIR.Ldr("", null, new X86LabelString(lbl.name), rdi) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
+        FinalIR.BranchLink("", new X86BranchString("scanf@plt")) ::
         FinalIR.Ldr("sx", rsp, null, rax) ::
-        FinalIR.Add("", X86None(), rsp, X86ImmediateInt(16), rsp) ::
+        FinalIR.Add("", new X86None(), rsp, new X86ImmediateInt(16), rsp) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
         FinalIR.Ret())
@@ -348,15 +345,15 @@ class X86HelperFunctions extends Assembler(null) {
       assembleTAC(Label("_readc")) ++
       (FinalIR.Push("", List(rbp)) :: 
         FinalIR.Mov("", rsp, rbp) ::
-        FinalIR.And("", rsp, X86ImmediateInt(-16)) ::
-        FinalIR.Sub("", X86None(), rsp, X86ImmediateInt(16), rsp) ::
+        FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+        FinalIR.Sub("", new X86None(), rsp, new X86ImmediateInt(16), rsp) ::
         FinalIR.StrPre("", rsp, null, rax) ::
         FinalIR.Lea("", rsp, rsi) :: 
-        FinalIR.Ldr("", null, X86LabelString(lbl.name), rdi) ::
-        FinalIR.Mov("", X86ImmediateInt(0), rax) ::
-        FinalIR.BranchLink("", X86BranchString("scanf@plt")) ::
+        FinalIR.Ldr("", null, new X86LabelString(lbl.name), rdi) ::
+        FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
+        FinalIR.BranchLink("", new X86BranchString("scanf@plt")) ::
         FinalIR.Ldr("sx", rsp, null, rax) ::
-        FinalIR.Add("", X86None(), rsp, X86ImmediateInt(16), rsp) ::
+        FinalIR.Add("", new X86None(), rsp, new X86ImmediateInt(16), rsp) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
         FinalIR.Ret())
