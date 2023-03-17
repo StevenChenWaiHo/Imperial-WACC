@@ -13,10 +13,7 @@ import wacc.cfgutils.{Colouring, RegisterAllocator}
 
 import scala.collection.mutable.ListBuffer
 
-import wacc.HelperFunctions
-object StatelessAssembler {
-  val argRegs = List(r0, r1, r2, r3)
-
+object ARM11StatelessAssembler {
   def pushPopAssist(condition: String, registers: List[Register]): String = {
     var str = condition + " {"
     for (register <- registers) {

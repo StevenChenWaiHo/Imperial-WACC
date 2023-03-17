@@ -50,7 +50,7 @@ class ARM11HelperFunctions {
     FinalIR.Push("", List(r1)) ::
     FinalIR.BranchLink("", ARM11BranchString("free")) ::
     FinalIR.Pop("", List(r1)) ::
-    FinalIR.Pop("", List(pc)) :: List())
+    FinalIR.Pop("", List(pc)))
   }
 
   
@@ -96,7 +96,7 @@ class ARM11HelperFunctions {
       FinalIR.Mov("ge", r2, r1) ::
       FinalIR.BranchLink("ge", ARM11BranchString("_boundsCheck")) ::
       FinalIR.Ldr("", r3, LogicalShiftLeft(r2, Right(2)), r0) ::
-      FinalIR.Pop("", List(pc)) :: List())
+      FinalIR.Pop("", List(pc)))
   }
 
   // Special calling convention: array ptr passed in R3, index in R10, value to store in R8, LR (R14) is used as general register
@@ -272,13 +272,12 @@ class ARM11HelperFunctions {
 
   def assemble_readi(): List[FinalIR] = {
     val lbl = new Label(".L._readi_str0")
-    List(
-      DataSegmentTAC(),
-      Comments("length of " + lbl.name),
-      StringLengthDefinitionTAC(2, lbl),
-      StringDefinitionTAC("%d", lbl),
-      TextSegmentTAC(),
-      Label("_readi")).map(tac => assembleTAC(tac)).flatten ++
+      assembleTAC(DataSegmentTAC()) ++
+      assembleTAC(Comments("length of " + lbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(2, lbl)) ++
+      assembleTAC(StringDefinitionTAC("%d", lbl)) ++
+      assembleTAC(TextSegmentTAC()) ++
+      assembleTAC(Label("_readi")) ++
       (FinalIR.Push("", List(lr)) ::
       FinalIR.StrPre("", sp, ARM11ImmediateInt(-POINTER_BYTE_SIZE), r0) ::
       FinalIR.Mov("", sp, r1) ::
@@ -291,13 +290,12 @@ class ARM11HelperFunctions {
 
   def assemble_readc(): List[FinalIR] = {
     val lbl = new Label(".L._readc_str0")
-    List(
-      DataSegmentTAC(),
-      Comments("length of " + lbl.name),
-      StringLengthDefinitionTAC(3, lbl),
-      StringDefinitionTAC(" %c", lbl),
-      TextSegmentTAC(),
-      Label("_readc")).map(tac => assembleTAC(tac)).flatten ++
+      assembleTAC(DataSegmentTAC()) ++
+      assembleTAC(Comments("length of " + lbl.name)) ++
+      assembleTAC(StringLengthDefinitionTAC(3, lbl)) ++ 
+      assembleTAC(StringDefinitionTAC(" %c", lbl)) ++
+      assembleTAC(TextSegmentTAC()) ++
+      assembleTAC(Label("_readc")) ++
       (FinalIR.Push("", List(lr)) :: 
       FinalIR.StrPre("b", sp, ARM11ImmediateInt(-1), r0) ::
       FinalIR.Mov("", sp, r1) :: 

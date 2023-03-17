@@ -16,10 +16,7 @@ import scala.collection.mutable.ListBuffer
 
 //TODO Change all to x86_64 Architecture
 
-import wacc.HelperFunctions
-object x86StatelessAssembler {
-  val argRegs = List(r0, r1, r2, r3)
-
+object X86StatelessAssembler {
   def pushPopAssist(condition: String, registers: List[Register]): String = {
     var str = condition + " {"
     for (register <- registers) {
@@ -114,11 +111,7 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
       }
       case Label(name) => {
         state.enterBranch // TODO: check state here
-        if (name == "main") {
-          FinalIR.Global(name) :: FinalIR.Lbl(name)
-        } else {
-          FinalIR.Lbl(name)
-        }
+        FinalIR.Lbl(name)
       }
       case Comments(str) => FinalIR.Comment(str)
       case DataSegmentTAC() => FinalIR.DataSeg()
