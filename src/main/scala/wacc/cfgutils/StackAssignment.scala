@@ -2,30 +2,40 @@ package wacc.cfgutils
 
 import wacc.TAC._
 
-import java.security.InvalidParameterException
-import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object StackAssignment {
   def apply(tacs: List[TAC]): List[TAC] = {
     var newTacs = tacs.to(ListBuffer)
-    for (i <- 0 to tacs.length) {
+    var height = 0
+    var lastLabel = 0
+    var i = 0
+    val stackMap = mutable.Map[TRegister, Int]()
+    while (i < newTacs.length) {
       newTacs(i) match {
-        case _: BeginFuncTAC =>
-          val height = funcStackSize(newTacs.slice(i, newTacs.length), 0, 0)
-          newTacs.insert(i + 1, AllocateStackTAC(height))
+        case _: Label => lastLabel = i + 1
+        case _: EndFuncTAC =>
+          newTacs.insert(lastLabel, AllocateStackTAC(height))
+          stackMap.clear()
+          i += 1 // We just added an instruction; return i to where it was.
+          height = 0
+        case ReservedPushTAC(alias, _, original) =>
+          val location = if (stackMap.contains(original)) {
+            stackMap(original)
+          } else {
+            height += 1
+            stackMap.addOne(original, height)
+            height
+          }
+          newTacs(i) = ReservedPushTAC(alias, location, original)
+        case ReservedPopTAC(location, alias, original) =>
+          newTacs(i) = ReservedPopTAC(stackMap(original), alias, original)
+        case _ =>
       }
+      i += 1
     }
+    newTacs.foreach(println)
     newTacs.toList
-  }
-
-  @tailrec
-  def funcStackSize(instrs: List[(TAC, Int)], height: Int, maxHeight: Int): Int = {
-    if (instrs.isEmpty) throw new InvalidParameterException("Unterminated function in TACs.")
-    instrs.head._1 match {
-      case _: PushParamTAC => funcStackSize(instrs.tail, height + 1, Math.max(height, maxHeight))
-      case _: PopParamTAC => funcStackSize(instrs.tail, height - 1, Math.max(height, maxHeight))
-      case _: EndFuncTAC => height
-    }
   }
 }

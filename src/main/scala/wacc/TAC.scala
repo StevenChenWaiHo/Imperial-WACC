@@ -30,10 +30,9 @@ object TAC {
   sealed trait TAC
 
 
-  type StackLocation = TRegister
   /** Alias: A new name for the same value. Can be pushed to the same place in memory as the old value */
-  case class AliasedPushTAC(alias: TRegister, location: StackLocation) extends TAC
-  case class AliasedPopTAC(location: StackLocation, alias: TRegister) extends TAC
+  case class ReservedPushTAC(alias: TRegister, location: Int, original: TRegister) extends TAC
+  case class ReservedPopTAC(location: Int, alias: TRegister, original:TRegister) extends TAC
   case class AllocateStackTAC(size: Int) extends TAC
 
   case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC {

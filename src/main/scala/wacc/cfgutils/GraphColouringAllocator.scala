@@ -37,6 +37,8 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     println
     cfg = cfgBuilder.build(nextTacs)
     interferenceGraph = new InterferenceGraph(cfg)
+    interferenceGraph.interferences.foreach(println)
+
     colourer = new GraphColourer[A](regs, interferenceGraph)
     colouring = colourer.attemptColouring
 //    println("\n--- Recolour: ---")
@@ -53,29 +55,39 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     val interferenceCounts = uncoloured.toVector.flatMap(t => interferenceGraph.interferences(t).toVector)
       .groupBy(identity).transform((_, t) => t.size).removedAll(spilled)
     val allTRegs = coloured.keySet union uncoloured
+    println
+    println
+    println
+    println(allTRegs)
+    println
+    println
+    println
+
     // Choose most frequently interfering register. If that doesn't work, pick any register.
     val target = if(interferenceCounts.nonEmpty) interferenceCounts.maxBy(_._2)._1
     else (allTRegs diff spilled).head
+    spilled = spilled incl target
     println("TARGET:")
     println(target)
       //uncoloured.maxBy(x => interferenceGraph.interferences(x).size)
 
-    var highestTReg = allTRegs.maxBy(_.num)
     def nextTReg = {
+      val highestTReg = allTRegs.maxBy(_.num)
       highestTReg.copy(num = highestTReg.num + 1)
-      highestTReg
     }
 
     /* Add a 'push' after each definition, and a 'pop' after each use. */
     @tailrec
     def modifyGraph(initial: Vector[CFGNode], result: Vector[TAC], targetReg: TRegister): Vector[TAC] = {
-      val newInstr = if(initial.nonEmpty) CfgTacInfo.mapTAC(initial.head.instr, (target, targetReg)) else null
-      spilled = spilled incl targetReg
+      val newInstr = if(initial.nonEmpty) TACLiveRange.mapTAC(initial.head.instr, (target, targetReg)) else null
+      val next = nextTReg
       initial match {
         case n +: ns if n.defs contains target =>
-          modifyGraph(ns, result ++ Vector(newInstr, AliasedPushTAC(targetReg, target)), nextTReg)
+          spilled = spilled incl next
+          modifyGraph(ns, result ++ Vector(newInstr, ReservedPushTAC(targetReg, 0, target)), next)
         case n +: ns if n.uses contains target =>
-          modifyGraph(ns, result ++ Vector(AliasedPopTAC(target, targetReg), newInstr, AliasedPushTAC(targetReg, target)), nextTReg)
+          spilled = spilled incl next
+          modifyGraph(ns, result ++ Vector(ReservedPopTAC(0, targetReg, target), newInstr, ReservedPushTAC(targetReg, 0, target)), next)
         case n +: ns =>
           modifyGraph(ns, result :+ newInstr, targetReg)
         case Vector() => result

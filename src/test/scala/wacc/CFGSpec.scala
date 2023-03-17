@@ -6,7 +6,7 @@ import wacc.Parser.ProgramParser.program
 import wacc.TAC.{BinaryOpTAC, TRegister}
 import wacc.Translator.delegateASTNode
 import wacc.cfgutils.CFG.CFGBuilder
-import wacc.cfgutils.{CfgTacInfo, GraphColouringAllocator}
+import wacc.cfgutils.{TACLiveRange, GraphColouringAllocator}
 
 import scala.language.postfixOps
 import scala.sys.exit
@@ -31,10 +31,10 @@ class CFGSpec extends AnyFlatSpec {
     println("--- TACS ---\n")
     println(testTACs)
     println("\n\n--- CFG ---\n")
-    println(new CFGBuilder(CfgTacInfo).build(testTACs))
+    println(new CFGBuilder(TACLiveRange).build(testTACs))
 
     println("\n\n\n\n--- Colouring ---\n")
-    val (ts, cs) = (new GraphColouringAllocator[String](List("aaa", "bbb", "ccc", "ddd"), testTACs, new CFGBuilder(CfgTacInfo)).allocateRegisters)
+    val (ts, cs) = (new GraphColouringAllocator[String](List("aaa", "bbb", "ccc", "ddd"), testTACs, new CFGBuilder(TACLiveRange)).allocateRegisters)
     println(cs)
     println
     ts.foreach(println)

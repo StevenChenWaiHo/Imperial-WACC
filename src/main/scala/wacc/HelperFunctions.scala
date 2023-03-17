@@ -8,7 +8,7 @@ import wacc.FinalIR.FinalIR
 
 import scala.collection.mutable.ListBuffer
 
-class HelperFunctions extends Assembler {
+class HelperFunctions extends Assembler(null) {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
 
   implicit private[this] def toStrings(state: AssemblerState) = state.code.toList

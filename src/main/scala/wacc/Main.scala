@@ -1,12 +1,14 @@
 package wacc
 
 import parsley.{Failure, Success}
+import wacc.ArchitectureType.getArchitecture
+import wacc.AssemblerTypes._
 import wacc.Parser.ProgramParser.program
+import wacc.PeepholeOptimisation.PeepholeOptimise
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
-import wacc.PeepholeOptimisation.PeepholeOptimise
-import wacc.ARM11Assembler
-import wacc.ArchitectureType.getArchitecture
+import wacc.cfgutils.CFG.CFGBuilder
+import wacc.cfgutils.{GraphColouringAllocator, TACLiveRange}
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -21,6 +23,7 @@ object Main {
 
   var target = ArchitectureType.ARM11
 
+
   def main(args: Array[String]): Unit = {
     val file = Option(Source.fromFile(args.head))
       .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
@@ -30,8 +33,8 @@ object Main {
     println(inputProgram)
 
     if (args.length == 2) {
-    target = getArchitecture(args(1))
-      .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
+      target = getArchitecture(args(1))
+        .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
     }
 
     /* Compile */
@@ -56,15 +59,20 @@ object Main {
       })
       sys.exit(SemanticErrorCode)
     }
-    
+
     // Translate the ast to TAC
     val tac = delegateASTNode(ast.get)._1
     println("--- TAC ---")
-    tac.foreach(l => println(l))
+    tac.foreach(println)
 
     // Convert the TAC to IR
-    val assembler = new Assembler()
+    val assembler = new Assembler(
+      new GraphColouringAllocator[AssemblerTypes.Register](
+        List(r4, r5, r6, r7, r8, r10), tac.toVector, new CFGBuilder(TACLiveRange)))
+
     val (ir, funcs) = assembler.assembleProgram(tac)
+    println(ir)
+    println(funcs)
 
     // Apply optimisations here
     // TODO: only optimise based on cmdline flags
@@ -86,7 +94,7 @@ object Main {
     print(asm)
 
     /* Output the assembly file */
-    if(OutputAssemblyFile) {
+    if (OutputAssemblyFile) {
       val inputFilename = args.head.split("/").last
       val outputFilename = inputFilename.replace(".wacc", ".s")
       val outputFile = new File(outputFilename)

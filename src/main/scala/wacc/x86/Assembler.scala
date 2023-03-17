@@ -3,9 +3,9 @@ package wacc
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
 import wacc.AssemblerTypes._
+import wacc.FinalIR.FinalIR
 import wacc.RegisterAllocator._
 import wacc.TAC._
-import wacc.FinalIR.FinalIR
 import wacc.cfgutils.{Colouring, RegisterAllocator}
 
 import scala.collection.mutable.ListBuffer
@@ -98,7 +98,7 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
       case Label(name) => new LabelString(name)
       case PairLiteralTAC() => new ImmediateInt(0)
       case ArrayOp(_) => ImmediateInt(0)
-      case a => println("getOperand fail: " + a); null 
+      case a => println("getOperand fail: " + a); null
     }
   }
 
@@ -106,7 +106,6 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
   def assembleTAC(tripleAddressCode: TAC): AssemblerState = {
     tripleAddressCode match {
       case Label(name) => {
-        state.enterBranch // TODO: check state here
         if (name == "main") {
           FinalIR.Global(name) :: FinalIR.Lbl(name)
         } else {
@@ -119,12 +118,9 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
       case StringLengthDefinitionTAC(len, _) => FinalIR.Word(len)
       case StringDefinitionTAC(str, lbl) => assembleStringDef(str, lbl)
       case BeginFuncTAC() => {
-        state.enterFunction // TODO: this was moved above the return line... does this matter?
         assembleBeginFunc()
       }
       case EndFuncTAC() => {
-        state.exitFunction
-        state.deleteFunctionScope
         assembleEndFunc()
       }
       case AssignmentTAC(operand, reg) => assembleAssignment(operand, reg)
@@ -146,6 +142,9 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
       case PopParamTAC(datatype, treg, index) => assemblePopParam(datatype, treg, index)
       case PushParamTAC(op) => null
       case ReadTAC(dataType, readReg) => assembleRead(dataType, readReg)
+      case ReservedPushTAC(reg, location, _) => FinalIR.Str("", getRealReg(reg), ImmediateInt(location * POINTER_BYTE_SIZE), fp)
+      case ReservedPopTAC(location, reg, _) => FinalIR.Ldr("", getRealReg(reg), ImmediateInt(location * POINTER_BYTE_SIZE), fp)
+      case AllocateStackTAC(size) => FinalIR.Sub("", AssemblerTypes.None(), sp, ImmediateInt(size), sp)
     }
   }
 
@@ -173,28 +172,28 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assemblePair(fstType: DeclarationType, sndType: DeclarationType, fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister): AssemblerState = {
     FinalIR.Pop("", List(getRealReg(fstReg))) ::
-    FinalIR.Pop("", List(getRealReg(sndReg))) ::
-    FinalIR.Push("", List(r0)) :: 
-    FinalIR.Mov("", ImmediateInt(2 * POINTER_BYTE_SIZE), r0) ::
-    FinalIR.BranchLink("", new BranchString("malloc")) ::
-    FinalIR.Mov("", r0, getRealReg(ptrReg)) ::
-    FinalIR.Pop("", List(r0)) :: 
-    FinalIR.Str("", getRealReg(ptrReg), ImmediateInt(POINTER_BYTE_SIZE), getRealReg(fstReg)) ::
-    FinalIR.Str("", getRealReg(ptrReg), ImmediateInt(0), getRealReg(sndReg)) ::
-    FinalIR.Mov("", getRealReg(ptrReg), getRealReg(dstReg))
+      FinalIR.Pop("", List(getRealReg(sndReg))) ::
+      FinalIR.Push("", List(r0)) ::
+      FinalIR.Mov("", ImmediateInt(2 * POINTER_BYTE_SIZE), r0) ::
+      FinalIR.BranchLink("", new BranchString("malloc")) ::
+      FinalIR.Mov("", r0, getRealReg(ptrReg)) ::
+      FinalIR.Pop("", List(r0)) ::
+      FinalIR.Str("", getRealReg(ptrReg), ImmediateInt(POINTER_BYTE_SIZE), getRealReg(fstReg)) ::
+      FinalIR.Str("", getRealReg(ptrReg), ImmediateInt(0), getRealReg(sndReg)) ::
+      FinalIR.Mov("", getRealReg(ptrReg), getRealReg(dstReg))
   }
-  
+
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): AssemblerState = {
     FinalIR.Mov("", ImmediateInt(getTypeSize(pairElemType)), r0) ::
-    FinalIR.BranchLink("", new BranchString("malloc")) ::
-    FinalIR.Push("", List(getRealReg((ptrReg)))) ::
-    FinalIR.Mov("", getRealReg(ptrReg), r0) ::
-    FinalIR.Str(getInstructionType(pairElemType), getRealReg(ptrReg), ImmediateInt(0), getRealReg(pairElem)) ::
-    FinalIR.Mov("", getRealReg(pairElem), r0) ::
-    FinalIR.Mov("", getRealReg(ptrReg), getRealReg(pairElem)) ::
-    FinalIR.Pop("", List(getRealReg(ptrReg))) ::
-    FinalIR.Push("", List(getRealReg(pairElem))) ::
-    FinalIR.Mov("", r0, getRealReg(pairElem))
+      FinalIR.BranchLink("", new BranchString("malloc")) ::
+      FinalIR.Push("", List(getRealReg((ptrReg)))) ::
+      FinalIR.Mov("", getRealReg(ptrReg), r0) ::
+      FinalIR.Str(getInstructionType(pairElemType), getRealReg(ptrReg), ImmediateInt(0), getRealReg(pairElem)) ::
+      FinalIR.Mov("", getRealReg(pairElem), r0) ::
+      FinalIR.Mov("", getRealReg(ptrReg), getRealReg(pairElem)) ::
+      FinalIR.Pop("", List(getRealReg(ptrReg))) ::
+      FinalIR.Push("", List(getRealReg(pairElem))) ::
+      FinalIR.Mov("", r0, getRealReg(pairElem))
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): AssemblerState = {
@@ -204,8 +203,8 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
       }
       case UnaryOpType.Not => {
         FinalIR.Cmp("", getOperand(t1), new ImmediateInt(1)) ::
-        FinalIR.Mov("ne", ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("eq", ImmediateInt(0), getRealReg(res))
+          FinalIR.Mov("ne", ImmediateInt(1), getRealReg(res)) ::
+          FinalIR.Mov("eq", ImmediateInt(0), getRealReg(res))
       }
       case UnaryOpType.Chr | UnaryOpType.Ord => {
         FinalIR.Mov("", getOperand(t1), getRealReg(res))
@@ -220,7 +219,7 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
     val bl = datatype match {
       case BaseType(baseType) => {
         baseType match {
-          case BaseT.Int_T =>"_readi"
+          case BaseT.Int_T => "_readi"
           case BaseT.Char_T => "_readc"
           case BaseT.String_T => "_reads"
           case BaseT.Bool_T => "_readb"
@@ -233,7 +232,7 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
     addEndFunc("_prints", new HelperFunctions().assemble_prints())
     addEndFunc(bl, new HelperFunctions().assemble_read(bl))
     FinalIR.BranchLink("", new BranchString(bl)) ::
-    FinalIR.Mov("", r0, getRealReg(readReg))
+      FinalIR.Mov("", r0, getRealReg(readReg))
   }
 
   def assembleCall(lbl: Label, args: List[TRegister], dstReg: TRegister): AssemblerState = {
@@ -263,12 +262,12 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
     addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
-    FinalIR.BranchLink("eq", new BranchString("_errNull")) ::
-    FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE),  getRealReg(dstReg)) ::
-    FinalIR.Push("", List(getRealReg(pairReg))) ::
-    FinalIR.Mov("", getRealReg(dstReg), getRealReg(pairReg)) ::
-    FinalIR.Ldr(getLdrInstructionType(datatype), getRealReg(pairReg), ImmediateInt(0), getRealReg(dstReg)) ::
-    FinalIR.Pop("", List(getRealReg(pairReg)))
+      FinalIR.BranchLink("eq", new BranchString("_errNull")) ::
+      FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
+      FinalIR.Push("", List(getRealReg(pairReg))) ::
+      FinalIR.Mov("", getRealReg(dstReg), getRealReg(pairReg)) ::
+      FinalIR.Ldr(getLdrInstructionType(datatype), getRealReg(pairReg), ImmediateInt(0), getRealReg(dstReg)) ::
+      FinalIR.Pop("", List(getRealReg(pairReg)))
   }
 
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): AssemblerState = {
@@ -276,11 +275,11 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
     addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
-    FinalIR.BranchLink("eq", BranchString("_errNull")) ::
-    FinalIR.Push("", List(getRealReg(pairReg))) ::
-    FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE),  getRealReg(pairReg)) ::
-    FinalIR.Str(getInstructionType(datatype), getRealReg(pairReg), ImmediateInt(0), getRealReg(srcReg)) ::
-    FinalIR.Pop("", List(getRealReg(pairReg)))
+      FinalIR.BranchLink("eq", BranchString("_errNull")) ::
+      FinalIR.Push("", List(getRealReg(pairReg))) ::
+      FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE), getRealReg(pairReg)) ::
+      FinalIR.Str(getInstructionType(datatype), getRealReg(pairReg), ImmediateInt(0), getRealReg(srcReg)) ::
+      FinalIR.Pop("", List(getRealReg(pairReg)))
   }
 
   // Returns tuple containing the main program and helper functions
@@ -301,7 +300,7 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assembleIf(t1: Operand, goto: Label): AssemblerState = {
     FinalIR.Cmp("", getOperand(t1), new ImmediateInt(1)) ::
-    FinalIR.Branch("eq", goto.name)
+      FinalIR.Branch("eq", goto.name)
   }
 
   def assemblePopParam(dataType: DeclarationType, treg: TRegister, index: Int): AssemblerState = {
@@ -324,7 +323,7 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
         FinalIR.Add("", Status(), getOperand(op1), getOperand(op2), getRealReg(res))
       }
       case BinaryOpType.Sub => {
-        FinalIR.Sub("", Status(), getOperand(op1), getOperand(op2),  getRealReg(res))
+        FinalIR.Sub("", Status(), getOperand(op1), getOperand(op2), getRealReg(res))
       }
       case BinaryOpType.Mul => {
         FinalIR.Smull("", Status(), getOperand(op2), getOperand(op1), getOperand(op2), getRealReg(res))
@@ -333,64 +332,64 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
         addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
         addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), r0) ::
-        FinalIR.Mov("", getOperand(op2), r1) ::
-        FinalIR.Cmp("", r1, new ImmediateInt(0)) ::
-        FinalIR.BranchLink("eq", new BranchString("_errDivZero")) ::
-        FinalIR.BranchLink("", new BranchString("__aeabi_idivmod")) ::
-        FinalIR.Mov("", r0, getRealReg(res))
+          FinalIR.Mov("", getOperand(op2), r1) ::
+          FinalIR.Cmp("", r1, new ImmediateInt(0)) ::
+          FinalIR.BranchLink("eq", new BranchString("_errDivZero")) ::
+          FinalIR.BranchLink("", new BranchString("__aeabi_idivmod")) ::
+          FinalIR.Mov("", r0, getRealReg(res))
       }
       case BinaryOpType.Mod => {
         addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
         addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), r0) ::
-        FinalIR.Mov("", getOperand(op2), r1) ::
-        FinalIR.Cmp("", r1, ImmediateInt(0)) ::
-        FinalIR.BranchLink("eq", BranchString("_errDivZero")) ::
-        FinalIR.BranchLink("", BranchString("__aeabi_idivmod")) ::
-        FinalIR.Mov("", r1, getRealReg(res))
+          FinalIR.Mov("", getOperand(op2), r1) ::
+          FinalIR.Cmp("", r1, ImmediateInt(0)) ::
+          FinalIR.BranchLink("eq", BranchString("_errDivZero")) ::
+          FinalIR.BranchLink("", BranchString("__aeabi_idivmod")) ::
+          FinalIR.Mov("", r1, getRealReg(res))
       }
       case BinaryOpType.Eq => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
-        FinalIR.Mov("eq", ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("ne", ImmediateInt(0), getRealReg(res))
+          FinalIR.Mov("eq", ImmediateInt(1), getRealReg(res)) ::
+          FinalIR.Mov("ne", ImmediateInt(0), getRealReg(res))
       }
       case BinaryOpType.Neq => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
-        FinalIR.Mov("ne", ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("eq", ImmediateInt(0), getRealReg(res))
+          FinalIR.Mov("ne", ImmediateInt(1), getRealReg(res)) ::
+          FinalIR.Mov("eq", ImmediateInt(0), getRealReg(res))
       }
       case BinaryOpType.Lt => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
-        FinalIR.Mov("lt", ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("ge", ImmediateInt(0), getRealReg(res))
+          FinalIR.Mov("lt", ImmediateInt(1), getRealReg(res)) ::
+          FinalIR.Mov("ge", ImmediateInt(0), getRealReg(res))
       }
       case BinaryOpType.Gt => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
-        FinalIR.Mov("gt", ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("le", ImmediateInt(0), getRealReg(res))
+          FinalIR.Mov("gt", ImmediateInt(1), getRealReg(res)) ::
+          FinalIR.Mov("le", ImmediateInt(0), getRealReg(res))
       }
       case BinaryOpType.Lte => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
-        FinalIR.Mov("le", ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("gt", ImmediateInt(0), getRealReg(res))
+          FinalIR.Mov("le", ImmediateInt(1), getRealReg(res)) ::
+          FinalIR.Mov("gt", ImmediateInt(0), getRealReg(res))
       }
       case BinaryOpType.Gte => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
-        FinalIR.Mov("ge", ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("lt", ImmediateInt(0), getRealReg(res))
+          FinalIR.Mov("ge", ImmediateInt(1), getRealReg(res)) ::
+          FinalIR.Mov("lt", ImmediateInt(0), getRealReg(res))
       }
       case BinaryOpType.And => {
         FinalIR.Cmp("", getOperand(op1), new ImmediateInt(1)) ::
-        FinalIR.Cmp("eq", getOperand(op2), new ImmediateInt(1)) ::
-        FinalIR.Mov("ne", ImmediateInt(0), getRealReg(res)) ::
-        FinalIR.Mov("eq", ImmediateInt(1), getRealReg(res))
+          FinalIR.Cmp("eq", getOperand(op2), new ImmediateInt(1)) ::
+          FinalIR.Mov("ne", ImmediateInt(0), getRealReg(res)) ::
+          FinalIR.Mov("eq", ImmediateInt(1), getRealReg(res))
       }
       case BinaryOpType.Or => {
         FinalIR.Cmp("", getOperand(op1), new ImmediateInt(1)) ::
-        FinalIR.Mov("eq", ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Cmp("ne", getOperand(op2), new ImmediateInt(1)) ::
-        FinalIR.Mov("ne", ImmediateInt(0), getRealReg(res)) ::
-        FinalIR.Mov("eq", ImmediateInt(1), getRealReg(res))
+          FinalIR.Mov("eq", ImmediateInt(1), getRealReg(res)) ::
+          FinalIR.Cmp("ne", getOperand(op2), new ImmediateInt(1)) ::
+          FinalIR.Mov("ne", ImmediateInt(0), getRealReg(res)) ::
+          FinalIR.Mov("eq", ImmediateInt(1), getRealReg(res))
       }
     }
   }
@@ -416,18 +415,18 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
   }
 
   def assembleStringDef(str: String, lbl: Label): AssemblerState = {
-    assembleTAC(lbl) ++ 
-    (FinalIR.AsciiZ(escape(str)))
+    assembleTAC(lbl) ++
+      (FinalIR.AsciiZ(escape(str)))
   }
 
   def assembleBeginFunc(): AssemblerState = {
     FinalIR.Push("", List(fp, lr)) ::
-    FinalIR.Mov("", sp, fp)
+      FinalIR.Mov("", sp, fp)
   }
 
   def assembleEndFunc(): AssemblerState = {
     FinalIR.Mov("", new ImmediateInt(0), r0) ::
-    FinalIR.Pop("", List(fp, pc))
+      FinalIR.Pop("", List(fp, pc))
   }
 
   def assembleAssignment(operand: Operand, reg: TRegister): AssemblerState = {
@@ -440,9 +439,8 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
   def assembleCommand(cmd: CmdT.Cmd, operand: Operand, opType: DeclarationType): AssemblerState = {
     cmd match {
       case CmdT.Exit => {
-        state.deleteFunctionScope
         FinalIR.Mov("", getOperand(operand), r0) ::
-        FinalIR.BranchLink("", new BranchString("exit"))
+          FinalIR.BranchLink("", new BranchString("exit"))
       }
       case CmdT.Print | CmdT.PrintLn => {
         val bl = opType match {
@@ -472,7 +470,6 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
         }
       }
       case CmdT.Ret => {
-        state.exitFunction
         FinalIR.Mov("", getOperand(operand), r0) ::
           FinalIR.Mov("", fp, sp) ::
           FinalIR.Pop("", List(fp, pc)) ::
@@ -482,11 +479,11 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
         opType match {
           case ArrayType(dataType, length) => {
             FinalIR.Sub("", Status(), r4, new ImmediateInt(POINTER_BYTE_SIZE), r8) ::
-            FinalIR.Push("", List(r8)) ::
-            FinalIR.Pop("", List(r8)) ::
-            FinalIR.Mov("", r8, r8) ::
-            FinalIR.Mov("", r8, r0) ::
-            FinalIR.BranchLink("", new BranchString("free"))
+              FinalIR.Push("", List(r8)) ::
+              FinalIR.Pop("", List(r8)) ::
+              FinalIR.Mov("", r8, r8) ::
+              FinalIR.Mov("", r8, r0) ::
+              FinalIR.BranchLink("", new BranchString("free"))
           }
           case PairType(fstType, sndType) => {
             addEndFunc("_freepair", new HelperFunctions().assemble_freepair())
@@ -494,7 +491,7 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
             addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
             FinalIR.Mov("", getOperand(operand), r0) ::
-            FinalIR.BranchLink("", new BranchString("_freepair"))
+              FinalIR.BranchLink("", new BranchString("_freepair"))
           }
 
         }
@@ -504,13 +501,13 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): AssemblerState = {
     FinalIR.Push("", List(r0)) ::
-    FinalIR.Mov("", new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1)), r0) ::
-    FinalIR.BranchLink("", new BranchString("malloc")) ::
-    FinalIR.Mov("", r0, getRealReg(dstReg)) ::
-    FinalIR.Pop("", List(r0)) ::
-    FinalIR.Add("", Status(), getRealReg(dstReg), new ImmediateInt(POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
-    FinalIR.Mov("", new ImmediateInt(arrLen), getRealReg(lenReg)) ::
-    FinalIR.Str("", getRealReg(lenReg), new ImmediateInt(-POINTER_BYTE_SIZE), getRealReg(dstReg))
+      FinalIR.Mov("", new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1)), r0) ::
+      FinalIR.BranchLink("", new BranchString("malloc")) ::
+      FinalIR.Mov("", r0, getRealReg(dstReg)) ::
+      FinalIR.Pop("", List(r0)) ::
+      FinalIR.Add("", Status(), getRealReg(dstReg), new ImmediateInt(POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
+      FinalIR.Mov("", new ImmediateInt(arrLen), getRealReg(lenReg)) ::
+      FinalIR.Str("", getRealReg(lenReg), new ImmediateInt(-POINTER_BYTE_SIZE), getRealReg(dstReg))
   }
 
   def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): AssemblerState = {
@@ -519,52 +516,52 @@ class x86TempAssembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): AssemblerState = {
     FinalIR.Push("", List(getRealReg(elemReg))) ::
-    FinalIR.Push("", List(r0)) ::
-    FinalIR.Mov("", ImmediateInt(getTypeSize(arrayElemType)), r0) ::
-    FinalIR.BranchLink("", new BranchString("malloc")) ::
-    FinalIR.Str("", r0, ImmediateInt(0), getRealReg(elemReg)) ::
-    FinalIR.Str(getInstructionType(arrayElemType), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos), getRealReg(elemReg)) ::
-    FinalIR.Mov("", r0, getRealReg(elemReg)) ::
-    FinalIR.Pop("", List(r0)) ::
-    FinalIR.Pop("", List(getRealReg(elemReg)))
+      FinalIR.Push("", List(r0)) ::
+      FinalIR.Mov("", ImmediateInt(getTypeSize(arrayElemType)), r0) ::
+      FinalIR.BranchLink("", new BranchString("malloc")) ::
+      FinalIR.Str("", r0, ImmediateInt(0), getRealReg(elemReg)) ::
+      FinalIR.Str(getInstructionType(arrayElemType), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos), getRealReg(elemReg)) ::
+      FinalIR.Mov("", r0, getRealReg(elemReg)) ::
+      FinalIR.Pop("", List(r0)) ::
+      FinalIR.Pop("", List(getRealReg(elemReg)))
   }
-  
+
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): AssemblerState = {
     addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
     var regs = List(getRealReg(arrReg), getRealReg(dstReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     var output: AssemblerState = (FinalIR.Push("", regs) ::
-    FinalIR.Push("", List(r0, r1, r2, r3)))
+      FinalIR.Push("", List(r0, r1, r2, r3)))
     arrPos.foreach(a => {
-      output = output ++ 
-      (FinalIR.Mov("", r2, getRealReg(a)) ::
-      FinalIR.Mov("", r3, getRealReg(arrReg)) :: // arrLoad uses r0 = r3[r2]
-      FinalIR.BranchLink("", new BranchString("_arrLoad")) ::
-      FinalIR.Mov("", getRealReg(dstReg), r0))
+      output = output ++
+        (FinalIR.Mov("", r2, getRealReg(a)) ::
+          FinalIR.Mov("", r3, getRealReg(arrReg)) :: // arrLoad uses r0 = r3[r2]
+          FinalIR.BranchLink("", new BranchString("_arrLoad")) ::
+          FinalIR.Mov("", getRealReg(dstReg), r0))
     })
     output ++
-    (FinalIR.Pop("", List(r0, r1, r2, r3)) ::
-    FinalIR.Pop("", regs))
+      (FinalIR.Pop("", List(r0, r1, r2, r3)) ::
+        FinalIR.Pop("", regs))
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): AssemblerState = {
     addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
-    
+
     var regs = List(getRealReg(arrReg), getRealReg(srcReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     var output = (FinalIR.Push("", regs) ::
-    FinalIR.Push("", List(r0, r1, r2, r3)))
+      FinalIR.Push("", List(r0, r1, r2, r3)))
     arrPos.foreach(a => {
       output = output ++
-      (FinalIR.Mov("", r2, getRealReg(srcReg)) ::
-      FinalIR.Mov("", r0, getRealReg(a)) ::
-      FinalIR.Mov("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
-      FinalIR.BranchLink("", new BranchString("_arrStore")))
+        (FinalIR.Mov("", r2, getRealReg(srcReg)) ::
+          FinalIR.Mov("", r0, getRealReg(a)) ::
+          FinalIR.Mov("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
+          FinalIR.BranchLink("", new BranchString("_arrStore")))
     })
     output ++
-    (FinalIR.Pop("", List(r0, r1, r2, r3)) ::
-    FinalIR.Pop("", regs))
+      (FinalIR.Pop("", List(r0, r1, r2, r3)) ::
+        FinalIR.Pop("", regs))
   }
 }

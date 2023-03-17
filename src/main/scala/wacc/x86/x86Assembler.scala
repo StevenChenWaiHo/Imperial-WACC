@@ -2,6 +2,8 @@ package wacc
 
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
+import wacc.TAC.ReservedPushTAC
+
 import collection.mutable
 
 //TODO Change all to x86_64 Architecture

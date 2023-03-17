@@ -7,7 +7,7 @@ import wacc.cfgutils.CFG.Id
 import scala.language.implicitConversions
 
 
-object CfgTacInfo extends LiveRange {
+object TACLiveRange extends LiveRange {
   /** Given a TAC, return:
    * (the set of tRegisters it uses, the set of tRegisters it defines, the indices of its successor TACs). */
   override def getInfo(instr: TAC.TAC, program: Vector[TAC.TAC], id: Id): (Set[TAC.TRegister], Set[TAC.TRegister], Set[Id]) = {
@@ -60,8 +60,8 @@ object CfgTacInfo extends LiveRange {
         defs = List(ptr)
       case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) => //TODO
         print("CreatePair not yet translated in CFG.scala")
-      case AliasedPushTAC(alias, _) => uses = List(alias)
-      case AliasedPopTAC(_, alias) => defs = List(alias)
+      case ReservedPushTAC(alias, _, _) => uses = List(alias)
+      case ReservedPopTAC(_, alias, _) => defs = List(alias)
 
       case _ => println("WARNING: Unimplemented TAC in CfgTacInfo: " + instr + "\n\t-Treated as though it does nothing.")
     }
