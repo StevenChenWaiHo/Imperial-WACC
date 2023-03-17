@@ -1,11 +1,9 @@
-
+package wacc
 
 import org.scalatest.flatspec.AnyFlatSpec
 
 import wacc.AbstractSyntaxTree._
-import wacc.FinalIR._
 import wacc.Optimisations.Inlining._
-import wacc.AssemblerTypes._
 import wacc.Parser.ProgramParser.program
 import wacc.TAC._
 
