@@ -25,7 +25,6 @@ class ScopeContext(scopeStack: List[Scope]) {
   if (scopeStack.isEmpty) throw new NoSuchElementException("Context cannot be empty")
 
   /* Number of unique vars */
-  //TODO: Delete this
   var varId = -1
   def nextId: Int = {
     varId += 1
