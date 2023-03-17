@@ -15,8 +15,6 @@ class HelperFunctions extends Assembler(null) {
 
   implicit private[this] def updateState(instr: FinalIR): AssemblerState = state.addInstruction(instr)
 
-//TODO add assemble_malloc for x86
-
   def assemble_errNull(): List[FinalIR] = {
     val sLbl = new Label(".L._errNull_str0")
     assembleTAC(DataSegmentTAC()) ++
@@ -112,7 +110,7 @@ class HelperFunctions extends Assembler(null) {
       FinalIR.Cmp("", r0, lr) ::
       FinalIR.Mov("ge", r0, r1) :: // r0 >= lr
       FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
-      FinalIR.Str("", LogicalShiftLeft(r0, Right(2)), r2, r3) :: // TODO: Logical shift does not work
+      FinalIR.Str("", LogicalShiftLeft(r0, Right(2)), r2, r3) :: 
       FinalIR.Pop("", List(pc)) :: List())
   }
 

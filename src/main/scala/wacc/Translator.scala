@@ -204,7 +204,7 @@ object Translator {
   def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
     val (pairRegList, pairReg) = delegateASTNode(lvalue)
     val elemType = lvalue match {
-      case ArrayElem(name, indices) => findType(name).get // TODO null
+      case ArrayElem(name, indices) => findType(name).get 
       case _ => {
         val (fstType, sndType) = findType(lvalue) match {
           case Some(PairType(fstType, sndType)) => (fstType, sndType)
@@ -333,10 +333,8 @@ object Translator {
             val srcReg = nextRegister()
             val ptrReg = nextRegister()
 
-             // TODO: Remove?
             val fstReg2 = nextRegister()
             val sndReg2 = nextRegister()
-             // TODO: Remove?
              
             // addNode(pairValue, pairReg)
             (List(Comments("Creating newpair")) ++
@@ -390,7 +388,7 @@ object Translator {
       case PairElement(elem, lvalue) => {
         val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
         val elemType = lvalue match {
-          case ArrayElem(name, indices) => findType(name).get // TODO null
+          case ArrayElem(name, indices) => findType(name).get 
           case _ => {
             val (fstType, sndType) = findType(lvalue) match {
               case Some(PairType(fstType, sndType)) => (fstType, sndType)

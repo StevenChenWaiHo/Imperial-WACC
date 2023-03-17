@@ -113,7 +113,6 @@ object Main {
     ir.foreach{x => println(x)}
 
     // Apply optimisations here
-    // TODO: only optimise based on cmdline flags
     var result = ir 
     if (peepholeFlag){
       result = PeepholeOptimise(ir)

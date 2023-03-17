@@ -1,7 +1,5 @@
 package wacc
 
-//TODO Change all to x86_64 Architecture
-
 object x86AssemblerTypes {
   sealed trait LHSop
 

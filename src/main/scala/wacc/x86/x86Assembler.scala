@@ -6,7 +6,6 @@ import wacc.TAC.ReservedPushTAC
 
 import collection.mutable
 
-//TODO Change all to x86_64 Architecture
 
 object x86Assembler {
 
@@ -72,7 +71,6 @@ object x86Assembler {
     "movq" + ldrStrAssist(condition, src, operand, dst)
   }
 
-  //TODO split out leaq
   def ldrStrAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
     var str = condition + " " + src.toString + ", "
     operand match {
