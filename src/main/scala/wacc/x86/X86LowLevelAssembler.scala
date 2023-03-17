@@ -27,7 +27,7 @@ object X86LowLevelAssembler {
         case Sub(cond, flag, op1, op2, dst) => assembleSub(cond, flag, op1, op2, dst)
         case Rsb(cond, flag, op1, op2, dst) => assembleRsb(cond, flag, op1, op2, dst)
         case Mul(cond, flag, op1, op2, dst) => assembleMul(cond, flag, op1, op2, dst)
-        case Smull(cond, flag, src, op1, op2, dst) => assembleSmull(cond, flag, src, op1, op2, dst)
+        case Smull(cond, flag, dst, op11, op1, op2) => assembleSmull(cond, flag, dst, op11, op1, op2)
         case And(cond, dst, value) => assembleAnd(cond, dst, value)
         case Mov(cond, src, dst) => assembleMove(cond, src, dst)
         case Lea(cond, src, dst) => assembleLea(cond, src, dst)
@@ -135,8 +135,8 @@ object X86LowLevelAssembler {
     addSubMulAssist("mul", condition, setflag, op1, op2, dst)
   }
 
-  def assembleSmull(condition: String, setflag: Suffi, src: LHSop, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    "smull" + fourMulAssist(condition, setflag, dst, src, op1, op2)
+  def assembleSmull(condition: String, setflag: Suffi, dst: LHSop, op11: LHSop, op1: LHSop, op2: LHSop): String = {
+    "smull" + fourMulAssist(condition, setflag, dst, op11, op1, op2)
   }
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
