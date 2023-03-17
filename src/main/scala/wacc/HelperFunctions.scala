@@ -89,7 +89,7 @@ class HelperFunctions extends Assembler {
     assembleTAC(Label("_arrLoad")) ++
     (FinalIR.Push("", List(lr)) ::
       FinalIR.Cmp("", r2, new ImmediateInt(0)) ::
-      FinalIR.Mov("", r2, r1) ::
+      FinalIR.Mov("lt", r2, r1) ::
       FinalIR.BranchLink("lt", new BranchString("_boundsCheck")) ::
       FinalIR.Ldr("", r3, new ImmediateInt(-POINTER_BYTE_SIZE), lr) ::
       FinalIR.Cmp("", r2, lr) ::
