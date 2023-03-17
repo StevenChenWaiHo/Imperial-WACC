@@ -1,4 +1,4 @@
-package wacc
+package wacc.Optimisations
 
 import wacc.TAC._
 import wacc.AbstractSyntaxTree._

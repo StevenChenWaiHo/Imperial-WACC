@@ -1,4 +1,4 @@
-package wacc
+package wacc.Optimisations
 
 import wacc.FinalIR._
 import wacc.AssemblerTypes._

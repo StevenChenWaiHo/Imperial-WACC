@@ -1,18 +1,16 @@
 package wacc
 
 import parsley.{Failure, Success}
-import wacc.ArchitectureType.getArchitecture
 import wacc.AssemblerTypes._
 import wacc.Parser.ProgramParser.program
-import wacc.PeepholeOptimisation.PeepholeOptimise
 import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
 import wacc.cfgutils.CFG.CFGBuilder
 import wacc.cfgutils.{GraphColouringAllocator, TACLiveRange}
-import wacc.Inlining.inline_delegateASTNode
+import wacc.Optimisations.Inlining.inline_delegateASTNode
 import wacc.ARM11Assembler
 import wacc.TAC._
-import wacc.PeepholeOptimisation.PeepholeOptimise
+import wacc.Optimisations.PeepholeOptimisation.PeepholeOptimise
 import wacc.ArchitectureType.getArchitecture
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
