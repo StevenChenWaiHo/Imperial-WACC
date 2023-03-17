@@ -5,27 +5,29 @@ import wacc.AssemblerTypes._
 object X86AssemblerTypes {
   //TODO change these to x86 format
   //TODO change all calls to LHSop instances in ALL files
-  case class X86StackOffset(offset: Int) extends StackOffset(offset: Int) {
+  class X86StackOffset(offset: Int) extends StackOffset(offset: Int) {
     override def toString(): String = "STACK" + offset.toString()
   }
 
-  case class X86ImmediateInt(i: Int) extends ImmediateInt(i: Int) {
+  class X86ImmediateInt(i: Int) extends ImmediateInt(i: Int) {
     override def toString(): String = i.toString()
   }
 
-  case class X86LabelString(name: String) extends LabelString(name: String) {
+  class X86LabelString(name: String) extends LabelString(name: String) {
     override def toString(): String = "=" + name
   }
 
-  case class X86BranchString(name: String) extends BranchString(name: String) {
+  class X86BranchString(name: String) extends BranchString(name: String) {
     override def toString(): String = name
   }
 
-  sealed trait X86Register extends GeneralRegister {
+  sealed trait Register
+
+  sealed trait X86Register extends Register {
     import scala.math.Ordered.orderingToOrdered
     def compare(that: X86Register): Int = listOfRegisters.get(this) compare listOfRegisters.get(that)
     // rbx/rsp/rbp should not be here
-    val listOfRegisters = Map[GeneralRegister, Int](rax -> 0, rcx -> 1, rdx -> 2, rsi -> 6, rdi -> 7,
+    val listOfRegisters = Map[Register, Int](rax -> 0, rcx -> 1, rdx -> 2, rsi -> 6, rdi -> 7,
     r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14, r15 -> 15)
   }
 
@@ -41,15 +43,15 @@ object X86AssemblerTypes {
     override def toString(): String = "rdx" // r3 equiv.
   }
 
-  object rbx extends LinkRegister with PCRegister {
+  object rbx extends Register {
     override def toString(): String = "rbx" // base pointer? (lr/pc) PRESERVED
   }
 
-  object rsp extends SPRegister {
+  object rsp extends Register {
     override def toString(): String = "rsp" // sp PRESERVED
   }
 
-  object rbp extends FPRegister {
+  object rbp extends Register {
     override def toString(): String = "rbp" // fp PRESERVED
   }
 
@@ -100,6 +102,8 @@ object X86AssemblerTypes {
   // object pc extends X86Register {
   //   override def toString(): String = "pc"
   // }
+
+  sealed trait LHSop
 
   case class ImmediateValueOrRegister(operand: Either[X86Register, Int]) extends LHSop {
     @Override
@@ -168,31 +172,31 @@ object X86AssemblerTypes {
   }
 
   // dont think its used
-  case class X86Control() extends Control {
+  class X86Control() extends Control {
     override def toString: String = {
       ""
     }
   }
 
-  case class X86Extension() extends Extension {
+  class X86Extension() extends Extension {
     override def toString: String = {
       ""
     }
   }
 
-  case class X86Status() extends Status {
+  class X86Status() extends Status {
     override def toString: String = {
       ""
     }
   }
 
-  case class X86Flags() extends Flags {
+  class X86Flags() extends Flags {
     override def toString: String = {
       ""
     }
   }
 
-  case class X86None() extends None {
+  class X86None() extends None {
     override def toString: String = {
       ""
     }
