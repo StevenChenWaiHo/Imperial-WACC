@@ -87,6 +87,8 @@ object TACLiveRange extends LiveRange {
 
       case StoreArrayElem(_, arr, pos, src) => uses = (src +: arr +: pos)
 
+      case _: Label | _: BeginFuncTAC | _: Comments =>
+
       case _ => println("WARNING: Unimplemented TAC in cfgutils.TACLiveRange: " + instr + "\n\t-Treated as though it does nothing.")
     }
     (uses, defs, succs.toSet)
