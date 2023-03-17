@@ -17,7 +17,6 @@ object PeepholeOptimisation {
         // src*(2^x) => src << x
         case Mul(cond, None(), op1, ImmediateInt(x), dst) if (op1 equals dst) 
             && isPower2(x) => Mov(cond, LogicalShiftLeft(dst, Right(getPower2(x))), dst)
-        // TODO: do the same for smull
         case _ => instr
     }
   }
@@ -47,7 +46,7 @@ object PeepholeOptimisation {
         case Mov(_, src, dst)
             if src equals dst => true
         // Str/Ldr src->src
-        case Str(condition, src, operand, dst) => false // TODO: implement correctly
+        case Str(condition, src, operand, dst) => false 
         case StrPre(condition, src, operand, dst) => false
         case Ldr(condition, src, operand, dst) => false
         // Add/Sub with 0
@@ -58,7 +57,7 @@ object PeepholeOptimisation {
         // Mul with 1
         case Mul(_, None(), op1, ImmediateInt(1), dst) if (op1 equals dst) => true
         case Mul(_, None(), ImmediateInt(1), op2, dst) if (op2 equals dst) => true
-        case Smull(_, None(), src, op1, ImmediateInt(1), dst) if (src equals dst) => false // TODO: implement correctly
+        case Smull(_, None(), src, op1, ImmediateInt(1), dst) if (src equals dst) => false 
         case Smull(_, None(), src, ImmediateInt(1), op2, dst) if (src equals dst) => false
         // Empty push/pop
         case Push(_, List()) => true
