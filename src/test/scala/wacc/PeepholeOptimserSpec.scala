@@ -112,7 +112,7 @@ class PeepholeOptimserSpec extends AnyFlatSpec {
       Special(".ltorg")
     )
 
-    assert(removeDeadCode(testCode) == testOutput)
+    assert(testCode.removeDeadCode() == testOutput)
     
   }
 
