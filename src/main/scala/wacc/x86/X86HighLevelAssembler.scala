@@ -212,7 +212,7 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
       case UnaryOpType.Not => {
         FinalIR.Cmp("", getOperand(t1), X86ImmediateInt(1)) ::
         FinalIR.Mov("ne", X86ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("eq", X86ImmediateInt(0), getRealReg(res))
+        FinalIR.Mov("e", X86ImmediateInt(0), getRealReg(res))
       }
       case UnaryOpType.Chr | UnaryOpType.Ord => {
         FinalIR.Mov("", getOperand(t1), getRealReg(res))
@@ -308,7 +308,7 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assembleIf(t1: Operand, goto: Label): AssemblerState = {
     FinalIR.Cmp("", getOperand(t1), X86ImmediateInt(1)) ::
-    FinalIR.Branch("eq", goto.name)
+    FinalIR.Branch("e", goto.name)
   }
 
   def assemblePopParam(dataType: DeclarationType, treg: TRegister, index: Int): AssemblerState = {
@@ -342,7 +342,7 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
         FinalIR.Mov("", getOperand(op1), rax) ::
         FinalIR.Mov("", getOperand(op2), rdi) ::
         FinalIR.Cmp("", rdi, X86ImmediateInt(0)) ::
-        FinalIR.BranchLink("eq", X86BranchString("_errDivZero")) ::
+        FinalIR.BranchLink("e", X86BranchString("_errDivZero")) ::
         FinalIR.BranchLink("", X86BranchString("__aeabi_idivmod")) ::
         FinalIR.Mov("", rax, getRealReg(res))
       }
@@ -352,19 +352,19 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
         FinalIR.Mov("", getOperand(op1), rax) ::
         FinalIR.Mov("", getOperand(op2), rdi) ::
         FinalIR.Cmp("", rdi, X86ImmediateInt(0)) ::
-        FinalIR.BranchLink("eq", X86BranchString("_errDivZero")) ::
+        FinalIR.BranchLink("e", X86BranchString("_errDivZero")) ::
         FinalIR.BranchLink("", X86BranchString("__aeabi_idivmod")) ::
         FinalIR.Mov("", rdi, getRealReg(res))
       }
       case BinaryOpType.Eq => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
-        FinalIR.Mov("eq", X86ImmediateInt(1), getRealReg(res)) ::
+        FinalIR.Mov("e", X86ImmediateInt(1), getRealReg(res)) ::
         FinalIR.Mov("ne", X86ImmediateInt(0), getRealReg(res))
       }
       case BinaryOpType.Neq => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
         FinalIR.Mov("ne", X86ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Mov("eq", X86ImmediateInt(0), getRealReg(res))
+        FinalIR.Mov("e", X86ImmediateInt(0), getRealReg(res))
       }
       case BinaryOpType.Lt => {
         FinalIR.Cmp("", getOperand(op1), getOperand(op2)) ::
@@ -388,16 +388,16 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
       }
       case BinaryOpType.And => {
         FinalIR.Cmp("", getOperand(op1), X86ImmediateInt(1)) ::
-        FinalIR.Cmp("eq", getOperand(op2), X86ImmediateInt(1)) ::
+        FinalIR.Cmp("", getOperand(op2), X86ImmediateInt(1)) ::
         FinalIR.Mov("ne", X86ImmediateInt(0), getRealReg(res)) ::
-        FinalIR.Mov("eq", X86ImmediateInt(1), getRealReg(res))
+        FinalIR.Mov("e", X86ImmediateInt(1), getRealReg(res))
       }
       case BinaryOpType.Or => {
         FinalIR.Cmp("", getOperand(op1), X86ImmediateInt(1)) ::
-        FinalIR.Mov("eq", X86ImmediateInt(1), getRealReg(res)) ::
-        FinalIR.Cmp("ne", getOperand(op2), X86ImmediateInt(1)) ::
+        FinalIR.Mov("e", X86ImmediateInt(1), getRealReg(res)) ::
+        FinalIR.Cmp("", getOperand(op2), X86ImmediateInt(1)) ::
         FinalIR.Mov("ne", X86ImmediateInt(0), getRealReg(res)) ::
-        FinalIR.Mov("eq", X86ImmediateInt(1), getRealReg(res))
+        FinalIR.Mov("e", X86ImmediateInt(1), getRealReg(res))
       }
     }
   }
@@ -512,9 +512,10 @@ class x86HighLevelAssembler(allocationScheme: RegisterAllocator[Register]) {
   }
 
   def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): AssemblerState = {
+    addEndFunc("_malloc", new X86HelperFunctions().assemble_malloc())
     FinalIR.Push("", List(rax)) ::
     FinalIR.Mov("", X86ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1)), rax) ::
-    FinalIR.BranchLink("", X86BranchString("malloc")) ::
+    FinalIR.BranchLink("", X86BranchString("_malloc")) ::
     FinalIR.Mov("", rax, getRealReg(dstReg)) ::
     FinalIR.Pop("", List(rax)) ::
     FinalIR.Add("", X86Status(), getRealReg(dstReg), X86ImmediateInt(POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
