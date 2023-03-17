@@ -1,4 +1,4 @@
-
+package wacc
 
 import org.scalatest.flatspec.AnyFlatSpec
 
