@@ -8,12 +8,13 @@ import wacc.Translator.delegateASTNode
 import wacc.cfgutils.CFG.CFGBuilder
 import wacc.cfgutils.{GraphColouringAllocator, TACLiveRange}
 import wacc.Optimisations.Inlining.inline_delegateASTNode
-import wacc.ARM11Assembler
 import wacc.TAC._
 import wacc.Optimisations.PeepholeOptimisation.PeepholeOptimise
 import wacc.ArchitectureType.getArchitecture
+import wacc.ARM11AssemblerTypes
 import wacc.ARM11HighLevelAssembler
 import wacc.ARM11LowLevelAssembler
+import wacc.X86AssemblerTypes
 import wacc.X86HighLevelAssembler
 import wacc.X86LowLevelAssembler
 
@@ -102,10 +103,12 @@ object Main {
     tac.foreach(l => println(l))
 
     // Convert the TAC to IR
-    val assembler = new Assembler(
-      new GraphColouringAllocator[AssemblerTypes.Register](
+    val assembler = target match {
+      case ArchitectureType.ARM11 => new ARM11HighLevelAssembler(new GraphColouringAllocator[AssemblerTypes.Register](
         List(r4, r5, r6, r7, r8, r10), tac.toVector, new CFGBuilder(TACLiveRange)))
-
+      case ArchitectureType.X86 => new X86HighLevelAssembler(new GraphColouringAllocator[AssemblerTypes.Register](
+        List(rcx, r8, r9, r10, r11, r12, r13, r14, r15), tac.toVector, new CFGBuilder(TACLiveRange)))
+    }
 
     val (ir, funcs) = assembler.assembleProgram(tac)
     println(ir)
@@ -123,21 +126,13 @@ object Main {
     var asm = new String()
     target match {
       case ArchitectureType.ARM11 => {
-        // Convert the TAC to IR
-        val (result, funcs) = ARM11HighLevelAssembler.assembleProgram(tac)
-        // Apply optimisations here
-        // TODO: only optimise based on cmdline flags
-        // val result = PeepholeOptimise(ir)
+        // val (result, funcs) = ARM11HighLevelAssembler.assembleProgram(tac)
         // Convert the IR to ARM11
         println("--- ARM ---")
         asm = ARM11LowLevelAssembler.assemble(result, funcs)
       }
       case ArchitectureType.X86 => {
-        // Convert the TAC to IR
-        val (result, funcs) = X86HighLevelAssembler.assembleProgram(tac)
-        // Apply optimisations here
-        // TODO: only optimise based on cmdline flags
-        // val result = PeepholeOptimise(ir)
+        // val (result, funcs) = X86HighLevelAssembler.assembleProgram(tac)
         // Convert the IR to X86_64
         println("--- X86_64 ---")
         asm = X86LowLevelAssembler.assemble(result, funcs)
