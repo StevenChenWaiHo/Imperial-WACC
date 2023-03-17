@@ -3,7 +3,7 @@ package wacc
 import org.scalatest.flatspec.AnyFlatSpec
 
 import wacc.FinalIR._
-import wacc.PeepholeOptimisation._
+import wacc.Optimisations.PeepholeOptimisation._
 import wacc.AssemblerTypes._
 
 class PeepholeOptimserSpec extends AnyFlatSpec {
@@ -86,6 +86,36 @@ class PeepholeOptimserSpec extends AnyFlatSpec {
       == Mov("", LogicalShiftLeft(r1, Right(2)), r1))
   }
 
+  def testRemoveDeadCode() = {
+    val testCode = List(
+      Lbl("wacc_f"),
+      Push("", List(fp, lr)),
+      Mov("", sp, fp),
+      Mov("", ImmediateInt(1), r1),
+      Mov("", r1, r0),
+      Mov("", fp, sp),
+      Pop("", List(fp, pc)),
+      Mov("", new ImmediateInt(0), r0),
+      Mov("", fp, sp),
+      Pop("", List(fp, pc)),
+      Special(".ltorg")
+    )
+
+    val testOutput = List(
+      Lbl("wacc_f"),
+      Push("", List(fp, lr)),
+      Mov("", sp, fp),
+      Mov("", ImmediateInt(1), r1),
+      Mov("", r1, r0),
+      Mov("", fp, sp),
+      Pop("", List(fp, pc)),
+      Special(".ltorg")
+    )
+
+    assert(removeDeadCode(testCode) == testOutput)
+    
+  }
+
   "Peephole Optimiser" can "identify null operations" in {
     testNullOpIdentify()
   }
@@ -104,5 +134,9 @@ class PeepholeOptimserSpec extends AnyFlatSpec {
 
   "Peephole Optimiser" can "reduce instruction strength" in {
     testReduceStrength()
+  }
+
+  "Peephole Optimiser" should "remove dead code at end of function" in {
+    testRemoveDeadCode()
   }
 }

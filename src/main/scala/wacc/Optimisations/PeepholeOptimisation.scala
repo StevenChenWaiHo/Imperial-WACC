@@ -1,4 +1,4 @@
-package wacc
+package wacc.Optimisations
 
 import wacc.FinalIR._
 import wacc.AssemblerTypes._
@@ -6,7 +6,8 @@ import wacc.AssemblerTypes._
 object PeepholeOptimisation {
   def PeepholeOptimise(code: List[FinalIR]): List[FinalIR] = {
     // Apply peephole optimisations trying to decrease length the most early on
-    code.slideAndFilter(isRedundant)
+    code.removeDeadCode()
+        .slideAndFilter(isRedundant)
         .filterNot(isNullOp)
         .map(strengthReduction)
   }
@@ -144,6 +145,32 @@ object PeepholeOptimisation {
             reducedCode.appended(code.last)
         }
     }
-  }
+
+    def removeDeadCode(): List[FinalIR] = {
+        // Get the indexes of instructions to remove
+        val toRemove: List[Int] = code.sliding(4).zipWithIndex.filter(quad => quad match {
+            case (List(
+                Pop("", List(fp1, pc1)),
+                Mov("", ImmediateInt(0), r01),
+                Mov("", fp2, sp1),
+                Pop("", List(fp3, pc2))), _) => 
+                    fp1.equals(fp) && pc1.equals(pc) && r01.equals(r0) && 
+                    fp2.equals(fp) && sp1.equals(sp) && fp3.equals(fp) && pc2.equals(pc)
+            case _ => false
+        }).map(quad => quad match {
+            case (_, index) => index
+        }).toList
+
+        // Remove the EndFunc dead code from input
+        code.zipWithIndex.filterNot(tuple => tuple match {
+            case (instr, index) => toRemove.contains(index - 1) || 
+                                    toRemove.contains(index - 2) || 
+                                    toRemove.contains(index - 3)
+            case _ => false
+        }).map(tuple => tuple match {
+            case (instr, _) => instr
+        })
+    }
+  } 
 
 }
