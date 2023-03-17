@@ -9,6 +9,7 @@ import collection.mutable
 
 
 object X86LowLevelAssembler {
+  var count: Int = 0
 
   def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
     endFuncsIR = endFuncs
@@ -27,7 +28,9 @@ object X86LowLevelAssembler {
         case Rsb(cond, flag, op1, op2, dst) => assembleRsb(cond, flag, op1, op2, dst)
         case Mul(cond, flag, op1, op2, dst) => assembleMul(cond, flag, op1, op2, dst)
         case Smull(cond, flag, src, op1, op2, dst) => assembleSmull(cond, flag, src, op1, op2, dst)
+        case And(cond, dst, value) => assembleAnd(cond, dst, value)
         case Mov(cond, src, dst) => assembleMove(cond, src, dst)
+        case Lea(cond, src, dst) => assembleLea(cond, src, dst)
         case Branch(cond, name) => assembleBranch(cond, name)
         case BranchLink(cond, name) => assembleBranchLink(cond, name)
         case Cmp(cond, op1, op2) => assembleCmp(cond, op1, op2)
@@ -63,9 +66,12 @@ object X86LowLevelAssembler {
   }
 
   def assembleStrPre(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
-    ldrStrAssist(condition, src, operand, dst).toString + "!".toString()
+    strPreAssist(condition, src, operand, dst)
   }
 
+  def strPreAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
+    "mov" + condition + " [" + dst.toString + "], " + src.toString
+  }
   
   def assembleLdr(condition: String, src: Register, operand: LHSop, dst: Register): String = {
     ldrStrAssist(condition, src, operand, dst)
@@ -86,6 +92,9 @@ object X86LowLevelAssembler {
       }
       case X86LabelString(x) => {
         "lea " + dst.toString + ", [rip + " + x + "]" //rip is instruction pointer
+      }
+      case null => {
+        str + "[" + src.toString + "]"
       }
     }
   }
@@ -152,6 +161,10 @@ object X86LowLevelAssembler {
       instr + condition + setflag + " " + dst + ", " + op2 + "\njo _errOverflow"
   }
 
+  def assembleAnd(condition: String, dst: LHSop, value: LHSop): String = {
+    "and" + condition + " " + dst.toString + ", " + value.toString
+  }
+
   def assembleCmp(condition: String, op1: LHSop, op2: LHSop): String = {
     "cmp" + condition + " " + op1.toString + ", " + op2.toString
   }
@@ -169,11 +182,38 @@ object X86LowLevelAssembler {
   }
 
   def assembleMove(condition: String, src: LHSop, dst: Register): String = {
-    condition match { //x86 should only use mov or cmov
-      // case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
-      case _ if condition.isEmpty => "mov" + " " + dst.toString + ", " + src.toString()
-      case _ => "cmov" + condition + " " + dst.toString + ", " + src.toString()
+    var ins = "j"
+    if (condition.isEmpty) {
+      "mov" + " " + dst.toString + ", " + src.toString()
+    } else if (src.isInstanceOf[Register]) {
+      "cmov" + condition + " " + dst.toString + ", " + src.toString()
+    } else {
+      condition match { //x86 should only use mov or cmov
+        // case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
+        case "ne" => ins = ins + "e"
+        case "e" => ins = ins + "ne"
+        case "nz" => ins = ins + "z"
+        case "z" => ins = ins + "nz"
+        case "nc" => ins = ins + "c"
+        case "c" => ins = ins + "nc"
+        case "ng" => ins = ins + "g"
+        case "g" => ins = ins + "ng"
+        case "nl" => ins = ins + "l"
+        case "l" => ins = ins + "nl"
+        case "le" => ins = ins + "g"
+        case "ge" => ins = ins + "l"
+        case "" => ins = ins + "mp"
+        case _ => "cmov" + condition + " " + dst.toString + ", " + src.toString()
+      }
+      count += 1
+      ins + " skip" + count + "\n" +
+        "mov" + " " + dst.toString + ", " + src.toString() + "\n" + //src must be register
+        "skip" + count + ":" //change
     }
+  }
+
+  def assembleLea(condition: String, src: LHSop, dst: LHSop) = {
+    "lea" + condition + " " + dst.toString + ", [" + src.toString + "]"
   }
 
   def assembleBranch(condition: String, name: String): String = {
