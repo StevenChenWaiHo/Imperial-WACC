@@ -1,7 +1,5 @@
 package wacc
 
-import wacc.ArchitectureType._
-import wacc.ARM11AssemblerTypes._
 import wacc.ARM11HighLevelAssembler._
 import wacc.ARM11AssemblerTypes._
 import wacc.ArchitectureType._

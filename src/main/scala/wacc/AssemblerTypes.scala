@@ -22,6 +22,7 @@ object AssemblerTypes {
   } // r0-14?/other regs
   class SPRegister extends Register // sp/rsp
   class FPRegister extends Register // fp/rbp
+  // are the below needed
   trait LinkRegister extends Register // lr/rbx
   trait PCRegister extends Register // pc/rbx
   //rbx as basepointer
