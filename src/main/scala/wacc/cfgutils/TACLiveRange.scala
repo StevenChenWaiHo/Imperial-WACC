@@ -47,9 +47,12 @@ object TACLiveRange extends LiveRange {
       case CommandTAC(cmd, t1, _) =>
         uses = List(t1)
         cmd match {
-          case Ret | Exit => succs = Nil
+          case Ret | Exit =>
+            succs = Nil
           case _ =>
         }
+      case ReadTAC(_, res) => defs = List(res)
+
       case PushParamTAC(t1) =>
         uses = List(t1)
       case PopParamTAC(_, t1, _) =>
