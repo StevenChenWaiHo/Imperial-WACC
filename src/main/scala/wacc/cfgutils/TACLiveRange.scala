@@ -50,7 +50,6 @@ object TACLiveRange extends LiveRange {
           case Ret | Exit => succs = Nil
           case _ =>
         }
-
       case PushParamTAC(t1) =>
         uses = List(t1)
       case PopParamTAC(_, t1, _) =>
