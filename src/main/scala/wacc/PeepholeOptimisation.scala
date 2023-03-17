@@ -121,7 +121,9 @@ object PeepholeOptimisation {
             case (List(instr1, instr2), index) => {
                 currentIndex = index
                 // If a pair was 'removed' previously, then we skip the next pair
-                if (lastRemovedIndex + 1 != index && func(instr1, instr2)) {
+                if (lastRemovedIndex + 1 == index){
+                    false
+                } else if (func(instr1, instr2)) {
                     lastRemovedIndex = index
                     false
                 } else {
