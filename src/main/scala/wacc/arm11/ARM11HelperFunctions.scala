@@ -91,7 +91,7 @@ class ARM11HelperFunctions {
     assembleTAC(Label("_arrLoad")) ++
     (FinalIR.Push("", List(lr)) ::
       FinalIR.Cmp("", r2, ARM11ImmediateInt(0)) ::
-      FinalIR.Mov("", r2, r1) ::
+      FinalIR.Mov("lt", r2, r1) ::
       FinalIR.BranchLink("lt", ARM11BranchString("_boundsCheck")) ::
       FinalIR.Ldr("", r3, ARM11ImmediateInt(-POINTER_BYTE_SIZE), lr) ::
       FinalIR.Cmp("", r2, lr) ::
