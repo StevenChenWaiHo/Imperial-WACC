@@ -1,7 +1,7 @@
 package wacc
 
 object AssemblerTypes {
-  sealed trait LHSop
+  trait LHSop
 
   case class StackOffset(offset: Int) extends LHSop {
     override def toString(): String = "STACK" + offset.toString()
@@ -19,7 +19,7 @@ object AssemblerTypes {
     override def toString(): String = name
   }
 
-  sealed trait Register extends LHSop with Ordered[Register] {
+   trait Register extends LHSop with Ordered[Register] {
       import scala.math.Ordered.orderingToOrdered
     def compare(that: Register): Int =  listOfRegisters.get(this) compare listOfRegisters.get(that)
   }
@@ -104,7 +104,7 @@ object AssemblerTypes {
     r7 -> 7, r8 -> 8, r9 -> 9, r10 -> 10, r11 -> 11, r12 -> 12, r13 -> 13, r14 -> 14)
 
 
-  sealed trait Operand2
+   trait Operand2
 
   case class ImmediateValueOrRegister(operand: Either[Register, Int]) extends LHSop {
     @Override
@@ -178,7 +178,7 @@ object AssemblerTypes {
     }
   }
 
-  sealed trait Suffi
+   trait Suffi
 
   case class Control() extends Suffi {
     override def toString: String = {

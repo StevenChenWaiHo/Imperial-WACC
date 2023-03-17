@@ -21,8 +21,6 @@ object X86AssemblerTypes {
     override def toString(): String = name
   }
 
-  sealed trait Register
-
   sealed trait X86Register extends Register {
     import scala.math.Ordered.orderingToOrdered
     def compare(that: X86Register): Int = listOfRegisters.get(this) compare listOfRegisters.get(that)
