@@ -9,6 +9,11 @@ import wacc.SemanticAnalyser.verifyProgram
 import wacc.Translator.delegateASTNode
 import wacc.cfgutils.CFG.CFGBuilder
 import wacc.cfgutils.{GraphColouringAllocator, TACLiveRange}
+import wacc.Inlining.inline_delegateASTNode
+import wacc.ARM11Assembler
+import wacc.TAC._
+import wacc.PeepholeOptimisation.PeepholeOptimise
+import wacc.ArchitectureType.getArchitecture
 
 import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
 import scala.io.Source
@@ -25,12 +30,32 @@ object Main {
 
 
   def main(args: Array[String]): Unit = {
-    val file = Option(Source.fromFile(args.head))
-      .getOrElse(throw new FileNotFoundException("File: " + args.head + " does not exist."))
+    var argsNum = 2
+    // Optional Flags
+    val optionalFlagString = args(1)
+    val inlineFlag = optionalFlagString.contains("i")
+    val peepholeFlag = optionalFlagString.contains("p")
+    val crossCompilerFlag = optionalFlagString.contains("c")
+    if (crossCompilerFlag){
+      argsNum=3
+      val archName = args(2)
+      target = archName match{
+        case "x86" => ArchitectureType.X86
+        case _: String => throw new IllegalArgumentException("Cannot find Architecture")
+      }
+    }
+
+    if (args.length != argsNum) throw new IllegalArgumentException(
+      "Incorrect number of arguments provided. Received: " + args.length + ", Expected " + argsNum
+    )
+    val filename = args.head
+    val file = Option(Source.fromFile(filename))
+      .getOrElse(throw new FileNotFoundException("File: " + filename + " does not exist."))
     val inputProgram = file.mkString
     file.close
 
-    println(inputProgram)
+    println(inputProgram + "\n\n")
+
 
     if (args.length == 2) {
       target = getArchitecture(args(1))
@@ -61,22 +86,38 @@ object Main {
     }
 
     // Translate the ast to TAC
-    val tac = delegateASTNode(ast.get)._1
-    println("--- TAC ---")
-    tac.foreach(println)
+    var tac = List[TAC]()
+    if (inlineFlag){
+      println("--- INLINED TAC ---")
+      tac = inline_delegateASTNode(ast.get)._1
+    }
+    else {
+      println("--- TAC ---")
+      tac = delegateASTNode(ast.get)._1
+    }
+    
+  
+    tac.foreach(l => println(l))
 
     // Convert the TAC to IR
     val assembler = new Assembler(
       new GraphColouringAllocator[AssemblerTypes.Register](
         List(r4, r5, r6, r7, r8, r10), tac.toVector, new CFGBuilder(TACLiveRange)))
 
+
     val (ir, funcs) = assembler.assembleProgram(tac)
     println(ir)
     println(funcs)
 
+    println("--- FinalIR ---")
+    ir.foreach{x => println(x)}
+
     // Apply optimisations here
     // TODO: only optimise based on cmdline flags
-    val result = PeepholeOptimise(ir)
+    var result = ir 
+    if (peepholeFlag){
+      result = PeepholeOptimise(ir)
+    }
 
     var asm = new String()
     target match {

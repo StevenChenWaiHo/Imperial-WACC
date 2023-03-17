@@ -49,8 +49,7 @@ object TAC {
     override def toString(): String = "if " + t1 + " then goto " + goto.name
   }
 
-  case class CommandTAC(cmd: Cmd, t1: Operand, opType: DeclarationType) extends TAC
-
+  case class CommandTAC(cmd: Cmd, t1: TRegister, opType: DeclarationType) extends TAC
   case class PushParamTAC(t1: Operand) extends TAC
 
   case class PopParamTAC(datatype: DeclarationType, t1: TRegister, index: Int) extends TAC

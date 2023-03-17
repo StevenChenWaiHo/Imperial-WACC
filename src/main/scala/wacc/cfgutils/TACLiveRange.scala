@@ -19,9 +19,9 @@ object TACLiveRange extends LiveRange {
     }.toSet
 
 
-    var uses: Set[TRegister] = Set()
-    var defs: Set[TRegister] = Set()
-    var succs: List[Id] = List(id + 1)
+    var uses: Set[TRegister] = Set()    // Operands (note the conversion toUsedRegisters) that the op reads the value of
+    var defs: Set[TRegister] = Set()    // TRegisters that the op defines
+    var succs: List[Id] = List(id + 1)  // The indices of the op's subsequent instructions
 
     instr match {
       case BinaryOpTAC(_, t1, t2, res) => {
@@ -55,15 +55,15 @@ object TACLiveRange extends LiveRange {
         succs = List(id + 1, getId(lbl))
       case GOTO(lbl) =>
         succs = List(getId(lbl))
-      case CreatePairElem(_, _, ptr, value) => //TODO: These pair-related ones could be wrong:
-        uses = List(value)
-        defs = List(ptr)
-      case CreatePair(_, _, fstReg, sndReg, srcReg, ptrReg, dstReg) => //TODO
-        print("CreatePair not yet translated in CFG.scala")
+
+//      case CreatePairElem(_, _, ptr, value) => //TODO: These pair-related ones could be wrong:
+//        uses = List(value)
+//        defs = List(ptr)
+
       case ReservedPushTAC(alias, _, _) => uses = List(alias)
       case ReservedPopTAC(_, alias, _) => defs = List(alias)
 
-      case _ => println("WARNING: Unimplemented TAC in CfgTacInfo: " + instr + "\n\t-Treated as though it does nothing.")
+      case _ => println("WARNING: Unimplemented TAC in cfgutils.TACLiveRange: " + instr + "\n\t-Treated as though it does nothing.")
     }
     (uses, defs, succs.toSet)
   }

@@ -185,15 +185,15 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): List[FinalIR] = {
     FinalIR.Mov("", ImmediateInt(getTypeSize(pairElemType)), r0) ::
-      FinalIR.BranchLink("", new BranchString("malloc")) ::
-      FinalIR.Push("", List(getRealReg((ptrReg)))) ::
-      FinalIR.Mov("", getRealReg(ptrReg), r0) ::
-      FinalIR.Str(getInstructionType(pairElemType), getRealReg(ptrReg), ImmediateInt(0), getRealReg(pairElem)) ::
-      FinalIR.Mov("", getRealReg(pairElem), r0) ::
-      FinalIR.Mov("", getRealReg(ptrReg), getRealReg(pairElem)) ::
-      FinalIR.Pop("", List(getRealReg(ptrReg))) ::
-      FinalIR.Push("", List(getRealReg(pairElem))) ::
-      FinalIR.Mov("", r0, getRealReg(pairElem)) :: List()
+    FinalIR.BranchLink("", new BranchString("malloc")) ::
+    FinalIR.Push("", List(getRealReg((ptrReg)))) ::
+    FinalIR.Mov("", r0, getRealReg(ptrReg)) ::
+    FinalIR.Str(getInstructionType(pairElemType), getRealReg(ptrReg), ImmediateInt(0), getRealReg(pairElem)) ::
+    FinalIR.Mov("", getRealReg(pairElem), r0) ::
+    FinalIR.Mov("", getRealReg(ptrReg), getRealReg(pairElem)) ::
+    FinalIR.Pop("", List(getRealReg(ptrReg))) ::
+    FinalIR.Push("", List(getRealReg(pairElem))) ::
+    FinalIR.Mov("", r0, getRealReg(pairElem)) :: List()
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): List[FinalIR] = {

@@ -4,6 +4,7 @@ import wacc.AssemblerTypes._
 
 object FinalIR {
   sealed trait FinalIR
+  sealed trait FuncJumpInstr
 
   case class Str(condition: String, src: LHSop, operand: LHSop, dst: Register) extends FinalIR
   case class StrPre(condition: String, src: Register, operand: LHSop, dst: Register) extends FinalIR
@@ -21,7 +22,7 @@ object FinalIR {
   case class Mov(condition: String, src: LHSop, dst: Register) extends FinalIR
 
   case class Branch(condition: String, name: String) extends FinalIR
-  case class BranchLink(condition: String, name: LHSop) extends FinalIR
+  case class BranchLink(condition: String, name: LHSop) extends FinalIR with FuncJumpInstr
 
   case class Cmp(condition: String, op1: LHSop, op2: LHSop) extends FinalIR
 
