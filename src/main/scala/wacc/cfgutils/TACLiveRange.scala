@@ -64,6 +64,14 @@ object TACLiveRange extends LiveRange {
        uses = List()
        defs = List(value, fstReg, sndReg, src, ptr)
 
+      case GetPairElem(_, pairReg, _, dstReg) =>
+        uses = List(pairReg)
+        defs = List(dstReg)
+
+      case StorePairElem(datatype, pairReg, pairPos, srcReg) => 
+        uses = List(pairReg, srcReg)
+        defs = List()
+
       case ReservedPushTAC(alias, _, _) => uses = List(alias)
       case ReservedPopTAC(_, alias, _) => defs = List(alias)
 
