@@ -427,7 +427,9 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assembleEndFunc(): List[FinalIR] = {
     FinalIR.Mov("", new ImmediateInt(0), r0) ::
-      FinalIR.Pop("", List(fp, pc)) :: List()
+      FinalIR.Mov("", fp, sp) ::
+      FinalIR.Pop("", List(fp, pc)) ::
+      FinalIR.Special(".ltorg") :: List() 
   }
 
   def assembleAssignment(operand: Operand, reg: TRegister): List[FinalIR] = {
@@ -473,8 +475,7 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
       case CmdT.Ret => {
         FinalIR.Mov("", getOperand(operand), r0) ::
           FinalIR.Mov("", fp, sp) ::
-          FinalIR.Pop("", List(fp, pc)) ::
-          FinalIR.Special(".ltorg") :: List() // TODO: examine use of special
+          FinalIR.Pop("", List(fp, pc)) :: List()
       }
       case CmdT.Free => {
         opType match {
