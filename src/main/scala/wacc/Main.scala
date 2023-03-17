@@ -57,7 +57,7 @@ object Main {
     println(inputProgram + "\n\n")
 
 
-    if (args.length == 2) {
+    if (crossCompilerFlag) {
       target = getArchitecture(args(1))
         .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
     }
