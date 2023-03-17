@@ -71,6 +71,15 @@ object Inlining{
     tacList.toList
   }
 
+  def checkInlineFunc(tacList: List[TAC]) : Boolean = {
+    tacList.foreach{tac => tac match{
+        case _: CallTAC => return false
+        case _ => 
+      }
+    }
+    return true
+  }
+
   def inline_translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
   newMap()
   // Initialise the main .data segment
@@ -85,7 +94,7 @@ object Inlining{
     case Func(returnType, ident, types, code) => {
       val funcTac = translateFunction(f)
       // TODO: add checks to check if inline function calls another function
-      if (funcTac.length <= INLINE_FUNC_MAX_INSTR){
+      if (funcTac.length <= INLINE_FUNC_MAX_INSTR && checkInlineFunc(funcTac)){
         addInlineFuncToMap(funcTac)
       }
       else{
