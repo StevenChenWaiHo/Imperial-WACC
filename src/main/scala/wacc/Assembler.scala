@@ -184,7 +184,7 @@ class Assembler {
     FinalIR.Mov("", ImmediateInt(getTypeSize(pairElemType)), r0) ::
     FinalIR.BranchLink("", new BranchString("malloc")) ::
     FinalIR.Push("", List(getRealReg((ptrReg)))) ::
-    FinalIR.Mov("", getRealReg(ptrReg), r0) ::
+    FinalIR.Mov("", r0, getRealReg(ptrReg)) ::
     FinalIR.Str(getInstructionType(pairElemType), getRealReg(ptrReg), ImmediateInt(0), getRealReg(pairElem)) ::
     FinalIR.Mov("", getRealReg(pairElem), r0) ::
     FinalIR.Mov("", getRealReg(ptrReg), getRealReg(pairElem)) ::
