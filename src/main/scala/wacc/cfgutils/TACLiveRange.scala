@@ -55,25 +55,29 @@ object TACLiveRange extends LiveRange {
         succs = List(id + 1, getId(lbl))
       case GOTO(lbl) =>
         succs = List(getId(lbl))
-
       case CreatePairElem(_, _, ptr, value) =>
-        uses = List(ptr)
-        defs = List(value)
-
+        uses = List(value)
+        defs = List(ptr)
       case CreatePair(_, _, fstReg, sndReg, src, ptr, value) =>
        uses = List()
-       defs = List(value, fstReg, sndReg, src, ptr)
+       defs = List(value, fstReg, sndReg, ptr)
 
       case GetPairElem(_, pairReg, _, dstReg) =>
         uses = List(pairReg)
         defs = List(dstReg)
 
-      case StorePairElem(datatype, pairReg, pairPos, srcReg) => 
+      case StorePairElem(_, pairReg, _, srcReg) =>
         uses = List(pairReg, srcReg)
         defs = List()
 
       case ReservedPushTAC(alias, _, _) => uses = List(alias)
       case ReservedPopTAC(_, alias, _) => defs = List(alias)
+
+      case InitialiseArray(_, len, dst) =>
+        uses = List(len)
+        defs = List(dst)
+
+      case StoreArrayElem(_, arr, pos, src) => uses = (src +: arr +: pos)
 
       case _ => println("WARNING: Unimplemented TAC in cfgutils.TACLiveRange: " + instr + "\n\t-Treated as though it does nothing.")
     }
