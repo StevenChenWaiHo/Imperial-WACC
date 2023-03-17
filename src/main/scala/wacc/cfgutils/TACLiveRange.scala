@@ -57,16 +57,16 @@ object TACLiveRange extends LiveRange {
         succs = List(getId(lbl))
 
       case CreatePairElem(_, _, ptr, value) =>
-        uses = List(ptr)
-        defs = List(value)
+        uses = List(value, ptr)
+        defs = List()
 
       case CreatePair(_, _, fstReg, sndReg, src, ptr, value) =>
-       uses = List()
-       defs = List(value, fstReg, sndReg, src, ptr)
+       uses = List(fstReg, sndReg, ptr, src)
+       defs = List(value)
 
-      case GetPairElem(_, pairReg, _, dstReg) =>
+      case GetPairElem(_, pairReg, _, tempReg, dstReg) =>
         uses = List(pairReg)
-        defs = List(dstReg)
+        defs = List(dstReg, tempReg)
 
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => 
         uses = List(pairReg, srcReg)

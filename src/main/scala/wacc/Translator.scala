@@ -214,8 +214,9 @@ object Translator {
       }
     }
     // Should not add this register to Map as it might update
+    val tempReg = nextRegister()
     val dstReg = nextRegister()
-    (List(Comments("Getting Pair Elem")) ++ pairRegList ++ List(GetPairElem(elemType, pairReg, elem, dstReg)) ++ List(Comments("Got Pair Elem")), dstReg)
+    (List(Comments("Getting Pair Elem")) ++ pairRegList ++ List(GetPairElem(elemType, pairReg, elem, tempReg, dstReg)) ++ List(Comments("Got Pair Elem")), dstReg)
   }
 
   // def translateArrayElem(name: String, indices: List[Expr]): (List[TAC], TRegister) = {

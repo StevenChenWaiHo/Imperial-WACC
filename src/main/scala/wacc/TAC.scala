@@ -91,7 +91,7 @@ object TAC {
   // malloc fst elem with reference to its type
   // mov ptrReg r0
   // str pairElemReg, [ptrReg, #0]
-  // mov fstReg ptrReg
+  // mov pairElemReg ptrReg
   // push pairElemReg
   //   --- CreatePairElem(Snd) --- 
   // malloc snd elem with reference to its type
@@ -124,7 +124,7 @@ object TAC {
   // ldr dstReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
   // mov pairReg dstReg
   // ldr(type) dstReg [pairReg, 0]
-  case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister) extends TAC
+  case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, tempReg: TRegister, dstReg: TRegister) extends TAC
 
 
   /* array declaration in assembly

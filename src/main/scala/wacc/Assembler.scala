@@ -128,7 +128,7 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
       case GOTO(label) => assembleJump(label)
       case CreatePairElem(pairElemType, pairPos, ptrReg, pairElemReg) => assemblePairElem(pairElemType, pairPos, ptrReg, pairElemReg)
       case CreatePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg) => assemblePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg)
-      case GetPairElem(datatype, pairReg, pairPos, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
+      case GetPairElem(datatype, pairReg, pairPos, tempReg, dstReg) => assembleGetPairElem(datatype, pairReg, pairPos, tempReg, dstReg)
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
       case InitialiseArray(arrLen, lenReg, dstReg) => assembleArrayInit(arrLen, lenReg, dstReg)
       case CreateArrayElem(arrayElemType, elemPos, arrReg, elemReg) => assembleArrayElem(arrayElemType, elemPos, arrReg, elemReg)
@@ -257,15 +257,17 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
     output ++ List(FinalIR.Mov("", r0, getRealReg(dstReg)))
   }
 
-  def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[FinalIR] = {
+  def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, tempReg: TRegister, dstReg: TRegister): List[FinalIR] = {
     addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
     addEndFunc("_prints", new HelperFunctions().assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
       FinalIR.BranchLink("eq", new BranchString("_errNull")) ::
-      FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
+        FinalIR.Push("", List(getRealReg(tempReg))) ::
+      FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE), getRealReg(tempReg)) ::
       FinalIR.Push("", List(getRealReg(pairReg))) ::
-      FinalIR.Mov("", getRealReg(dstReg), getRealReg(pairReg)) ::
+      FinalIR.Mov("", getRealReg(tempReg), getRealReg(pairReg)) ::
+        FinalIR.Pop("", List(getRealReg(tempReg))) ::
       FinalIR.Ldr(getLdrInstructionType(datatype), getRealReg(pairReg), ImmediateInt(0), getRealReg(dstReg)) ::
       FinalIR.Pop("", List(getRealReg(pairReg))) :: List()
   }
