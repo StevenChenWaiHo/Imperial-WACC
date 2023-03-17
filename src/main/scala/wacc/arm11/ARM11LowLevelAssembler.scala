@@ -1,10 +1,11 @@
 package wacc
 
+import wacc.ARM11AssemblerTypes._
 import wacc.AssemblerTypes._
 import wacc.FinalIR._
 import collection.mutable
 
-object ARM11Assembler {
+object ARM11LowLevelAssembler {
 
   def assemble(irCode: List[FinalIR], endFuncs: mutable.Map[String, List[FinalIR]]): String = {
     endFuncsIR = endFuncs
@@ -68,10 +69,10 @@ object ARM11Assembler {
   def ldrStrAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
     var str = condition + " " + dst.toString + ", "
     operand match {
-      case ImmediateInt(x) => {
+      case ARM11ImmediateInt(x) => {
         str = str + "[" + src.toString + ", #" + x + "]"
       }
-      case LabelString(x) => {
+      case ARM11LabelString(x) => {
         str = str + "=" + x
       }
     }
@@ -119,9 +120,9 @@ object ARM11Assembler {
   }
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
-                    op1: LHSop, op2: LHSop): String = {
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+                    sourceRegister: LHSop, operand: LHSop): String = {
+    addEndFunc("_errOverflow", new ARM11HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new ARM11HelperFunctions().assemble_prints())
 
     condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + op1 +
       "," + " " + op2 +
@@ -131,8 +132,8 @@ object ARM11Assembler {
 
 
   def addSubMulAssist(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errOverflow", new ARM11HelperFunctions().assemble_errOverflow())
+    addEndFunc("_prints", new ARM11HelperFunctions().assemble_prints())
     condition + setflag + " " + dst + ", " + op1 + ", " + op2 + "\nblvs _errOverflow"
   }
 
@@ -154,7 +155,7 @@ object ARM11Assembler {
 
   def assembleMove(condition: String, src: LHSop, dst: Register): String = {
     src match {
-      case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
+      case ARM11ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
       case _ => "mov" + condition + " " + dst.toString + ", " + src.toString()
     }
   }
