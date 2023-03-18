@@ -311,7 +311,7 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
     if (index < cRegs.length) {
       // Populate from registers in r0-
       val callReg = cRegs.take(index + 1).last
-      List(FinalIR.Mov("", getRealReg(treg), callReg))
+      List(FinalIR.Mov("", callReg, getRealReg(treg)))
     } else {
       // Populate from stack
       List(FinalIR.Ldr("", fp, ImmediateInt(funcStackFrameSize + (POINTER_BYTE_SIZE * (index - cRegs.size))), getRealReg(treg)))
