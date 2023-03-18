@@ -7,7 +7,7 @@ import wacc.TAC._
 import wacc.FinalIR.FinalIR
 
 import scala.collection.mutable.ListBuffer
-
+// For ARM11 only
 class HelperFunctions extends Assembler(null) {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
 
