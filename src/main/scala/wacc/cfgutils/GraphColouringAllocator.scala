@@ -54,15 +54,7 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     // Map of tRegisters to how often they interfere with the uncoloured nodes.
     val interferenceCounts = uncoloured.toVector.flatMap(t => interferenceGraph.interferences(t).toVector)
       .groupBy(identity).transform((_, t) => t.size).removedAll(spilled)
-    val allTRegs = coloured.keySet union uncoloured
-    println
-    println
-    println
-    println(allTRegs)
-    println
-    println
-    println
-
+    var allTRegs = coloured.keySet union uncoloured
     // Choose most frequently interfering register. If that doesn't work, pick any register.
     val target = if(interferenceCounts.nonEmpty) interferenceCounts.maxBy(_._2)._1
     else (allTRegs diff spilled).head
@@ -84,9 +76,11 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
       initial match {
         case n +: ns if n.defs contains target =>
           spilled = spilled incl next
+          allTRegs = allTRegs incl next
           modifyGraph(ns, result ++ Vector(newInstr, ReservedPushTAC(targetReg, 0, target)), next)
         case n +: ns if n.uses contains target =>
           spilled = spilled incl next
+          allTRegs = allTRegs incl next
           modifyGraph(ns, result ++ Vector(ReservedPopTAC(0, targetReg, target), newInstr, ReservedPushTAC(targetReg, 0, target)), next)
         case n +: ns =>
           modifyGraph(ns, result :+ newInstr, targetReg)

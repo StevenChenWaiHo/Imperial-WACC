@@ -297,7 +297,8 @@ class Assembler(archName: String, allocationScheme: RegisterAllocator[Register])
         List(FinalIR.Sub("", Status(), getOperand(op1), getOperand(op2), getRealReg(res)))
       }
       case BinaryOpType.Mul => {
-        List(FinalIR.Smull("", Status(), getRealReg(res), getOperand(op1), getOperand(op1), getOperand(op2)))
+        // snd res currently not used
+        List(FinalIR.Smull("", Status(), getRealReg(res), getOperand(res), getOperand(op1), getOperand(op2)))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
