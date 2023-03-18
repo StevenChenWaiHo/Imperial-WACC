@@ -71,8 +71,10 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     /* Add a 'push' after each definition, and a 'pop' after each use. */
     @tailrec
     def modifyGraph(initial: Vector[CFGNode], result: Vector[TAC], targetReg: TRegister): Vector[TAC] = {
-      val newInstr = if(initial.nonEmpty) TACLiveRange.mapTAC(initial.head.instr, (target, targetReg)) else null
+      // Renumber the target register:
+      val newInstr = if(initial.nonEmpty) TACLiveRange.mapTAC(initial.head.instr, (target -> targetReg)) else null
       val next = nextTReg
+      // If the instruction uses or defines the target register, add a pop and/or a push as appropriate.
       initial match {
         case n +: ns if n.defs contains target =>
           spilled = spilled incl next
