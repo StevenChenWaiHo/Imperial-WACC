@@ -6,7 +6,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object StackAssignment {
-  def apply(tacs: List[TAC]): List[TAC] = {
+  def apply(tacs: Vector[TAC]): Vector[TAC] = {
     val newTacs = tacs.to(ListBuffer)
     var height = 0
     var lastLabel = 0
@@ -38,6 +38,8 @@ object StackAssignment {
       i += 1
     }
     newTacs.foreach(println)
-    newTacs.toList
+    newTacs.toVector
   }
+
+
 }

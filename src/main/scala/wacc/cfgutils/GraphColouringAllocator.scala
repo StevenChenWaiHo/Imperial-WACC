@@ -6,13 +6,11 @@ import wacc.cfgutils.CFG.{CFG, CFGBuilder, CFGNode, Id}
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
-import scala.util.control.Breaks.break
 
 class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: CFGBuilder) extends RegisterAllocator[A] {
   /* State */
   private var cfg: CFG = null
   private var interferenceGraph: InterferenceGraph = null
-  private var colourer: GraphColourer[A] = null
   private var colouring: Colouring[A] = null
   private var spilled: Set[TRegister] = Set()
 
@@ -27,43 +25,33 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     while (colouring.uncoloured.nonEmpty) {
       spill(colouring)
     }
-    (nextTacs, colouring)
+
+
+    (StackAssignment(pushBeforeCalls), colouring)
   }
 
   private def recolour(): Unit = {
-    nextTacs.foreach(println)
-    println
-    println
-    println
     cfg = cfgBuilder.build(nextTacs)
     interferenceGraph = new InterferenceGraph(cfg)
-    interferenceGraph.interferences.foreach(println)
-
-    colourer = new GraphColourer[A](regs, interferenceGraph)
-    colouring = colourer.attemptColouring
-//    println("\n--- Recolour: ---")
-//    println(colouring)
-//    println
-//    println(interferenceGraph.interferences)
+    colouring = new GraphColourer[A](regs, interferenceGraph).attemptColouring
   }
 
   private def spill(colouring: Colouring[A]): Unit = {
     //TODO: Currently doesn't use the interference graph
     /* Simple strategy: spill the node that interferes with the most uncolourable nodes. */
     val Colouring(coloured, uncoloured) = colouring
-    // Map of tRegisters to how often they interfere with the uncoloured nodes.
+    // Map of tRegisters to how often they interfere with uncoloured nodes.
     val interferenceCounts = uncoloured.toVector.flatMap(t => interferenceGraph.interferences(t).toVector)
       .groupBy(identity).transform((_, t) => t.size).removedAll(spilled)
     var allTRegs = coloured.keySet union uncoloured
     // Choose most frequently interfering register. If that doesn't work, pick any register.
-    val target = if(interferenceCounts.nonEmpty) interferenceCounts.maxBy(_._2)._1
+    val target = if (interferenceCounts.nonEmpty) interferenceCounts.maxBy(_._2)._1
     else (allTRegs diff spilled).head
     spilled = spilled incl target
     println("TARGET:")
     println(target)
-      //uncoloured.maxBy(x => interferenceGraph.interferences(x).size)
 
-    def nextTReg = {
+    def nextTReg: TRegister = {
       val highestTReg = allTRegs.maxBy(_.num)
       highestTReg.copy(num = highestTReg.num + 1)
     }
@@ -71,8 +59,10 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     /* Add a 'push' after each definition, and a 'pop' after each use. */
     @tailrec
     def modifyGraph(initial: Vector[CFGNode], result: Vector[TAC], targetReg: TRegister): Vector[TAC] = {
-      val newInstr = if(initial.nonEmpty) TACLiveRange.mapTAC(initial.head.instr, (target, targetReg)) else null
+      // Renumber the target register:
+      val newInstr = if (initial.nonEmpty) TACLiveRange.mapTAC(initial.head.instr, (target -> targetReg)) else null
       val next = nextTReg
+      // If the instruction uses or defines the target register, add a pop and/or a push as appropriate.
       initial match {
         case n +: ns if n.defs contains target =>
           spilled = spilled incl next
@@ -91,9 +81,50 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     nextTacs = modifyGraph(cfg.nodes, Vector[TAC](), target)
     recolour()
   }
+
+
+  // Push the minimal amount of registers possible before each function call.
+  // This can only be done after the graph is coloured.
+  private def pushBeforeCalls: Vector[TAC] = {
+
+    /* Get function register definitions */
+    val funcDefs = mutable.Map[Label, Set[A]]()
+    var lastLabel: Label = null
+    var currentFunc: Label = null
+    var currentDefs = Set[A]()
+    for (node <- cfg.nodes) node.instr match {
+      case l: Label => lastLabel = l
+      case BeginFuncTAC() => {
+        currentFunc = lastLabel
+        currentDefs = Set()
+      }
+      case EndFuncTAC() => funcDefs.addOne(currentFunc -> currentDefs)
+      case _ => currentDefs = currentDefs union node.defs.map(t => colouring.coloured(t))
+    }
+
+    /* Apply these definitions to calls */
+    @tailrec
+    def addPushes(initial: Vector[CFGNode], result: Vector[TAC]): Vector[TAC] =
+      if (initial.isEmpty) result
+      else {
+        val node = initial.head
+        node.instr match {
+          case n@CallTAC(lbl, _, _) =>
+            val survivingTRegs = (node.liveOut diff node.defs)
+            val wipedRegs = funcDefs(lbl)
+            val pushTRegs: Vector[TRegister] = survivingTRegs.collect {
+              case t if wipedRegs contains colouring.coloured(t) => t
+            }.toVector
+            addPushes(initial.tail, result ++ pushTRegs.map(PushTAC) ++ (n +: pushTRegs.map(PopTAC)))
+          case n => addPushes(initial.tail, result :+ n)
+        }
+      }
+
+    addPushes(cfg.nodes, Vector[TAC]())
+  }
 }
 
-class GraphColourer[A](val regs: List[A], interferenceGraph: InterferenceGraph) {
+private class GraphColourer[A](val regs: List[A], interferenceGraph: InterferenceGraph) {
   private type IGNode = (TRegister, Set[TRegister])
 
   def attemptColouring: Colouring[A] = {
@@ -129,10 +160,9 @@ class GraphColourer[A](val regs: List[A], interferenceGraph: InterferenceGraph) 
     node._2.count(x => remainingInters.contains(x))
 
   private def pushAllToStack(interferences: mutable.Map[TRegister, Set[TRegister]], stack: mutable.Stack[(TRegister, Set[TRegister])]): Unit = {
-  /* Repeatedly push the smallest-order colourable node to the stack. */
+    /* Repeatedly push the smallest-order colourable node to the stack. */
     do {
       val fewestInterferences = interferences.minBy(x => remainingArcs(x, interferences))
-      if (fewestInterferences._2.size > regs.size) return
       interferences.subtractOne(fewestInterferences._1)
       stack.push(fewestInterferences)
     }
@@ -147,7 +177,7 @@ private class InterferenceGraph(cfg: CFG) {
       node: CFGNode =>
         node.liveOut.foreach(t => inters.update(t, inters.getOrElse(t, Set()) union node.liveOut excl t))
         // Ensure that every tRegister gets a node (even if it doesn't get used)
-        node.defs.foreach(t => if(!(inters contains t)) inters.update(t, Set()))
+        node.defs.foreach(t => if (!(inters contains t)) inters.update(t, Set()))
     }
     inters.toMap
   }
@@ -172,7 +202,7 @@ private class InterferenceGraph(cfg: CFG) {
         }
     }
     // Adding the final block
-    println(tempEnds)
+    //    println(tempEnds)
     val lastBlockStart = tempEnds.last._2 + 1
     if (lastBlockStart < cfg.nodes.length) // This should always be true
       tempEnds.addOne((lastBlockStart, cfg.nodes.length - 1))
