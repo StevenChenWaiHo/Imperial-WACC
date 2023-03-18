@@ -115,7 +115,7 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
             val pushTRegs: Vector[TRegister] = survivingTRegs.collect {
               case t if wipedRegs contains colouring.coloured(t) => t
             }.toVector
-            addPushes(initial.tail, result ++ pushTRegs.map(PushTAC) ++ (n +: pushTRegs.map(PopTAC)))
+            addPushes(initial.tail, result ++ pushTRegs.map(PushTAC) ++ (n +: pushTRegs.reverse.map(PopTAC)))
           case n => addPushes(initial.tail, result :+ n)
         }
       }
