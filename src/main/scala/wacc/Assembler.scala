@@ -143,8 +143,7 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
       case ReservedPushTAC(reg, location, _) => List[FinalIR](FinalIR.Str("", fp, ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
       case ReservedPopTAC(location, reg, _) => List[FinalIR](FinalIR.Ldr("", fp, ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
       // ^Add 2 more to account for the fp and lr, which are pushed to the stack at the start of functions
-      case AllocateStackTAC(size) => List(FinalIR.Sub("", AssemblerTypes.None(), sp, ImmediateInt((size + 1) * POINTER_BYTE_SIZE), sp))
-      // ^Since 'size' is zero-indexed, add 1 to it to prevent overwriting the bottom of the stack.
+      case AllocateStackTAC(size) => if(size > 0) List(FinalIR.Sub("", AssemblerTypes.None(), sp, ImmediateInt(size * POINTER_BYTE_SIZE), sp)) else List()
     }
   }
 
@@ -284,15 +283,14 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
 
   // Returns tuple containing the main program and helper functions
   def assembleProgram(tacList: List[TAC]): (List[FinalIR], collection.mutable.Map[String, List[FinalIR]]) = {
-    val (spilledCode, colouring) = allocationScheme.allocateRegisters
+    val (finalCode, colouring) = allocationScheme.allocateRegisters
     this.colouring = colouring
-    val finalCode = cfgutils.StackAssignment(spilledCode.toList)
 
-    (state.code.toList, endFuncs.map(elem => elem match {
-      case (name, state) => (name, state.code.toList)
-    }))
+//    endFuncs.map(elem => elem match {
+//      case (name, state) => (name, state.code.toList)
+//    })
 
-    (finalCode.map(assembleTAC).flatten, endFuncs)
+    (finalCode.toList.flatMap(assembleTAC), endFuncs)
   }
 
   def assembleJump(label: Label): List[FinalIR] = {
@@ -328,7 +326,7 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
       }
       case BinaryOpType.Mul => {
         // snd res currently not used
-        List(FinalIR.Smull("", Status(), getRealReg(res), getOperand(res), getOperand(op1), getOperand(op2)))
+        List(FinalIR.Smull("", Status(), getRealReg(res), r0, getOperand(op1), getOperand(op2)))
       }
       case BinaryOpType.Div => {
         addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())

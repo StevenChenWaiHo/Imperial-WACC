@@ -27,7 +27,8 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
     while (colouring.uncoloured.nonEmpty) {
       spill(colouring)
     }
-    (nextTacs, colouring)
+
+    (StackAssignment(nextTacs), colouring)
   }
 
   private def recolour(): Unit = {
