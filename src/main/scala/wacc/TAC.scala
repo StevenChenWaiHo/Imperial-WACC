@@ -35,6 +35,9 @@ object TAC {
   case class ReservedPopTAC(location: Int, alias: TRegister, original:TRegister) extends TAC
   case class AllocateStackTAC(size: Int) extends TAC
 
+  case class PushTAC(reg: TRegister) extends TAC
+  case class PopTAC(reg: TRegister) extends TAC
+
   case class BinaryOpTAC(op: BinOp, t1: Operand, t2: Operand, res: TRegister) extends TAC {
     override def toString(): String = res + " = " + t1 + " " + op + " " + t2
   }

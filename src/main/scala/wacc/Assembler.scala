@@ -104,7 +104,7 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
   def assembleTAC(tripleAddressCode: TAC): List[FinalIR] = {
     tripleAddressCode match {
       case Label(name) => {
-        if (name == "main") {
+        if (name == MainLabel) {
           List(FinalIR.Global(name), FinalIR.Lbl(name))
         } else {
           List(FinalIR.Lbl(name))
@@ -143,7 +143,9 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
       case ReservedPushTAC(reg, location, _) => List[FinalIR](FinalIR.Str("", fp, ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
       case ReservedPopTAC(location, reg, _) => List[FinalIR](FinalIR.Ldr("", fp, ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
       // ^Add 2 more to account for the fp and lr, which are pushed to the stack at the start of functions
-      case AllocateStackTAC(size) => if(size > 0) List(FinalIR.Sub("", AssemblerTypes.None(), sp, ImmediateInt(size * POINTER_BYTE_SIZE), sp)) else List()
+      case AllocateStackTAC(size) => if (size > 0) List(FinalIR.Sub("", AssemblerTypes.None(), sp, ImmediateInt(size * POINTER_BYTE_SIZE), sp)) else List()
+      case PushTAC(tReg) => List(FinalIR.Push("", List(getRealReg(tReg))))
+      case PopTAC(tReg) => List(FinalIR.Pop("", List(getRealReg(tReg))))
     }
   }
 
@@ -184,15 +186,15 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
 
   def assemblePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElem: TRegister): List[FinalIR] = {
     FinalIR.Mov("", ImmediateInt(getTypeSize(pairElemType)), r0) ::
-    FinalIR.BranchLink("", new BranchString("malloc")) ::
-    FinalIR.Push("", List(getRealReg((ptrReg)))) ::
-    FinalIR.Mov("", r0, getRealReg(ptrReg)) ::
-    FinalIR.Str(getInstructionType(pairElemType), getRealReg(ptrReg), ImmediateInt(0), getRealReg(pairElem)) ::
-    FinalIR.Mov("", getRealReg(pairElem), r0) ::
-    FinalIR.Mov("", getRealReg(ptrReg), getRealReg(pairElem)) ::
-    FinalIR.Pop("", List(getRealReg(ptrReg))) ::
-    FinalIR.Push("", List(getRealReg(pairElem))) ::
-    FinalIR.Mov("", r0, getRealReg(pairElem)) :: List()
+      FinalIR.BranchLink("", new BranchString("malloc")) ::
+      FinalIR.Push("", List(getRealReg((ptrReg)))) ::
+      FinalIR.Mov("", r0, getRealReg(ptrReg)) ::
+      FinalIR.Str(getInstructionType(pairElemType), getRealReg(ptrReg), ImmediateInt(0), getRealReg(pairElem)) ::
+      FinalIR.Mov("", getRealReg(pairElem), r0) ::
+      FinalIR.Mov("", getRealReg(ptrReg), getRealReg(pairElem)) ::
+      FinalIR.Pop("", List(getRealReg(ptrReg))) ::
+      FinalIR.Push("", List(getRealReg(pairElem))) ::
+      FinalIR.Mov("", r0, getRealReg(pairElem)) :: List()
   }
 
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): List[FinalIR] = {
@@ -286,9 +288,9 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
     val (finalCode, colouring) = allocationScheme.allocateRegisters
     this.colouring = colouring
 
-//    endFuncs.map(elem => elem match {
-//      case (name, state) => (name, state.code.toList)
-//    })
+    //    endFuncs.map(elem => elem match {
+    //      case (name, state) => (name, state.code.toList)
+    //    })
 
     (finalCode.toList.flatMap(assembleTAC), endFuncs)
   }
@@ -428,7 +430,7 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
     FinalIR.Mov("", new ImmediateInt(0), r0) ::
       FinalIR.Mov("", fp, sp) ::
       FinalIR.Pop("", List(fp, pc)) ::
-      FinalIR.Special(".ltorg") :: List() 
+      FinalIR.Special(".ltorg") :: List()
   }
 
   def assembleAssignment(operand: Operand, reg: TRegister): List[FinalIR] = {

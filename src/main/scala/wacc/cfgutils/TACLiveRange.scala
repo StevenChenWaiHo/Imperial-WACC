@@ -54,10 +54,9 @@ object TACLiveRange extends LiveRange {
         uses = List(t1)
       case PopParamTAC(_, t1, _) =>
         uses = List(t1)
-      case CallTAC(lbl, args, dstReg) =>
+      case CallTAC(_, args, dstReg) =>
         uses = args
         defs = List(dstReg)
-        succs = List(id + 1, getId(lbl))
       case GOTO(lbl) =>
         succs = List(getId(lbl))
       case CreatePairElem(_, _, ptr, value) =>

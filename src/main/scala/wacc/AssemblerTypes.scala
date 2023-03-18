@@ -3,6 +3,7 @@ package wacc
 object AssemblerTypes {
   trait LHSop
 
+  val MainLabel = "main"
   case class StackOffset(offset: Int) extends LHSop {
     override def toString(): String = "STACK" + offset.toString()
   }
