@@ -22,7 +22,7 @@ object Main {
 
   val SyntaxErrorCode = 100
   val SemanticErrorCode = 200
-  val SuccessCode = 0
+  val SuccessCode = 0 
 
   var target = ArchitectureType.ARM11
 
