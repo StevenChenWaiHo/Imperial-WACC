@@ -53,7 +53,7 @@ object TACLiveRange extends LiveRange {
       case PushParamTAC(t1) =>
         uses = List(t1)
       case PopParamTAC(_, t1, _) =>
-        uses = List(t1)
+        defs = List(t1)
       case CallTAC(_, args, dstReg) =>
         uses = args
         defs = List(dstReg)
