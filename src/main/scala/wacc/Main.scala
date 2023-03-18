@@ -54,12 +54,6 @@ object Main {
 
     println(inputProgram + "\n\n")
 
-
-    if (crossCompilerFlag) {
-      target = getArchitecture(args(1))
-        .getOrElse(throw new FileNotFoundException("Architecture: " + args(1) + " does not exist."))
-    }
-
     /* Compile */
     // Parse input file
     val ast = program.parse(inputProgram)
@@ -94,7 +88,6 @@ object Main {
       tac = delegateASTNode(ast.get)._1
     }
     
-  
     tac.foreach(l => println(l))
 
     // Convert the TAC to IR
@@ -104,8 +97,6 @@ object Main {
 
 
     val (ir, funcs) = assembler.assembleProgram(tac)
-    println(ir)
-    println(funcs)
 
     println("--- FinalIR ---")
     ir.foreach{x => println(x)}
@@ -125,7 +116,7 @@ object Main {
       }
       case ArchitectureType.X86 => {
         // Convert the IR to X86_64
-        //val x86 = X86Assembler.assemble(result, funcs)
+        //val asm = X86Assembler.assemble(result, funcs)
         println("--- X86_64 ---")
       }
     }
