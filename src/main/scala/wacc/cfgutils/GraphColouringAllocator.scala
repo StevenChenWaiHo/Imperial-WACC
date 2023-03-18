@@ -31,10 +31,10 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
   }
 
   private def recolour(): Unit = {
-    nextTacs.foreach(println)
-    println
-    println
-    println
+//    nextTacs.foreach(println)
+//    println
+//    println
+//    println
     cfg = cfgBuilder.build(nextTacs)
     interferenceGraph = new InterferenceGraph(cfg)
     interferenceGraph.interferences.foreach(println)
@@ -116,6 +116,11 @@ class GraphColourer[A](val regs: List[A], interferenceGraph: InterferenceGraph) 
     while (stack.nonEmpty) {
       val (tReg, neighbours) = stack.pop()
       val existingNeighbours = neighbours.filter(colouring.coloured.contains(_))
+//      println
+//      println(tReg)
+//      println(existingNeighbours)
+//      println
+
       val existingColours: Set[A] = existingNeighbours.map(x => colouring.coloured(x))
       val validColours = regs.toSet diff existingColours
       if (validColours.isEmpty)
@@ -131,10 +136,12 @@ class GraphColourer[A](val regs: List[A], interferenceGraph: InterferenceGraph) 
     node._2.count(x => remainingInters.contains(x))
 
   private def pushAllToStack(interferences: mutable.Map[TRegister, Set[TRegister]], stack: mutable.Stack[(TRegister, Set[TRegister])]): Unit = {
+//    println
+//    print(interferences)
+//    println
   /* Repeatedly push the smallest-order colourable node to the stack. */
     do {
       val fewestInterferences = interferences.minBy(x => remainingArcs(x, interferences))
-      if (fewestInterferences._2.size > regs.size) return
       interferences.subtractOne(fewestInterferences._1)
       stack.push(fewestInterferences)
     }
@@ -174,7 +181,7 @@ private class InterferenceGraph(cfg: CFG) {
         }
     }
     // Adding the final block
-    println(tempEnds)
+//    println(tempEnds)
     val lastBlockStart = tempEnds.last._2 + 1
     if (lastBlockStart < cfg.nodes.length) // This should always be true
       tempEnds.addOne((lastBlockStart, cfg.nodes.length - 1))
