@@ -100,6 +100,7 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
         currentDefs = Set()
       }
       case CallTAC(lbl, _, _) =>
+        currentDefs = currentDefs union node.defs.map(t => colouring.coloured(t))
         if(funcCalls contains currentFunc) funcCalls.update(currentFunc, funcCalls(currentFunc) incl lbl)
         else funcCalls.addOne(currentFunc -> Set(lbl))
       case EndFuncTAC() => funcDefs.addOne(currentFunc -> currentDefs)
