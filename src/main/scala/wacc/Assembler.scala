@@ -7,21 +7,22 @@ import wacc.ArchitectureType._
 import wacc.FinalIR.FinalIR
 import wacc.RegisterAllocator._
 import wacc.TAC._
+import wacc.X86AssemblerTypes._
 import wacc.cfgutils.{Colouring, RegisterAllocator}
 
 import scala.collection.mutable.ListBuffer
 
-class Assembler(archName: String, allocationScheme: RegisterAllocator[Register]) {
+class Assembler(target: Architecture, allocationScheme: RegisterAllocator[Register]) {
   var colouring: Colouring[Register] = null
 
-  private[this] val state = archName.getArchitecture match {
-    case Some(X86) => new AssemblerState(ListBuffer(rcx, r8, r9, r10, r11, r12, r13, r14, r15))
-    case _ => new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r10))
+  private[this] val state = target match {
+    case X86 => new AssemblerState(ListBuffer(rcx, X86AssemblerTypes.r8, X86AssemblerTypes.r9, X86AssemblerTypes.r10, X86AssemblerTypes.r11, X86AssemblerTypes.r12, X86AssemblerTypes.r13, X86AssemblerTypes.r14, X86AssemblerTypes.r15))
+    case _ => new AssemblerState(ListBuffer(r4, r5, r6, r7, AssemblerTypes.r8, AssemblerTypes.r10))
   }  
   val endFuncs = collection.mutable.Map[String, List[FinalIR]]()
   var labelCount = 0
-  val argRegs = archName.getArchitecture match {
-    case Some(X86) => List(rax, rdi, rsi, rdx)
+  val argRegs = target match {
+    case X86 => List(rax, rdi, rsi, rdx)
     case _ => List(r0, r1, r2, r3)
   }
   val POINTER_BYTE_SIZE = 4
@@ -451,11 +452,11 @@ class Assembler(archName: String, allocationScheme: RegisterAllocator[Register])
       case CmdT.Free => {
         opType match {
           case ArrayType(dataType, length) => {
-            FinalIR.Sub("", Status(), r4, new ImmediateInt(POINTER_BYTE_SIZE), r8) ::
-              FinalIR.Push("", List(r8)) ::
-              FinalIR.Pop("", List(r8)) ::
-              FinalIR.Mov("", r8, r8) ::
-              FinalIR.Mov("", r8, r0) ::
+            FinalIR.Sub("", Status(), r4, new ImmediateInt(POINTER_BYTE_SIZE), AssemblerTypes.r8) ::
+              FinalIR.Push("", List(AssemblerTypes.r8)) ::
+              FinalIR.Pop("", List(AssemblerTypes.r8)) ::
+              FinalIR.Mov("", AssemblerTypes.r8, AssemblerTypes.r8) ::
+              FinalIR.Mov("", AssemblerTypes.r8, r0) ::
               FinalIR.BranchLink("", new BranchString("free")) :: List()
           }
           case PairType(fstType, sndType) => {

@@ -9,7 +9,7 @@ import scala.collection.mutable.ListBuffer
 
 //TODO Change all to x86_64 Architecture, most comments are currently outdated
 
-class X86HelperFunctions extends Assembler(null) {
+class X86HelperFunctions extends Assembler(null, null) {
   private[this] val state = new AssemblerState(ListBuffer(rcx, r8, r9, r10, r11, r12, r13, r14, r15))
 
   implicit private[this] def toStrings(state: AssemblerState) = state.code.toList

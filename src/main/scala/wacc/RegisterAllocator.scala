@@ -1,6 +1,5 @@
 package wacc
 
-import wacc.StatelessAssembler.{assembleAdd, assembleLdr, assemblePush, assembleStr, assembleSub}
 import wacc.AssemblerTypes.{ImmediateInt, Register, fp, sp}
 import wacc.TAC._
 import wacc.FinalIR.FinalIR

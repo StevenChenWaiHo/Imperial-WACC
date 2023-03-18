@@ -5,19 +5,19 @@ import wacc.AssemblerTypes._
 object X86AssemblerTypes {
   //TODO change these to x86 format
   //TODO change all calls to LHSop instances in ALL files
-  class X86StackOffset(offset: Int) extends StackOffset(offset: Int) {
+  case class X86StackOffset(offset: Int) extends LHSop {
     override def toString(): String = "STACK" + offset.toString()
   }
 
-  class X86ImmediateInt(i: Int) extends ImmediateInt(i: Int) {
+  case class X86ImmediateInt(i: Int) extends LHSop {
     override def toString(): String = i.toString()
   }
 
-  class X86LabelString(name: String) extends LabelString(name: String) {
+  case class X86LabelString(name: String) extends LHSop {
     override def toString(): String = "=" + name
   }
 
-  class X86BranchString(name: String) extends BranchString(name: String) {
+  case class X86BranchString(name: String) extends LHSop {
     override def toString(): String = name
   }
 
@@ -100,8 +100,6 @@ object X86AssemblerTypes {
   // object pc extends X86Register {
   //   override def toString(): String = "pc"
   // }
-
-  sealed trait LHSop
 
   case class ImmediateValueOrRegister(operand: Either[X86Register, Int]) extends LHSop {
     @Override

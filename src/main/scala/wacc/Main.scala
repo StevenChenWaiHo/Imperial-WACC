@@ -91,7 +91,7 @@ object Main {
     tac.foreach(l => println(l))
 
     // Convert the TAC to IR
-    val assembler = new Assembler(archName, 
+    val assembler = new Assembler(target, 
       new GraphColouringAllocator[AssemblerTypes.Register](
         List(r4, r5, r6, r7, r8, r10), tac.toVector, new CFGBuilder(TACLiveRange)))
 
