@@ -328,10 +328,7 @@ object Translator {
           case None => {
             val (exp1List, fstReg) = delegateASTNode(exp1)
             val (exp2List, sndReg) = delegateASTNode(exp2)
-
-            val fstReg2 = nextRegister()
-            val sndReg2 = nextRegister()
-
+            
             val dstReg = nextRegister()
 
             // addNode(pairValue, pairReg)
