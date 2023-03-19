@@ -458,6 +458,7 @@ object Assembler {
               for (i <- Range(0, length)) {
                 irs = irs ++
                   List(FinalIR.Ldr("", arr, ImmediateInt(i * POINTER_BYTE_SIZE), r0),
+                    FinalIR.Ldr("", r0, ImmediateInt(0), r0),
                     FinalIR.BranchLink("", BranchString("_printc")))
               }
               return irs
