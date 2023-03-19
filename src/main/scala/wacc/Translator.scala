@@ -287,11 +287,15 @@ object Translator {
   }
 
   def translateDeclaration(dataType: DeclarationType, ident: IdentLiteral, rvalue: RVal): (List[TAC], TRegister) = {
-    addType(ident, dataType)
+    println(dataType)
     dataType match {
-      case BaseType(baseType) => translateBaseDeclaration(baseType, ident, rvalue)
-      case PairType(fstType, sndType) => translatePairDeclaration(fstType, sndType, ident, rvalue)
-      case ArrayType(dataType, length) => translateArrayDeclaration(dataType, length, ident, rvalue)
+      case BaseType(baseType) =>
+        addType(ident, dataType)
+        translateBaseDeclaration(baseType, ident, rvalue)
+      case PairType(fstType, sndType) =>
+        addType(ident, dataType)
+        translatePairDeclaration(fstType, sndType, ident, rvalue)
+      case ArrayType(_, length) => translateArrayDeclaration(dataType, length, ident, rvalue)
     }
   }
 
@@ -303,7 +307,9 @@ object Translator {
         val arrReg = nextRegister()
         addNode(ident, arrReg)
         val elemType = dataType match {
-          case ArrayType(dType, length) => dType
+          case ArrayType(dType, length) =>
+            addType(ident, ArrayType(dType, elements.length))
+            dType
           case _ => dataType
         }
         for (i <- 0 to elements.length - 1) {
@@ -328,7 +334,7 @@ object Translator {
           case None => {
             val (exp1List, fstReg) = delegateASTNode(exp1)
             val (exp2List, sndReg) = delegateASTNode(exp2)
-            
+
             val dstReg = nextRegister()
 
             // addNode(pairValue, pairReg)
