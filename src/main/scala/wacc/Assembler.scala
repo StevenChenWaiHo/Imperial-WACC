@@ -268,12 +268,11 @@ object Assembler {
   def assembleProgram(tacList: List[TAC]): (List[FinalIR], collection.mutable.Map[String, List[FinalIR]]) = {
     val (finalCode, colouring) = allocationScheme.allocateRegisters
     this.colouring = colouring
-
-    //    endFuncs.map(elem => elem match {
-    //      case (name, state) => (name, state.code.toList)
-    //    })
-
-    (finalCode.toList.flatMap(assembleTAC), endFuncs)
+    var codeList = finalCode.toList
+    // if (target == X86) { // X86 starts with global
+    //   codeList = Global("main") :: codeList
+    // }
+    (codeList.flatMap(assembleTAC), endFuncs)
   }
 
   def assembleJump(label: Label): List[FinalIR] = {
