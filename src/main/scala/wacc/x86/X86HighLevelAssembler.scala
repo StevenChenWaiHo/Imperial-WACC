@@ -2,13 +2,14 @@ package wacc
 
 import wacc.AbstractSyntaxTree.BaseT.Char_T
 import wacc.AbstractSyntaxTree._
+import wacc.Assembler._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
 import wacc.cfgutils.{Colouring, RegisterAllocator}
 import wacc.FinalIR.FinalIR // TODO: change this to not import everything
 import wacc.X86AssemblerTypes._
-import wacc.X86HelperFunctions
+import wacc.X86HelperFunctions._
 
 import scala.collection.mutable.ListBuffer
 
@@ -186,9 +187,9 @@ object X86HighLevelAssembler {
       }
       case _ => "_readi"
     }
-    addEndFunc("_errOverflow", new X86HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
-    addEndFunc(bl, new X86HelperFunctions().assemble_read(bl))
+    addEndFunc("_errOverflow", X86HelperFunctions.assemble_errOverflow())
+    addEndFunc("_prints", X86HelperFunctions.assemble_prints())
+    addEndFunc(bl, X86HelperFunctions.assemble_read(bl))
     FinalIR.BranchLink("", new X86BranchString(bl)) ::
       FinalIR.Mov("", rax, getRealReg(readReg)) :: List()
   }
@@ -216,8 +217,8 @@ object X86HighLevelAssembler {
   }
 
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[FinalIR] = {
-    addEndFunc("_errNull", new X86HelperFunctions().assemble_errNull())
-    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
+    addEndFunc("_errNull", X86HelperFunctions.assemble_errNull())
+    addEndFunc("_prints", X86HelperFunctions.assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), new X86ImmediateInt(0)) ::
       FinalIR.BranchLink("", new X86BranchString("_errNull")) ::
@@ -229,8 +230,8 @@ object X86HighLevelAssembler {
   }
 
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): List[FinalIR] = {
-    addEndFunc("_errNull", new X86HelperFunctions().assemble_errNull())
-    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
+    addEndFunc("_errNull", X86HelperFunctions.assemble_errNull())
+    addEndFunc("_prints", X86HelperFunctions.assemble_prints())
 
     FinalIR.Cmp("", getRealReg(pairReg), new X86ImmediateInt(0)) ::
       FinalIR.BranchLink("", new X86BranchString("_errNull")) ::
@@ -287,8 +288,8 @@ object X86HighLevelAssembler {
         List(FinalIR.Smull("", new X86Status(), getRealReg(res), rax, getOperand(op1), getOperand(op2)))
       }
       case BinaryOpType.Div => {
-        addEndFunc("_errDivZero", new X86HelperFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new X86HelperFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", X86HelperFunctions.assemble_errDivZero())
+        addEndFunc("_prints", X86HelperFunctions.assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), rax) ::
           FinalIR.Mov("", getOperand(op2), rdi) ::
           FinalIR.Cmp("", rdi, new X86ImmediateInt(0)) ::
@@ -297,8 +298,8 @@ object X86HighLevelAssembler {
           FinalIR.Mov("", rax, getRealReg(res)) :: List()
         }
       case BinaryOpType.Mod => {
-        addEndFunc("_errDivZero", new X86HelperFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new X86HelperFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", X86HelperFunctions.assemble_errDivZero())
+        addEndFunc("_prints", X86HelperFunctions.assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), rax) ::
           FinalIR.Mov("", getOperand(op2), rdi) ::
           FinalIR.Cmp("", rdi, new X86ImmediateInt(0)) ::
@@ -416,9 +417,9 @@ object X86HighLevelAssembler {
 
           case ArrayType(t, _) if t is BaseType(Char_T) => "_prints"
         }
-        addEndFunc(bl, new X86HelperFunctions().assemble_print(bl))
+        addEndFunc(bl, X86HelperFunctions.assemble_print(bl))
         if (cmd == CmdT.PrintLn) {
-          addEndFunc("_println", new X86HelperFunctions().assemble_print("_println"))
+          addEndFunc("_println", X86HelperFunctions.assemble_print("_println"))
           FinalIR.Mov("", getOperand(operand), rax) ::
             FinalIR.BranchLink("", new X86BranchString(bl)) ::
             FinalIR.BranchLink("", new X86BranchString("_println")) :: List()
@@ -446,9 +447,9 @@ object X86HighLevelAssembler {
               FinalIR.BranchLink("", new X86BranchString("free")) :: List()
           }
           case PairType(fstType, sndType) => {
-            addEndFunc("_freepair", new X86HelperFunctions().assemble_freepair())
-            addEndFunc("_errNull", new X86HelperFunctions().assemble_errNull())
-            addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
+            addEndFunc("_freepair", X86HelperFunctions.assemble_freepair())
+            addEndFunc("_errNull", X86HelperFunctions.assemble_errNull())
+            addEndFunc("_prints", X86HelperFunctions.assemble_prints())
 
             FinalIR.Mov("", getOperand(operand), rax) ::
               FinalIR.BranchLink("", new X86BranchString("_freepair")) :: List()
@@ -460,7 +461,7 @@ object X86HighLevelAssembler {
   }
 
   def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): List[FinalIR] = {
-    addEndFunc("_malloc", new X86HelperFunctions().assemble_malloc())
+    addEndFunc("_malloc", X86HelperFunctions.assemble_malloc())
     FinalIR.Push("", List(rax)) ::
       FinalIR.Mov("", new X86ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1)), rax) ::
       FinalIR.BranchLink("", new X86BranchString("_malloc")) ::
@@ -488,8 +489,8 @@ object X86HighLevelAssembler {
   }
 
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): List[FinalIR] = {
-    addEndFunc("_arrLoad", new X86HelperFunctions().assemble_arrLoad())
-    addEndFunc("_boundsCheck", new X86HelperFunctions().assemble_boundsCheck())
+    addEndFunc("_arrLoad", X86HelperFunctions.assemble_arrLoad())
+    addEndFunc("_boundsCheck", X86HelperFunctions.assemble_boundsCheck())
     var regs = List(getRealReg(arrReg), getRealReg(dstReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     var output = List[FinalIR]()
@@ -509,8 +510,8 @@ object X86HighLevelAssembler {
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): List[FinalIR] = {
-    addEndFunc("_arrStore", new X86HelperFunctions().assemble_arrStore())
-    addEndFunc("_boundsCheck", new X86HelperFunctions().assemble_boundsCheck())
+    addEndFunc("_arrStore", X86HelperFunctions.assemble_arrStore())
+    addEndFunc("_boundsCheck", X86HelperFunctions.assemble_boundsCheck())
     
     var regs = List(getRealReg(arrReg), getRealReg(srcReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)

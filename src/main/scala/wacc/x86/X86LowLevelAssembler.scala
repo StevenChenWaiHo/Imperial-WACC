@@ -142,8 +142,8 @@ object X86LowLevelAssembler {
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
                     sourceRegister: LHSop, operand: LHSop): String = {
-    addEndFunc("_errOverflow", new X86HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
+    addEndFunc("_errOverflow", X86HelperFunctions.assemble_errOverflow())
+    addEndFunc("_prints", X86HelperFunctions.assemble_prints())
 
     condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
       "," + " " + operand +
@@ -153,8 +153,8 @@ object X86LowLevelAssembler {
 
 
   def addSubMulAssist(instr: String, condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    addEndFunc("_errOverflow", new X86HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new X86HelperFunctions().assemble_prints())
+    addEndFunc("_errOverflow", X86HelperFunctions.assemble_errOverflow())
+    addEndFunc("_prints", X86HelperFunctions.assemble_prints())
     if (op1 == dst) {
       instr + condition + setflag + " " + dst + ", " + op2 + "\njo _errOverflow"
     }

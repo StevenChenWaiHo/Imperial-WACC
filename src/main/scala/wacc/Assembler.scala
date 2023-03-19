@@ -224,9 +224,9 @@ object Assembler {
       }
       case _ => "_readi"
     }
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
-    addEndFunc(bl, new HelperFunctions().assemble_read(bl))
+    addEndFunc("_errOverflow", HelperFunctions.assemble_errOverflow())
+    addEndFunc("_prints", HelperFunctions.assemble_prints())
+    addEndFunc(bl, HelperFunctions.assemble_read(bl))
     FinalIR.BranchLink("", new BranchString(bl)) ::
       FinalIR.Mov("", r0, getRealReg(readReg)) :: List()
   }
@@ -254,8 +254,8 @@ object Assembler {
   }
     
   def checkNull(pairReg: TRegister) : List[FinalIR] = {
-    addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errNull", HelperFunctions.assemble_errNull())
+    addEndFunc("_prints", HelperFunctions.assemble_prints())
     
     FinalIR.Cmp("", getRealReg(pairReg), ImmediateInt(0)) ::
       FinalIR.BranchLink("eq", new BranchString("_errNull")) :: List()
@@ -350,8 +350,8 @@ object Assembler {
         List(FinalIR.Smull("", Status(), getRealReg(res), r0, getOperand(op1), getOperand(op2)))
       }
       case BinaryOpType.Div => {
-        addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", HelperFunctions.assemble_errDivZero())
+        addEndFunc("_prints", HelperFunctions.assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), r0) ::
           FinalIR.Mov("", getOperand(op2), r1) ::
           FinalIR.Cmp("", r1, new ImmediateInt(0)) ::
@@ -360,8 +360,8 @@ object Assembler {
           FinalIR.Mov("", r0, getRealReg(res)) :: List()
       }
       case BinaryOpType.Mod => {
-        addEndFunc("_errDivZero", new HelperFunctions().assemble_errDivZero())
-        addEndFunc("_prints", new HelperFunctions().assemble_print("_prints"))
+        addEndFunc("_errDivZero", HelperFunctions.assemble_errDivZero())
+        addEndFunc("_prints", HelperFunctions.assemble_print("_prints"))
         FinalIR.Mov("", getOperand(op1), r0) ::
           FinalIR.Mov("", getOperand(op2), r1) ::
           FinalIR.Cmp("", r1, ImmediateInt(0)) ::
@@ -480,9 +480,9 @@ object Assembler {
 
           case ArrayType(t, _) if t is BaseType(Char_T) => "_prints"
         }
-        addEndFunc(bl, new HelperFunctions().assemble_print(bl))
+        addEndFunc(bl, HelperFunctions.assemble_print(bl))
         if (cmd == CmdT.PrintLn) {
-          addEndFunc("_println", new HelperFunctions().assemble_print("_println"))
+          addEndFunc("_println", HelperFunctions.assemble_print("_println"))
           FinalIR.Mov("", getOperand(operand), r0) ::
             FinalIR.BranchLink("", new BranchString(bl)) ::
             FinalIR.BranchLink("", new BranchString("_println")) :: List()
@@ -508,9 +508,9 @@ object Assembler {
               FinalIR.BranchLink("", new BranchString("free")) :: List()
           }
           case PairType(fstType, sndType) => {
-            addEndFunc("_freepair", new HelperFunctions().assemble_freepair())
-            addEndFunc("_errNull", new HelperFunctions().assemble_errNull())
-            addEndFunc("_prints", new HelperFunctions().assemble_prints())
+            addEndFunc("_freepair", HelperFunctions.assemble_freepair())
+            addEndFunc("_errNull", HelperFunctions.assemble_errNull())
+            addEndFunc("_prints", HelperFunctions.assemble_prints())
 
             FinalIR.Mov("", getOperand(operand), r0) ::
               FinalIR.BranchLink("", new BranchString("_freepair")) :: List()
@@ -549,8 +549,8 @@ object Assembler {
   }
 
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): List[FinalIR] = {
-    addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
-    addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
+    addEndFunc("_arrLoad", HelperFunctions.assemble_arrLoad())
+    addEndFunc("_boundsCheck", HelperFunctions.assemble_boundsCheck())
     var output = List[FinalIR]()
     arrPos.foreach(a => {
       output = output ++
@@ -563,8 +563,8 @@ object Assembler {
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): List[FinalIR] = {
-    addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
-    addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
+    addEndFunc("_arrStore", HelperFunctions.assemble_arrStore())
+    addEndFunc("_boundsCheck", HelperFunctions.assemble_boundsCheck())
 
     var regs = List(getRealReg(arrReg), getRealReg(srcReg))
     regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)

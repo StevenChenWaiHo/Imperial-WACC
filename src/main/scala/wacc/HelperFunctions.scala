@@ -1,6 +1,6 @@
 package wacc
 
-import wacc.Assembler
+import wacc.Assembler._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
@@ -8,7 +8,7 @@ import wacc.FinalIR.FinalIR
 
 import scala.collection.mutable.ListBuffer
 // For ARM11 only
-class HelperFunctions extends Assembler(null, null) {
+object HelperFunctions {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
 
   implicit private[this] def toStrings(state: AssemblerState) = state.code.toList
