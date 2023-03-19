@@ -132,45 +132,6 @@ object Assembler {
     }
   }
 
-  // def assembleX86TAC(tripleAddressCode: TAC): List[FinalIR] = {
-  //   tripleAddressCode match {
-  //     case Global(name) => List(FinalIR.Global(name))
-  //     case Label(name) => List(FinalIR.Lbl(name))
-  //     case Comments(str) => List(FinalIR.Comment(str))
-  //     case DataSegmentTAC() => List(FinalIR.DataSeg())
-  //     case TextSegmentTAC() => List(FinalIR.TextSeg())
-  //     case StringLengthDefinitionTAC(len, _) => List(FinalIR.Word(len))
-  //     case StringDefinitionTAC(str, lbl) => X86HighLevelAssembler.assembleStringDef(str, lbl)
-  //     case BeginFuncTAC() => X86HighLevelAssembler.assembleBeginFunc()
-  //     case EndFuncTAC() => X86HighLevelAssembler.assembleEndFunc()
-  //     case AssignmentTAC(operand, reg) => X86HighLevelAssembler.assembleAssignment(operand, reg)
-  //     case CommandTAC(cmd, operand, opType) => X86HighLevelAssembler.assembleCommand(cmd, operand, opType)
-  //     case BinaryOpTAC(operation, op1, op2, res) => X86HighLevelAssembler.assembleBinOp(operation, op1, op2, res)
-  //     case IfTAC(t1, goto) => X86HighLevelAssembler.assembleIf(t1, goto)
-  //     case GOTO(label) => X86HighLevelAssembler.assembleJump(label)
-  //     case CreatePairElem(pairElemType, pairPos, ptrReg, pairElemReg) => X86HighLevelAssembler.assemblePairElem(pairElemType, pairPos, ptrReg, pairElemReg)
-  //     case CreatePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg) => X86HighLevelAssembler.assemblePair(fstType, sndType, fstReg, sndReg, srcReg, ptrReg, dstReg)
-  //     case GetPairElem(datatype, pairReg, pairPos, dstReg) => X86HighLevelAssembler.assembleGetPairElem(datatype, pairReg, pairPos, dstReg)
-  //     case StorePairElem(datatype, pairReg, pairPos, srcReg) => X86HighLevelAssembler.assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
-  //     case InitialiseArray(arrLen, lenReg, dstReg) => X86HighLevelAssembler.assembleArrayInit(arrLen, lenReg, dstReg)
-  //     case CreateArrayElem(arrayElemType, elemPos, arrReg, elemReg) => X86HighLevelAssembler.assembleArrayElem(arrayElemType, elemPos, arrReg, elemReg)
-  //     case CreateArray(arrayElemType, elemsReg, dstReg) => X86HighLevelAssembler.assembleArray(arrayElemType, elemsReg, dstReg)
-  //     case LoadArrayElem(datatype, arrReg, arrPos, dstReg) => X86HighLevelAssembler.assembleLoadArrayElem(datatype, arrReg, arrPos, dstReg)
-  //     case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => X86HighLevelAssembler.assembleStoreArrayElem(datatype, arrReg, arrPos, srcReg)
-  //     case UnaryOpTAC(op, t1, res) => X86HighLevelAssembler.assembleUnaryOp(op, t1, res)
-  //     case CallTAC(lbl, args, dstReg) => X86HighLevelAssembler.assembleCall(lbl, args, dstReg)
-  //     case PopParamTAC(datatype, treg, index) => X86HighLevelAssembler.assemblePopParam(datatype, treg, index)
-  //     case PushParamTAC(op) => List()
-  //     case ReadTAC(dataType, readReg) => X86HighLevelAssembler.assembleRead(dataType, readReg)
-  //     case ReservedPushTAC(reg, location, _) => List[FinalIR](FinalIR.Str("", rbp, X86ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
-  //     case ReservedPopTAC(location, reg, _) => List[FinalIR](FinalIR.Ldr("", rbp, X86ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
-  //     // ^Add 2 more to account for the fp and lr, which are pushed to the stack at the start of functions
-  //     case AllocateStackTAC(size) => if (size > 0) List(FinalIR.Sub("", X86None(), rsp, X86ImmediateInt(size * POINTER_BYTE_SIZE), rsp)) else List()
-  //     case PushTAC(tReg) => List(FinalIR.Push("", List(getRealReg(tReg))))
-  //     case PopTAC(tReg) => List(FinalIR.Pop("", List(getRealReg(tReg))))
-  //   }
-  // }
-
   def getInstructionType(decType: DeclarationType): String = {
     decType match {
       case BaseType(BaseT.Char_T) => "b"
@@ -543,9 +504,9 @@ object Assembler {
   //  str elemReg [r0, 0]
   //  str elemReg [arrReg, #Pos * 4]
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): List[FinalIR] = {
-      FinalIR.Mov("", ImmediateInt(getTypeSize(arrayElemType)), r0) ::
-      FinalIR.BranchLink("", new BranchString("malloc")) ::
-      FinalIR.Str("", r0, ImmediateInt(0), getRealReg(elemReg)) ::
+      // FinalIR.Mov("", ImmediateInt(getTypeSize(arrayElemType)), r0) ::
+      // FinalIR.BranchLink("", new BranchString("malloc")) ::
+      // FinalIR.Str("", r0, ImmediateInt(0), getRealReg(elemReg)) :: // may still work without these
       FinalIR.Str(getInstructionType(arrayElemType), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos), getRealReg(elemReg)) :: List()
   }
 
