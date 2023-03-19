@@ -25,10 +25,11 @@ object X86HelperFunctions {
     assembleTAC(StringDefinitionTAC("fatal error: null pair dereferenced or freed\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errNull")) ++
-    (FinalIR.Ldr("", rax, new X86LabelString(".L._errNull_str0"), rax) ::
-    FinalIR.BranchLink("", new X86BranchString("_prints")) ::
-    FinalIR.Mov("", new X86ImmediateInt(255), rax) ::
-    FinalIR.BranchLink("", new X86BranchString("exit")))
+    (FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+      FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("_prints")) ::
+      FinalIR.Mov("", new X86ImmediateInt(-1), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("exit@plt")))
   }
 
   def assemble_freepair(): List[FinalIR] = {
@@ -62,10 +63,11 @@ object X86HelperFunctions {
     assembleTAC(StringDefinitionTAC("fatal error: division or modulo by zero\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errDivZero")) ++
-    (FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rax) ::
-    FinalIR.BranchLink("", new X86BranchString("_prints")) ::
-    FinalIR.Mov("", new X86ImmediateInt(255), rax) ::
-    FinalIR.BranchLink("", new X86BranchString("exit")))
+    (FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+      FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("_prints")) ::
+      FinalIR.Mov("", new X86ImmediateInt(-1), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("exit@plt")))
   }
 
   def assemble_errOverflow(): List[FinalIR] = {
@@ -138,6 +140,7 @@ object X86HelperFunctions {
   }
 
   def assemble_malloc(): List[FinalIR] = {
+    assembleTAC(Label("_malloc")) ++
     FinalIR.Push("", List(rbp)) ::
       FinalIR.Mov("", rsp, rbp) ::
       FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
