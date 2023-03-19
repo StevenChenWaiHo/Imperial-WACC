@@ -74,6 +74,9 @@ object ARM11Assembler {
       case LabelString(x) => {
         str = str + "=" + x
       }
+      case LogicalShiftLeft(_, _) | LogicalShiftRight(_, _) => {
+        str = str + "[" + src.toString + ", " + operand + "]"
+      }
     }
     str
   }

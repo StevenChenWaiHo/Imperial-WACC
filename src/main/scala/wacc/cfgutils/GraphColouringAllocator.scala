@@ -86,9 +86,10 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
   // Push the minimal amount of registers possible before each function call.
   // This can only be done after the graph is coloured.
   private def pushBeforeCalls: Vector[TAC] = {
-
+    /* Construct register overwrite graph */
     /* Get function register definitions */
-    val funcDefs = mutable.Map[Label, Set[A]]()
+    var funcDefs = mutable.Map[Label, Set[A]]()
+    val funcCalls = mutable.Map[Label, Set[Label]]()
     var lastLabel: Label = null
     var currentFunc: Label = null
     var currentDefs = Set[A]()
@@ -98,9 +99,32 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
         currentFunc = lastLabel
         currentDefs = Set()
       }
+      case CallTAC(lbl, _, _) =>
+        currentDefs = currentDefs union node.defs.map(t => colouring.coloured(t))
+        if(funcCalls contains currentFunc) funcCalls.update(currentFunc, funcCalls(currentFunc) incl lbl)
+        else funcCalls.addOne(currentFunc -> Set(lbl))
       case EndFuncTAC() => funcDefs.addOne(currentFunc -> currentDefs)
       case _ => currentDefs = currentDefs union node.defs.map(t => colouring.coloured(t))
     }
+
+    /* Iteratively recalculate the registers overwritten by each function */
+    var currentFuncDefs = mutable.Map[Label, Set[A]]()
+
+    do {
+      currentFuncDefs = funcDefs.clone()
+      println
+      println
+      println("hihihi")
+      currentFuncDefs.map(println)
+      println
+      println
+      funcDefs = funcDefs.map {
+        kv =>
+          val (func, defs) = kv
+          val callDefs = funcCalls.getOrElse(func, Set()).flatMap(funcDefs)
+          (func, defs union callDefs)
+      }
+    } while (currentFuncDefs != funcDefs)
 
     /* Apply these definitions to calls */
     @tailrec
@@ -115,7 +139,7 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
             val pushTRegs: Vector[TRegister] = survivingTRegs.collect {
               case t if wipedRegs contains colouring.coloured(t) => t
             }.toVector
-            addPushes(initial.tail, result ++ pushTRegs.map(PushTAC) ++ (n +: pushTRegs.map(PopTAC)))
+            addPushes(initial.tail, result ++ pushTRegs.map(PushTAC) ++ (n +: pushTRegs.reverse.map(PopTAC)))
           case n => addPushes(initial.tail, result :+ n)
         }
       }

@@ -300,9 +300,8 @@ object Translator {
       case ArrayLiteral(elements) => {
         val tacs = ListBuffer[TAC]()
         val tRegs = ListBuffer[TRegister]() //required?
-        val lenReg = nextRegister()
-        val dstReg = nextRegister()
-        addNode(ident, dstReg)
+        val arrReg = nextRegister()
+        addNode(ident, arrReg)
         val elemType = dataType match {
           case ArrayType(dType, length) => dType
           case _ => dataType
@@ -312,10 +311,10 @@ object Translator {
           addNode(elements(i), reg)
           tacs ++= elemTacs
           tRegs += reg
-          tacs ++= List(Comments("ArrayElem Declaration Start"), CreateArrayElem(elemType, i, dstReg, reg), Comments("ArrayElem Declaration End"))
+          tacs ++= List(Comments("ArrayElem Declaration Start"), CreateArrayElem(elemType, i, arrReg, reg), Comments("ArrayElem Declaration End"))
         }
-        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, lenReg, dstReg)) ++ tacs.toList ++ List(CreateArray(elemType, tRegs.toList, dstReg),
-         Comments("Array Declaration End")), dstReg)
+        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, arrReg)) ++ tacs.toList ++ 
+         List(Comments("Array Declaration End")), arrReg)
       }
       case _ => (List(new Label("Array Type not Matched")), null)
     }
@@ -329,18 +328,14 @@ object Translator {
           case None => {
             val (exp1List, fstReg) = delegateASTNode(exp1)
             val (exp2List, sndReg) = delegateASTNode(exp2)
-            val pairReg = nextRegister()
-            val srcReg = nextRegister()
-            val ptrReg = nextRegister()
 
-            val fstReg2 = nextRegister()
-            val sndReg2 = nextRegister()
+            val dstReg = nextRegister()
              
             // addNode(pairValue, pairReg)
             (List(Comments("Creating newpair")) ++
-              exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, ptrReg, fstReg)) ++
-              exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, ptrReg, sndReg),
-              CreatePair(fstType, sndType, fstReg2, sndReg2, srcReg, ptrReg, pairReg), Comments("Created newpair")), pairReg)
+              exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, fstReg)) ++
+              exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, sndReg),
+              CreatePair(dstReg), Comments("Created newpair")), dstReg)
           }
         }
 
