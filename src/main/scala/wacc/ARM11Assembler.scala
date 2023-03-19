@@ -156,7 +156,7 @@ object ARM11Assembler {
     false
   }
 
-  def assembleMove(condition: String, src: LHSop, dst: Register): String = {
+  def assembleMove(condition: String, src: LHSop, dst: LHSop): String = {
     src match {
       case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
       case _ => "mov" + condition + " " + dst.toString + ", " + src.toString()

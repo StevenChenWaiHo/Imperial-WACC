@@ -76,10 +76,12 @@ object X86HelperFunctions {
     assembleTAC(StringDefinitionTAC("fatal error: integer overflow or underflow\n", sLbl)) ++
     assembleTAC(TextSegmentTAC()) ++
     assembleTAC(Label("_errOverflow")) ++
-    (FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rax) ::
-    FinalIR.BranchLink("", new X86BranchString("_prints")) ::
-    FinalIR.Mov("", new X86ImmediateInt(255), rax) ::
-    FinalIR.BranchLink("", new X86BranchString("exit")))
+    assembleTAC(Comments("external calls must be stack-aligned to 16 bytes, accomplished by masking with fffffffffffffff0")) ++
+    (FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+      FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("_prints")) ::
+      FinalIR.Mov("", new X86ImmediateInt(-1), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("exit@plt")))
   }
 
   // Special calling convention: array ptr passed in R9, index in R10, and return into R9

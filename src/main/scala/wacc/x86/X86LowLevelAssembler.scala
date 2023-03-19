@@ -135,23 +135,6 @@ object X86LowLevelAssembler {
     addSubMulAssist("mul", condition, setflag, op1, op2, dst)
   }
 
-  def assembleSmull(condition: String, setflag: Suffi, dst: LHSop, dst2: LHSop, op1: LHSop, op2: LHSop): String = {
-    val dstHigh = if (dst == op1) op2 else op1
-    "smull" + fourMulAssist(condition, setflag, dst, dstHigh, op1, op2)
-  }
-
-  def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
-                    sourceRegister: LHSop, operand: LHSop): String = {
-    addEndFunc("_errOverflow", X86HelperFunctions.assemble_errOverflow())
-    addEndFunc("_prints", X86HelperFunctions.assemble_prints())
-
-    condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + sourceRegister +
-      "," + " " + operand +
-      "\ncmp " + destinationHigh + ", " + destinationLow + ", asr #31" +
-      "\nbne _errOverflow"
-  }
-
-
   def addSubMulAssist(instr: String, condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
     addEndFunc("_errOverflow", X86HelperFunctions.assemble_errOverflow())
     addEndFunc("_prints", X86HelperFunctions.assemble_prints())
@@ -160,6 +143,15 @@ object X86LowLevelAssembler {
     }
     "mov " + dst + ", " + op1 + "\n" +
       instr + condition + setflag + " " + dst + ", " + op2 + "\njo _errOverflow"
+  }
+
+  def assembleSmull(condition: String, setflag: Suffi, dst: LHSop, dst2: LHSop, op1: LHSop, op2: LHSop): String = {
+    addEndFunc("_errOverflow", X86HelperFunctions.assemble_errOverflow())
+    addEndFunc("_prints", X86HelperFunctions.assemble_prints())
+
+    val dstHigh = if (dst == op1) op2 else op1
+    assembleMove("", op1, dst) + 
+    "imul" + condition + setflag + " " + dst + ", " + op2
   }
 
   def assembleAnd(condition: String, dst: LHSop, value: LHSop): String = {
@@ -182,7 +174,7 @@ object X86LowLevelAssembler {
     false
   }
 
-  def assembleMove(condition: String, src: LHSop, dst: Register): String = {
+  def assembleMove(condition: String, src: LHSop, dst: LHSop): String = {
     var ins = "j"
     if (condition.isEmpty) {
       "mov" + " " + dst.toString + ", " + src.toString()
