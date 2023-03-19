@@ -564,8 +564,8 @@ object Assembler {
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): List[FinalIR] = {
-    addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
-    addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
+    addEndFunc("_arrStore", HelperFunctions.assemble_arrStore())
+    addEndFunc("_boundsCheck", HelperFunctions.assemble_boundsCheck())
     var output = List[FinalIR]()
     arrPos.foreach(a => {
       output = output ++
