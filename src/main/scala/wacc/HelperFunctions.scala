@@ -110,7 +110,7 @@ class HelperFunctions extends Assembler(null) {
       FinalIR.Cmp("", r0, lr) ::
       FinalIR.Mov("ge", r0, r1) :: // r0 >= lr
       FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
-      FinalIR.Str("", LogicalShiftLeft(r0, Right(2)), r2, r3) :: 
+      FinalIR.Str("", r3, LogicalShiftLeft(r0, Right(2)), r2) :: 
       FinalIR.Pop("", List(pc)) :: List())
   }
 
