@@ -269,9 +269,9 @@ object Assembler {
     val (finalCode, colouring) = allocationScheme.allocateRegisters
     this.colouring = colouring
     var codeList = finalCode.toList
-    // if (target == X86) { // X86 starts with global
-    //   codeList = Global("main") :: codeList
-    // }
+    if (target == X86) { // X86 starts with global
+      codeList = Global("main") :: codeList
+    }
     (codeList.flatMap(assembleTAC), endFuncs)
   }
 
