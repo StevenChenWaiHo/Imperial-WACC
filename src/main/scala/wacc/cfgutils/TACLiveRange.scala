@@ -85,7 +85,12 @@ object TACLiveRange extends LiveRange {
         uses = List(arrReg, elemReg)
         defs = List()
 
-      case StoreArrayElem(_, arr, pos, src) => uses = (src +: arr +: pos)
+      case StoreArrayElem(_, arr, pos, src) => 
+        uses = List(arr, src) ++ pos
+
+      case LoadArrayElem(datatype, arr, pos, dst) => 
+        uses = List(arr) ++ pos
+        defs = List(dst)
 
       case ReadTAC(_, reg) => defs = List(reg)
 

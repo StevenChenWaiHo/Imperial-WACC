@@ -564,24 +564,16 @@ object Assembler {
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): List[FinalIR] = {
-    addEndFunc("_arrStore", HelperFunctions.assemble_arrStore())
-    addEndFunc("_boundsCheck", HelperFunctions.assemble_boundsCheck())
-
-    var regs = List(getRealReg(arrReg), getRealReg(srcReg))
-    regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
+    addEndFunc("_arrStore", new HelperFunctions().assemble_arrStore())
+    addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
     var output = List[FinalIR]()
-    output = output ++
-      (FinalIR.Push("", regs) ::
-        FinalIR.Push("", List(r0, r1, r2, r3)) :: List())
     arrPos.foreach(a => {
       output = output ++
-        (FinalIR.Mov("", r2, getRealReg(srcReg)) ::
-          FinalIR.Mov("", r0, getRealReg(a)) ::
-          FinalIR.Mov("", r3, getRealReg(arrReg)) :: // arrStore uses r3[r0] = r2
+        (FinalIR.Mov("", getRealReg(srcReg), r2) ::
+          FinalIR.Mov("", getRealReg(a), r0) ::
+          FinalIR.Mov("", getRealReg(arrReg), r3) :: // arrStore uses r3[r0] = r2
           FinalIR.BranchLink("", new BranchString("_arrStore")) :: List())
     })
-    output ++
-      (FinalIR.Pop("", List(r0, r1, r2, r3)) ::
-        FinalIR.Pop("", regs) :: List())
+    output
   }
 }
