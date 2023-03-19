@@ -204,7 +204,7 @@ object Translator {
   def translatePairElem(elem: PairElemT.Elem, lvalue: LVal): (List[TAC], TRegister) = {
     val (pairRegList, pairReg) = delegateASTNode(lvalue)
     val elemType = lvalue match {
-      case ArrayElem(name, indices) => findType(name).get 
+      case ArrayElem(name, indices) => findType(name).get
       case _ => {
         val (fstType, sndType) = findType(lvalue) match {
           case Some(PairType(fstType, sndType)) => (fstType, sndType)
@@ -335,7 +335,7 @@ object Translator {
 
             val fstReg2 = nextRegister()
             val sndReg2 = nextRegister()
-             
+
             // addNode(pairValue, pairReg)
             (List(Comments("Creating newpair")) ++
               exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, ptrReg, fstReg)) ++
@@ -349,7 +349,7 @@ object Translator {
         val reg = nextRegister()
         (List(AssignmentTAC(PairLiteralTAC(), reg)), reg)
       }
-      
+
       case PairElement(elem, lvalue) => translatePairElem(elem, lvalue)
       // PairLiteral or IdentLiteral
       case lit@(_: Literal | _: Call) => {
@@ -388,7 +388,7 @@ object Translator {
       case PairElement(elem, lvalue) => {
         val (lvalueList, lvalueReg) = delegateASTNode(lvalue)
         val elemType = lvalue match {
-          case ArrayElem(name, indices) => findType(name).get 
+          case ArrayElem(name, indices) => findType(name).get
           case _ => {
             val (fstType, sndType) = findType(lvalue) match {
               case Some(PairType(fstType, sndType)) => (fstType, sndType)
@@ -397,7 +397,7 @@ object Translator {
             if (elem == PairElemT.Fst) fstType else sndType
           }
         }
-        (rvalueList ++ lvalueList ++ 
+        (rvalueList ++ lvalueList ++
         List(Comments("Store Pair Elem")) ++ List(StorePairElem(elemType, lvalueReg, elem, rvalueReg)) ++ List(Comments("Finish Storing Pair Elem")), lvalueReg)
       }
       case _ => (List(Label("Not translating PairElem")), null)
@@ -413,7 +413,7 @@ object Translator {
           indexNodes += delegateASTNode(i)._2
         })
         val lvalueReg = findNode(name).get
-        (rvalueList ++ 
+        (rvalueList ++
         List(Comments("Store Array Elem")) ++ List(StoreArrayElem(null, lvalueReg, indexNodes.toList, rvalueReg)) ++ List(Comments("Finish storing Array Elem")), lvalueReg)
       }
       case _ => (List(Label("Not translating ArrayElem")), null)
@@ -438,10 +438,10 @@ object Translator {
       funcTAClist.addAll(translateFunction(f))
     })
     // Save main .data and .text segment
-    dataList.toList ++ 
+    dataList.toList ++
     List[TAC](TextSegmentTAC()) ++
-    List(Label("main"), BeginFuncTAC()) ++ 
-    tacList ++ List(EndFuncTAC()) ++ 
+    List(Label("main"), BeginFuncTAC()) ++
+    tacList ++ List(EndFuncTAC()) ++
     funcTAClist.toList
   }
 

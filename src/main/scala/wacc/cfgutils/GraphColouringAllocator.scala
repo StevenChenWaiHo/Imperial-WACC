@@ -32,8 +32,15 @@ class GraphColouringAllocator[A](regs: List[A], tacs: Vector[TAC], cfgBuilder: C
 
   private def recolour(): Unit = {
     cfg = cfgBuilder.build(nextTacs)
+    println
+    cfg.nodes.foreach(println)
+    println
     interferenceGraph = new InterferenceGraph(cfg)
     colouring = new GraphColourer[A](regs, interferenceGraph).attemptColouring
+    println
+    println(colouring.coloured.foreach(println))
+    println
+
   }
 
   private def spill(colouring: Colouring[A]): Unit = {
@@ -199,7 +206,7 @@ private class InterferenceGraph(cfg: CFG) {
     val inters = mutable.Map[TRegister, Set[TRegister]]()
     cfg.nodes.foreach {
       node: CFGNode =>
-        node.liveOut.foreach(t => inters.update(t, inters.getOrElse(t, Set()) union node.liveOut excl t))
+        (node.liveOut union node.defs).foreach(t => inters.update(t, inters.getOrElse(t, Set()) union node.liveOut excl t))
         // Ensure that every tRegister gets a node (even if it doesn't get used)
         node.defs.foreach(t => if (!(inters contains t)) inters.update(t, Set()))
     }
