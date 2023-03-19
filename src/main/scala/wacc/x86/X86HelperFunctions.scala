@@ -17,6 +17,37 @@ object X86HelperFunctions {
 
   implicit private[this] def updateState(instr: FinalIR): AssemblerState = state.addInstruction(instr)
 
+  def assemble_free(): List[FinalIR] = {
+    assembleTAC(Label("_free")) ++
+    (FinalIR.Push("", List(rbp)) ::
+      FinalIR.Mov("", rsp, rbp) ::
+      FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+      FinalIR.BranchLink("", new X86BranchString("free@plt")) ::
+      FinalIR.Mov("", rbp, rsp) ::
+      FinalIR.Pop("", List(rbp)) ::
+      FinalIR.Ret() :: List())
+  }
+
+  def assemble_freepair(): List[FinalIR] = {
+    assembleTAC(TextSegmentTAC()) ++
+    assembleTAC(Label("_freepair")) ++
+    (FinalIR.Push("", List(rbp)) ::
+      FinalIR.Mov("", rsp, rbp) ::
+      FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
+      FinalIR.Mov("", rdi, rbx) ::
+      FinalIR.Cmp("", rbx, new X86ImmediateInt(0)) ::
+      FinalIR.Branch("e", "_errNull") ::
+      FinalIR.Ldr("", rbx, new X86ImmediateInt(0), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("free@plt")) ::
+      FinalIR.Ldr("", rbx, new X86ImmediateInt(8), rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("free@plt")) ::
+      FinalIR.Mov("", rbx, rdi) ::
+      FinalIR.BranchLink("", new X86BranchString("free@plt")) ::
+      FinalIR.Mov("", rbp, rsp) ::
+      FinalIR.Pop("", List(rbp)) ::
+      FinalIR.Ret() :: List())
+  }
+
   def assemble_errNull(): List[FinalIR] = {
     val sLbl = new Label(".L._errNull_str0")
     assembleTAC(DataSegmentTAC()) ++
@@ -29,31 +60,8 @@ object X86HelperFunctions {
       FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
       FinalIR.BranchLink("", new X86BranchString("_prints")) ::
       FinalIR.Mov("", new X86ImmediateInt(-1), rdi) ::
-      FinalIR.BranchLink("", new X86BranchString("exit@plt")))
+      FinalIR.BranchLink("", new X86BranchString("exit@plt")) :: List())
   }
-
-  def assemble_freepair(): List[FinalIR] = {
-    assembleTAC(TextSegmentTAC()) ++
-    assembleTAC(Label("_freepair")) ++
-    (FinalIR.Push("", List(rbx)) ::
-    FinalIR.Mov("", rax, rdi) ::
-    FinalIR.Cmp("", rdi, new X86ImmediateInt(0)) ::
-    FinalIR.BranchLink("e", new X86BranchString("_errNull")) ::
-    FinalIR.Ldr("", rdi, new X86ImmediateInt(0), rax) ::
-    FinalIR.Push("", List(rdi)) ::
-    FinalIR.BranchLink("", new X86BranchString("free")) ::
-    FinalIR.Pop("", List(rdi)) ::
-    FinalIR.Ldr("", rdi, new X86ImmediateInt(POINTER_BYTE_SIZE), rax) ::
-    FinalIR.Push("", List(rdi)) ::
-    FinalIR.BranchLink("", new X86BranchString("free")) ::
-    FinalIR.Pop("", List(rdi)) ::
-    FinalIR.Mov("", rdi, rax) ::
-    FinalIR.Push("", List(rdi)) ::
-    FinalIR.BranchLink("", new X86BranchString("free")) ::
-    FinalIR.Pop("", List(rdi)) ::
-    FinalIR.Pop("", List(rbx)))
-  }
-
   
   def assemble_errDivZero(): List[FinalIR] = {
     val sLbl = Label(".L._errDivZero_str0")
@@ -67,7 +75,7 @@ object X86HelperFunctions {
       FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
       FinalIR.BranchLink("", new X86BranchString("_prints")) ::
       FinalIR.Mov("", new X86ImmediateInt(-1), rdi) ::
-      FinalIR.BranchLink("", new X86BranchString("exit@plt")))
+      FinalIR.BranchLink("", new X86BranchString("exit@plt")) :: List())
   }
 
   def assemble_errOverflow(): List[FinalIR] = {
@@ -83,7 +91,7 @@ object X86HelperFunctions {
       FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
       FinalIR.BranchLink("", new X86BranchString("_prints")) ::
       FinalIR.Mov("", new X86ImmediateInt(-1), rdi) ::
-      FinalIR.BranchLink("", new X86BranchString("exit@plt")))
+      FinalIR.BranchLink("", new X86BranchString("exit@plt")) :: List())
   }
 
   // Special calling convention: array ptr passed in R9, index in R10, and return into R9
@@ -101,7 +109,7 @@ object X86HelperFunctions {
       FinalIR.BranchLink("ge", new X86BranchString("_boundsCheck")) ::
       FinalIR.Ldr("sx", rdx, X86AssemblerTypes.LogicalShiftLeft(rsi, Right(2)), rax) ::
       FinalIR.Pop("", List(rbx)) ::
-      FinalIR.Ret())
+      FinalIR.Ret() :: List())
   }
 
   // Special calling convention: array ptr passed in R9, index in R10, value to store in RAX
@@ -119,7 +127,7 @@ object X86HelperFunctions {
       FinalIR.BranchLink("ge", new X86BranchString("_boundsCheck")) ::
       FinalIR.Str("", X86AssemblerTypes.LogicalShiftLeft(rax, Right(2)), rsi, rdx) :: // TODO: Logical shift does not work
       FinalIR.Pop("", List(rbx)) ::
-      FinalIR.Ret())
+      FinalIR.Ret() :: List())
   }
 
   def assemble_boundsCheck(): List[FinalIR] = {
@@ -136,7 +144,7 @@ object X86HelperFunctions {
       FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
       FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
       FinalIR.Mov("", new X86ImmediateInt(-1), rdi) ::
-      FinalIR.BranchLink("", new X86BranchString("exit@plt")))
+      FinalIR.BranchLink("", new X86BranchString("exit@plt")) :: List())
   }
 
   def assemble_malloc(): List[FinalIR] = {
@@ -147,7 +155,7 @@ object X86HelperFunctions {
       FinalIR.BranchLink("", new X86BranchString("malloc@plt")) ::
       FinalIR.Mov("", rbp, rsp) ::
       FinalIR.Pop("", List(rbp)) ::
-      FinalIR.Ret() :: List()) //not sure why only this needs to :: List()
+      FinalIR.Ret() :: List())
   }
 
   def assemble_print(pType: String): List[FinalIR] = {
@@ -181,7 +189,7 @@ object X86HelperFunctions {
         FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
-        FinalIR.Ret())
+        FinalIR.Ret() :: List())
    }
 
   def assemble_prints(): List[FinalIR] = {
@@ -204,7 +212,7 @@ object X86HelperFunctions {
         FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
-        FinalIR.Ret())
+        FinalIR.Ret() :: List())
   }
 
   def assemble_printc(): List[FinalIR] = {
@@ -226,7 +234,7 @@ object X86HelperFunctions {
         FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
-        FinalIR.Ret())
+        FinalIR.Ret() :: List())
   }
 
   def assemble_printi(): List[FinalIR] = {
@@ -248,7 +256,7 @@ object X86HelperFunctions {
         FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
-        FinalIR.Ret())
+        FinalIR.Ret() :: List())
   }
 
   def assemble_println(): List[FinalIR] = {
@@ -268,7 +276,7 @@ object X86HelperFunctions {
         FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
-        FinalIR.Ret())
+        FinalIR.Ret() :: List())
   }
 
   def assemble_printb(): List[FinalIR] = {
@@ -306,7 +314,7 @@ object X86HelperFunctions {
         FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
-        FinalIR.Ret())
+        FinalIR.Ret() :: List())
   }
 
   def assemble_read(rType: String): List[FinalIR] = {
@@ -338,7 +346,7 @@ object X86HelperFunctions {
         FinalIR.Add("", new X86None(), rsp, new X86ImmediateInt(16), rsp) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
-        FinalIR.Ret())
+        FinalIR.Ret() :: List())
   }
 
   def assemble_readc(): List[FinalIR] = {
@@ -362,7 +370,7 @@ object X86HelperFunctions {
         FinalIR.Add("", new X86None(), rsp, new X86ImmediateInt(16), rsp) ::
         FinalIR.Mov("", rbp, rsp) ::
         FinalIR.Pop("", List(rbp)) ::
-        FinalIR.Ret())
+        FinalIR.Ret() :: List())
   }
 
 }

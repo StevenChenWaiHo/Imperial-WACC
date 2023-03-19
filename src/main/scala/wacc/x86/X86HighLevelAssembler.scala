@@ -56,11 +56,10 @@ object X86HighLevelAssembler {
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
       
       // Array
-      // case InitialiseArray(arrLen, lenReg, dstReg) => assembleArrayInit(arrLen, lenReg, dstReg)
-      // case CreateArrayElem(arrayElemType, elemPos, arrReg, elemReg) => assembleArrayElem(arrayElemType, elemPos, arrReg, elemReg)
-      // case CreateArray(arrayElemType, elemsReg, dstReg) => assembleArray(arrayElemType, elemsReg, dstReg)
-      // case LoadArrayElem(datatype, arrReg, arrPos, dstReg) => assembleLoadArrayElem(datatype, arrReg, arrPos, dstReg)
-      // case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => assembleStoreArrayElem(datatype, arrReg, arrPos, srcReg)
+      case InitialiseArray(arrLen, dstReg) => assembleArrayInit(arrLen, dstReg)
+      case CreateArrayElem(arrayElemType, elemPos, arrReg, elemReg) => assembleArrayElem(arrayElemType, elemPos, arrReg, elemReg)
+      case LoadArrayElem(datatype, arrReg, arrPos, dstReg) => assembleLoadArrayElem(datatype, arrReg, arrPos, dstReg)
+      case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => assembleStoreArrayElem(datatype, arrReg, arrPos, srcReg)
       
       case CallTAC(lbl, args, dstReg) => assembleCall(lbl, args, dstReg)
       case PopParamTAC(datatype, treg, index) => assemblePopParam(datatype, treg, index)
@@ -361,13 +360,14 @@ object X86HighLevelAssembler {
       case CmdT.Free => {
         opType match {
           case ArrayType(dataType, length) => {
+            addEndFunc("_free", X86HelperFunctions.assemble_free())
             // why is r4/rcx here
             FinalIR.Sub("", new X86Status(), rcx, new X86ImmediateInt(POINTER_BYTE_SIZE), X86AssemblerTypes.r8) ::
               FinalIR.Push("", List(X86AssemblerTypes.r8)) ::
               FinalIR.Pop("", List(X86AssemblerTypes.r8)) ::
               FinalIR.Mov("", X86AssemblerTypes.r8, X86AssemblerTypes.r8) ::
               FinalIR.Mov("", X86AssemblerTypes.r8, rax) ::
-              FinalIR.BranchLink("", new X86BranchString("free")) :: List()
+              FinalIR.BranchLink("", new X86BranchString("_free")) :: List()
           }
           case PairType(fstType, sndType) => {
             addEndFunc("_freepair", X86HelperFunctions.assemble_freepair())
@@ -383,74 +383,45 @@ object X86HighLevelAssembler {
     }
   }
 
-  def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): List[FinalIR] = {
+  def assembleArrayInit(arrLen: Int, dstReg: TRegister): List[FinalIR] = {
     addEndFunc("_malloc", X86HelperFunctions.assemble_malloc())
-    FinalIR.Push("", List(rax)) ::
-      FinalIR.Mov("", new X86ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1)), rax) ::
+    FinalIR.Mov("", new X86ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1)), rdi) ::
       FinalIR.BranchLink("", new X86BranchString("_malloc")) ::
       FinalIR.Mov("", rax, getRealReg(dstReg)) ::
-      FinalIR.Pop("", List(rax)) ::
-      FinalIR.Add("", new X86Status(), getRealReg(dstReg), new X86ImmediateInt(POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
-      FinalIR.Mov("", new X86ImmediateInt(arrLen), getRealReg(lenReg)) ::
-      FinalIR.Str("", getRealReg(lenReg), new X86ImmediateInt(-POINTER_BYTE_SIZE), getRealReg(dstReg)) :: List()
-  }
-
-  def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): List[FinalIR] = {
-    List[FinalIR]()
+      FinalIR.Add("", X86Status(), getRealReg(dstReg), new X86ImmediateInt(POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
+      FinalIR.Mov("", new X86ImmediateInt(arrLen), rax) ::
+      FinalIR.StrPre("", getRealReg(dstReg), new X86ImmediateInt(-POINTER_BYTE_SIZE), rax) :: List()
   }
 
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): List[FinalIR] = {
-    FinalIR.Push("", List(getRealReg(elemReg))) ::
-      FinalIR.Push("", List(rax)) ::
-      FinalIR.Mov("", new X86ImmediateInt(getTypeSize(arrayElemType)), rax) ::
-      FinalIR.BranchLink("", new X86BranchString("malloc")) ::
-      FinalIR.Str("", rax, new X86ImmediateInt(0), getRealReg(elemReg)) ::
-      FinalIR.Str(getInstructionType(arrayElemType), getRealReg(arrReg), new X86ImmediateInt(POINTER_BYTE_SIZE * elemPos), getRealReg(elemReg)) ::
-      FinalIR.Mov("", rax, getRealReg(elemReg)) ::
-      FinalIR.Pop("", List(rax)) ::
-      FinalIR.Pop("", List(getRealReg(elemReg))) :: List()
+      FinalIR.StrPre(getInstructionType(arrayElemType), getRealReg(elemReg), new X86ImmediateInt(POINTER_BYTE_SIZE * elemPos), getRealReg(arrReg)) :: List()
   }
 
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): List[FinalIR] = {
     addEndFunc("_arrLoad", X86HelperFunctions.assemble_arrLoad())
     addEndFunc("_boundsCheck", X86HelperFunctions.assemble_boundsCheck())
-    var regs = List(getRealReg(arrReg), getRealReg(dstReg))
-    regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     var output = List[FinalIR]()
-    output = output ++
-      (FinalIR.Push("", regs) ::
-        FinalIR.Push("", List(rax, rdi, rsi, rdx)) :: List())
     arrPos.foreach(a => {
-      output = output ++ 
-      (FinalIR.Mov("", rsi, getRealReg(a)) ::
-        FinalIR.Mov("", rdx, getRealReg(arrReg)) :: // arrLoad uses rax = rdx[rsi]
+      output = output ++
+      (FinalIR.Mov("", getRealReg(a), rsi) ::
+        FinalIR.Mov("", getRealReg(arrReg), rdx) :: // arrLoad uses rax = rdx[rsi]
         FinalIR.BranchLink("", new X86BranchString("_arrLoad")) ::
-        FinalIR.Mov("", getRealReg(dstReg), rax) :: List())
+        FinalIR.Mov("", rax, getRealReg(dstReg)) :: List())
     })
-    output ++
-    (FinalIR.Pop("", List(rax, rdi, rsi, rdx)) ::
-      FinalIR.Pop("", regs) :: List())
+    output
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): List[FinalIR] = {
     addEndFunc("_arrStore", X86HelperFunctions.assemble_arrStore())
     addEndFunc("_boundsCheck", X86HelperFunctions.assemble_boundsCheck())
-    
-    var regs = List(getRealReg(arrReg), getRealReg(srcReg))
-    regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     var output = List[FinalIR]()
-    output = output ++
-      (FinalIR.Push("", regs) ::
-        FinalIR.Push("", List(rax, rdi, rsi, rdx)) :: List())
     arrPos.foreach(a => {
       output = output ++
-      (FinalIR.Mov("", rsi, getRealReg(srcReg)) ::
-        FinalIR.Mov("", rax, getRealReg(a)) ::
-        FinalIR.Mov("", rdx, getRealReg(arrReg)) :: // arrStore uses rdx[rax] = rsi
+      (FinalIR.Mov("", getRealReg(srcReg), rsi) ::
+        FinalIR.Mov("", getRealReg(a), rax) ::
+        FinalIR.Mov("", getRealReg(arrReg), rdx) :: // arrStore uses rdx[rax] = rsi
         FinalIR.BranchLink("", new X86BranchString("_arrStore")) :: List())
     })
-    output ++
-    (FinalIR.Pop("", List(rax, rdi, rsi, rdx)) ::
-      FinalIR.Pop("", regs) :: List())
+    output
   }
 }
