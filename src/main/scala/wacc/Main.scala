@@ -10,6 +10,8 @@ import wacc.cfgutils.{GraphColouringAllocator, TACLiveRange}
 import wacc.Optimisations.Inlining.inline_delegateASTNode
 import wacc.ARM11Assembler
 import wacc.TAC._
+import wacc.X86AssemblerTypes._
+import wacc.X86LowLevelAssembler._
 import wacc.Optimisations.PeepholeOptimisation.PeepholeOptimise
 import wacc.ArchitectureType.getArchitecture
 
@@ -90,13 +92,18 @@ object Main {
     
     tac.foreach(l => println(l))
 
+    val regsList = target match {
+      case ArchitectureType.ARM11 => List(r4, r5, r6, r7, AssemblerTypes.r8, AssemblerTypes.r10)
+      case ArchitectureType.X86 => List(X86AssemblerTypes.rcx, X86AssemblerTypes.r8, X86AssemblerTypes.r9, X86AssemblerTypes.r10, X86AssemblerTypes.r11, X86AssemblerTypes.r12, X86AssemblerTypes.r13, X86AssemblerTypes.r14, X86AssemblerTypes.r15)
+    }
+
     // Convert the TAC to IR
-    val assembler = new Assembler(
+    Assembler.apply(target, 
       new GraphColouringAllocator[AssemblerTypes.Register](
-        List(r4, r5, r6, r7, r8, r10), tac.toVector, new CFGBuilder(TACLiveRange)))
+        regsList, tac.toVector, new CFGBuilder(TACLiveRange)))
 
 
-    val (ir, funcs) = assembler.assembleProgram(tac)
+    val (ir, funcs) = Assembler.assembleProgram(tac)
 
     println("--- FinalIR ---")
     ir.foreach{x => println(x)}
@@ -116,7 +123,7 @@ object Main {
       }
       case ArchitectureType.X86 => {
         // Convert the IR to X86_64
-        //val asm = X86Assembler.assemble(result, funcs)
+        asm = X86LowLevelAssembler.assemble(result, funcs)
         println("--- X86_64 ---")
       }
     }

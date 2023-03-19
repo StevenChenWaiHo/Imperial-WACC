@@ -124,8 +124,8 @@ object ARM11Assembler {
 
   def fourMulAssist(condition: String, setflag: Suffi, destinationLow: LHSop, destinationHigh: LHSop,
                     op1: LHSop, op2: LHSop): String = {
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errOverflow", HelperFunctions.assemble_errOverflow())
+    addEndFunc("_prints", HelperFunctions.assemble_prints())
 
     condition + setflag + " " + destinationLow + "," + " " + destinationHigh + "," + " " + op1 +
       "," + " " + op2 +
@@ -135,8 +135,8 @@ object ARM11Assembler {
 
 
   def addSubMulAssist(condition: String, setflag: Suffi, op1: LHSop, op2: LHSop, dst: LHSop): String = {
-    addEndFunc("_errOverflow", new HelperFunctions().assemble_errOverflow())
-    addEndFunc("_prints", new HelperFunctions().assemble_prints())
+    addEndFunc("_errOverflow", HelperFunctions.assemble_errOverflow())
+    addEndFunc("_prints", HelperFunctions.assemble_prints())
     condition + setflag + " " + dst + ", " + op1 + ", " + op2 + "\nblvs _errOverflow"
   }
 
@@ -156,7 +156,7 @@ object ARM11Assembler {
     false
   }
 
-  def assembleMove(condition: String, src: LHSop, dst: Register): String = {
+  def assembleMove(condition: String, src: LHSop, dst: LHSop): String = {
     src match {
       case ImmediateInt(i) if !checkMovCases(i) => "ldr " + condition + " " + dst.toString() + ", =" + i
       case _ => "mov" + condition + " " + dst.toString + ", " + src.toString()

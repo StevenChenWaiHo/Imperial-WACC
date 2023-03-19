@@ -83,6 +83,11 @@ object TAC {
     override def toString(): String = "goto: " + label.name
   }
 
+  case class Global(var name: String = "label") extends TAC with Operand {
+    this.name = name 
+    override def toString(): String = "global: " + name
+  }
+
   case class Label(var name: String = "label") extends TAC with Operand {
     this.name = name
 
