@@ -123,7 +123,7 @@ object Main {
       }
       case ArchitectureType.X86 => {
         // Convert the IR to X86_64
-        val asm = X86LowLevelAssembler.assemble(result, funcs)
+        asm = X86LowLevelAssembler.assemble(result, funcs)
         println("--- X86_64 ---")
       }
     }

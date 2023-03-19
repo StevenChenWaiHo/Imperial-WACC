@@ -1,5 +1,6 @@
 package wacc
 
+import wacc.Assembler._
 import wacc.X86AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
