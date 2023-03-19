@@ -329,18 +329,14 @@ object Translator {
           case None => {
             val (exp1List, fstReg) = delegateASTNode(exp1)
             val (exp2List, sndReg) = delegateASTNode(exp2)
-            val pairReg = nextRegister()
-            val srcReg = nextRegister()
-            val ptrReg = nextRegister()
 
-            val fstReg2 = nextRegister()
-            val sndReg2 = nextRegister()
+            val dstReg = nextRegister()
              
             // addNode(pairValue, pairReg)
             (List(Comments("Creating newpair")) ++
-              exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, ptrReg, fstReg)) ++
-              exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, ptrReg, sndReg),
-              CreatePair(fstType, sndType, fstReg2, sndReg2, srcReg, ptrReg, pairReg), Comments("Created newpair")), pairReg)
+              exp1List ++ List(CreatePairElem(fstType, PairElemT.Fst, fstReg)) ++
+              exp2List ++ List(CreatePairElem(sndType, PairElemT.Snd, sndReg),
+              CreatePair(dstReg), Comments("Created newpair")), dstReg)
           }
         }
 
