@@ -8,12 +8,13 @@ import wacc.FinalIR.FinalIR
 import wacc.RegisterAllocator._
 import wacc.TAC._
 import wacc.X86AssemblerTypes._
-import wacc.X86HighLevelAssembler._
 import wacc.cfgutils.{Colouring, RegisterAllocator}
 
 import scala.collection.mutable.ListBuffer
 
-class Assembler(target: Architecture, allocationScheme: RegisterAllocator[Register]) {
+object Assembler {
+  var target: Architecture = null
+  var allocationScheme: RegisterAllocator[Register] = null
   var colouring: Colouring[Register] = null
 
   private[this] val state = target match {
@@ -27,6 +28,11 @@ class Assembler(target: Architecture, allocationScheme: RegisterAllocator[Regist
     case _ => List(r0, r1, r2, r3)
   }
   val POINTER_BYTE_SIZE = 4
+
+  def apply(target: Architecture, allocationScheme: RegisterAllocator[Register]) = {
+    this.target = target
+    this.allocationScheme = allocationScheme
+  }
 
   // Add predefined function to end of assembly code (.e.g _prints)
   def addEndFunc(name: String, code: List[FinalIR]): Unit = {
@@ -185,7 +191,6 @@ class Assembler(target: Architecture, allocationScheme: RegisterAllocator[Regist
       case _ => 4
     }
   }
-
   
   def assembleUnaryOp(op: UnaryOpType.UnOp, t1: Operand, res: TRegister): List[FinalIR] = {
     op match {

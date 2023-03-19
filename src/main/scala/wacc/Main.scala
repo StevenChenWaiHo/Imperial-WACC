@@ -10,6 +10,8 @@ import wacc.cfgutils.{GraphColouringAllocator, TACLiveRange}
 import wacc.Optimisations.Inlining.inline_delegateASTNode
 import wacc.ARM11Assembler
 import wacc.TAC._
+import wacc.X86AssemblerTypes._
+import wacc.X86LowLevelAssembler._
 import wacc.Optimisations.PeepholeOptimisation.PeepholeOptimise
 import wacc.ArchitectureType.getArchitecture
 
@@ -96,12 +98,12 @@ object Main {
     }
 
     // Convert the TAC to IR
-    val assembler = new Assembler(target, 
+    Assembler.apply(target, 
       new GraphColouringAllocator[AssemblerTypes.Register](
         regsList, tac.toVector, new CFGBuilder(TACLiveRange)))
 
 
-    val (ir, funcs) = assembler.assembleProgram(tac)
+    val (ir, funcs) = Assembler.assembleProgram(tac)
 
     println("--- FinalIR ---")
     ir.foreach{x => println(x)}
