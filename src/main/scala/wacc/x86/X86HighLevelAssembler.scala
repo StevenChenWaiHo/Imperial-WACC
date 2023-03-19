@@ -66,10 +66,10 @@ object X86HighLevelAssembler {
       case PopParamTAC(datatype, treg, index) => assemblePopParam(datatype, treg, index)
       case PushParamTAC(op) => List()
       case ReadTAC(dataType, readReg) => assembleRead(dataType, readReg)
-      case ReservedPushTAC(reg, location, _) => List[FinalIR](FinalIR.Str("", fp, ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
-      case ReservedPopTAC(location, reg, _) => List[FinalIR](FinalIR.Ldr("", fp, ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
+      case ReservedPushTAC(reg, location, _) => List[FinalIR](FinalIR.Str("", rbp, X86ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
+      case ReservedPopTAC(location, reg, _) => List[FinalIR](FinalIR.Ldr("", rbp, X86ImmediateInt((location + 2) * POINTER_BYTE_SIZE), getRealReg(reg)))
       // ^Add 2 more to account for the fp and lr, which are pushed to the stack at the start of functions
-      case AllocateStackTAC(size) => if (size > 0) List(FinalIR.Sub("", AssemblerTypes.None(), sp, ImmediateInt(size * POINTER_BYTE_SIZE), sp)) else List()
+      case AllocateStackTAC(size) => if (size > 0) List(FinalIR.Sub("", X86None(), rsp, X86ImmediateInt(size * POINTER_BYTE_SIZE), rsp)) else List()
       case PushTAC(tReg) => List(FinalIR.Push("", List(getRealReg(tReg))))
       case PopTAC(tReg) => List(FinalIR.Pop("", List(getRealReg(tReg))))
     }

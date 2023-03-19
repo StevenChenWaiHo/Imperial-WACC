@@ -99,7 +99,7 @@ object X86HelperFunctions {
       FinalIR.Cmp("", rsi, rbx) ::
       FinalIR.Mov("ge", rsi, rdi) ::
       FinalIR.BranchLink("ge", new X86BranchString("_boundsCheck")) ::
-      FinalIR.Ldr("sx", rdx, AssemblerTypes.LogicalShiftLeft(rsi, Right(2)), rax) ::
+      FinalIR.Ldr("sx", rdx, X86AssemblerTypes.LogicalShiftLeft(rsi, Right(2)), rax) ::
       FinalIR.Pop("", List(rbx)) ::
       FinalIR.Ret())
   }
@@ -117,7 +117,7 @@ object X86HelperFunctions {
       FinalIR.Cmp("", rax, rbx) ::
       FinalIR.Mov("ge", rax, rdi) :: // rax >= rbx
       FinalIR.BranchLink("ge", new X86BranchString("_boundsCheck")) ::
-      FinalIR.Str("", AssemblerTypes.LogicalShiftLeft(rax, Right(2)), rsi, rdx) :: // TODO: Logical shift does not work
+      FinalIR.Str("", X86AssemblerTypes.LogicalShiftLeft(rax, Right(2)), rsi, rdx) :: // TODO: Logical shift does not work
       FinalIR.Pop("", List(rbx)) ::
       FinalIR.Ret())
   }
