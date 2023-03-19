@@ -168,31 +168,31 @@ object X86AssemblerTypes {
   }
 
   // dont think its used
-  class X86Control() extends Control {
+  case class X86Control() extends Suffi {
     override def toString: String = {
       ""
     }
   }
 
-  class X86Extension() extends Extension {
+  case class X86Extension() extends Suffi {
     override def toString: String = {
       ""
     }
   }
 
-  class X86Status() extends Status {
+  case class X86Status() extends Suffi {
     override def toString: String = {
       ""
     }
   }
 
-  class X86Flags() extends Flags {
+  case class X86Flags() extends Suffi {
     override def toString: String = {
       ""
     }
   }
 
-  class X86None() extends None {
+  case class X86None() extends Suffi {
     override def toString: String = {
       ""
     }
