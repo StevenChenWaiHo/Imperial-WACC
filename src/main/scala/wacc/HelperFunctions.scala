@@ -1,14 +1,14 @@
 package wacc
 
-import wacc.Assembler
+import wacc.Assembler._
 import wacc.AssemblerTypes._
 import wacc.RegisterAllocator._
 import wacc.TAC._
 import wacc.FinalIR.FinalIR
 
 import scala.collection.mutable.ListBuffer
-
-class HelperFunctions extends Assembler(null) {
+// For ARM11 only
+object HelperFunctions {
   private[this] val state = new AssemblerState(ListBuffer(r4, r5, r6, r7, r8, r9, r10, r11))
 
   implicit private[this] def toStrings(state: AssemblerState) = state.code.toList
@@ -110,7 +110,7 @@ class HelperFunctions extends Assembler(null) {
       FinalIR.Cmp("", r0, lr) ::
       FinalIR.Mov("ge", r0, r1) :: // r0 >= lr
       FinalIR.BranchLink("ge", new BranchString("_boundsCheck")) ::
-      FinalIR.Str("", LogicalShiftLeft(r0, Right(2)), r2, r3) :: 
+      FinalIR.Str("", r3, LogicalShiftLeft(r0, Right(2)), r2) :: 
       FinalIR.Pop("", List(pc)) :: List())
   }
 

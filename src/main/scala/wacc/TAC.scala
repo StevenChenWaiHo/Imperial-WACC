@@ -83,60 +83,53 @@ object TAC {
     override def toString(): String = "goto: " + label.name
   }
 
+  case class Global(var name: String = "label") extends TAC with Operand {
+    this.name = name 
+    override def toString(): String = "global: " + name
+  }
+
   case class Label(var name: String = "label") extends TAC with Operand {
     this.name = name
 
     override def toString(): String = name + ":"
   }
 
-  // Pairs Operations to ARM
-  //   --- CreatePairElem(Fst) --- 
+  //   --- CreatePairElem(Fst/Snd) --- 
+  // mov r0, #TypeSize
   // malloc fst elem with reference to its type
-  // mov ptrReg r0
-  // str pairElemReg, [ptrReg, #0]
-  // mov fstReg ptrReg
-  // push pairElemReg
-  //   --- CreatePairElem(Snd) --- 
-  // malloc snd elem with reference to its type
-  // mov ptrReg r0
-  // str pairElemReg, [ptrReg, #4]
-  // mov sndReg ptrReg
-  // push pairElemReg
-  //   --- CreatePair() --- 
-  // pop fstReg
-  // pop sndReg
-  // malloc 2 * 4 bytes for 2 pointers
-  // mov ptrReg r0
-  // pop srcReg
-  // str srcReg [ptrReg, #4]
-  // pop srcReg
-  // str srcReg [ptrReg, #0]
-  // mov dstReg r12
-  case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, ptrReg: TRegister, pairElemReg: TRegister) extends TAC
+  // str pairElemReg, [r0, #0]
+  // push r0
+  case class CreatePairElem(pairElemType: DeclarationType, pairPos: PairElemT.Elem, pairElemReg: TRegister) extends TAC
 
-  case class CreatePair(fstType: DeclarationType, sndType: DeclarationType,
-                        fstReg: TRegister, sndReg: TRegister, srcReg: TRegister, ptrReg: TRegister, dstReg: TRegister) extends TAC
+  //   --- CreatePair --- 
+  // The two pointer to pair elem is on stack in reversed order
+  // mov r0, #PointerSize * 2
+  // malloc 2 * 4 bytes for 2 pointers
+  // mov dst r0
+  // pop r2
+  // str r2 [dst, #4]
+  // pop r1
+  // str r1 [dst, #0]
+  case class CreatePair(dstReg: TRegister) extends TAC
 
   // StorePairElem
-  // ldr pairReg [pairReg, pairPos]
-  // str srcReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
+  // ldr r1 [pairReg, pairPos]
+  // str srcReg [r1, pairPos], where (pairPos == fst) ? #0 : #4
   case class StorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister) extends TAC
 
   // GetPairElem
   // Check Null
-  // ldr dstReg [pairReg, pairPos], where (pairPos == fst) ? #0 : #4
-  // mov pairReg dstReg
-  // ldr(type) dstReg [pairReg, 0]
+  // ldr r1 [pairReg, pairPos], where (pairPos == fst) ? #0 : #4\
+  // ldr dstReg [r1, 0]
   case class GetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister) extends TAC
 
 
   /* array declaration in assembly
-    @ 4 element array, 4 per element and 4 for array pointer
-		mov r0, #20
+		mov r0, #PointerSize * Length
 		bl malloc
-		mov r12, r0
+		mov dstReg, r0
 		@ array pointers are shifted forwards by 4 bytes (to account for size)
-		add r12, r12, #4
+		add dstReg, dstReg, #4
 		mov r8, #4
 		str r8, [r12, #-4]
 		mov r8, #43
@@ -148,13 +141,10 @@ object TAC {
 		mov r8, #1
 		str r8, [r12, #12]
   */
-  case class InitialiseArray(arrLen: Int, lenReg: TRegister, dstReg: TRegister) extends TAC
+  case class InitialiseArray(arrLen: Int, dstReg: TRegister) extends TAC
 
   //delegates each element in an array
   case class CreateArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister) extends TAC
-
-  //delegates an array with all of its elements
-  case class CreateArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
 
   // StoreArrayElem
   // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)

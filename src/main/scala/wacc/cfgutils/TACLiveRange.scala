@@ -59,17 +59,17 @@ object TACLiveRange extends LiveRange {
         defs = List(dstReg)
       case GOTO(lbl) =>
         succs = List(getId(lbl))
-      case CreatePairElem(_, _, ptr, value) =>
-        uses = List(value)
-        defs = List(ptr)
-      case CreatePair(_, _, fstReg, sndReg, src, ptr, value) =>
-       uses = List()
-       defs = List(value, fstReg, sndReg, ptr)
 
+      // Pair
+      case CreatePairElem(_, _, pairElem) =>
+        uses = List(pairElem)
+        defs = List()
+      case CreatePair(dst) =>
+       uses = List()
+       defs = List(dst)
       case GetPairElem(_, pairReg, _, dstReg) =>
         uses = List(pairReg)
         defs = List(dstReg)
-
       case StorePairElem(_, pairReg, _, srcReg) =>
         uses = List(pairReg, srcReg)
         defs = List()
@@ -77,11 +77,20 @@ object TACLiveRange extends LiveRange {
       case ReservedPushTAC(alias, _, _) => uses = List(alias)
       case ReservedPopTAC(_, alias, _) => defs = List(alias)
 
-      case InitialiseArray(_, len, dst) =>
-        uses = List(len)
+      case InitialiseArray(_, dst) =>
+        uses = List()
         defs = List(dst)
 
-      case StoreArrayElem(_, arr, pos, src) => uses = (src +: arr +: pos)
+      case CreateArrayElem(arrayElemType, elemPos, arrReg, elemReg) => 
+        uses = List(arrReg, elemReg)
+        defs = List()
+
+      case StoreArrayElem(_, arr, pos, src) => 
+        uses = List(arr, src) ++ pos
+
+      case LoadArrayElem(datatype, arr, pos, dst) => 
+        uses = List(arr) ++ pos
+        defs = List(dst)
 
       case ReadTAC(_, reg) => defs = List(reg)
 
