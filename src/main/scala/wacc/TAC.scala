@@ -120,12 +120,11 @@ object TAC {
 
 
   /* array declaration in assembly
-    @ 4 element array, 4 per element and 4 for array pointer
-		mov r0, #20
+		mov r0, #PointerSize * Length
 		bl malloc
-		mov r12, r0
+		mov dstReg, r0
 		@ array pointers are shifted forwards by 4 bytes (to account for size)
-		add r12, r12, #4
+		add dstReg, dstReg, #4
 		mov r8, #4
 		str r8, [r12, #-4]
 		mov r8, #43
@@ -137,13 +136,10 @@ object TAC {
 		mov r8, #1
 		str r8, [r12, #12]
   */
-  case class InitialiseArray(arrLen: Int, lenReg: TRegister, dstReg: TRegister) extends TAC
+  case class InitialiseArray(arrLen: Int, dstReg: TRegister) extends TAC
 
   //delegates each element in an array
   case class CreateArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister) extends TAC
-
-  //delegates an array with all of its elements
-  case class CreateArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister) extends TAC
 
   // StoreArrayElem
   // str srcReg [arrReg, pos], where pos = arrPos * 4 + 4 (if not nested)

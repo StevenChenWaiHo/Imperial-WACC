@@ -77,9 +77,13 @@ object TACLiveRange extends LiveRange {
       case ReservedPushTAC(alias, _, _) => uses = List(alias)
       case ReservedPopTAC(_, alias, _) => defs = List(alias)
 
-      case InitialiseArray(_, len, dst) =>
-        uses = List(len)
+      case InitialiseArray(_, dst) =>
+        uses = List()
         defs = List(dst)
+
+      case CreateArrayElem(arrayElemType, elemPos, arrReg, elemReg) => 
+        uses = List(arrReg, elemReg)
+        defs = List()
 
       case StoreArrayElem(_, arr, pos, src) => uses = (src +: arr +: pos)
 

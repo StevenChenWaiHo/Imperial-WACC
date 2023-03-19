@@ -300,9 +300,8 @@ object Translator {
       case ArrayLiteral(elements) => {
         val tacs = ListBuffer[TAC]()
         val tRegs = ListBuffer[TRegister]() //required?
-        val lenReg = nextRegister()
-        val dstReg = nextRegister()
-        addNode(ident, dstReg)
+        val arrReg = nextRegister()
+        addNode(ident, arrReg)
         val elemType = dataType match {
           case ArrayType(dType, length) => dType
           case _ => dataType
@@ -312,10 +311,10 @@ object Translator {
           addNode(elements(i), reg)
           tacs ++= elemTacs
           tRegs += reg
-          tacs ++= List(Comments("ArrayElem Declaration Start"), CreateArrayElem(elemType, i, dstReg, reg), Comments("ArrayElem Declaration End"))
+          tacs ++= List(Comments("ArrayElem Declaration Start"), CreateArrayElem(elemType, i, arrReg, reg), Comments("ArrayElem Declaration End"))
         }
-        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, lenReg, dstReg)) ++ tacs.toList ++ List(CreateArray(elemType, tRegs.toList, dstReg),
-         Comments("Array Declaration End")), dstReg)
+        (List(Comments("Array Declaration Start"), InitialiseArray(elements.length, arrReg)) ++ tacs.toList ++ 
+         List(Comments("Array Declaration End")), arrReg)
       }
       case _ => (List(new Label("Array Type not Matched")), null)
     }

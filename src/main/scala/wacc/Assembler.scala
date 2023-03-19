@@ -135,9 +135,8 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
       case StorePairElem(datatype, pairReg, pairPos, srcReg) => assembleStorePairElem(datatype, pairReg, pairPos, srcReg)
       
       // Array
-      case InitialiseArray(arrLen, lenReg, dstReg) => assembleArrayInit(arrLen, lenReg, dstReg)
+      case InitialiseArray(arrLen, dstReg) => assembleArrayInit(arrLen, dstReg)
       case CreateArrayElem(arrayElemType, elemPos, arrReg, elemReg) => assembleArrayElem(arrayElemType, elemPos, arrReg, elemReg)
-      case CreateArray(arrayElemType, elemsReg, dstReg) => assembleArray(arrayElemType, elemsReg, dstReg)
       case LoadArrayElem(datatype, arrReg, arrPos, dstReg) => assembleLoadArrayElem(datatype, arrReg, arrPos, dstReg)
       case StoreArrayElem(datatype, arrReg, arrPos, srcReg) => assembleStoreArrayElem(datatype, arrReg, arrPos, srcReg)
 
@@ -506,52 +505,45 @@ class Assembler(allocationScheme: RegisterAllocator[Register]) {
     }
   }
 
-  def assembleArrayInit(arrLen: Int, lenReg: TRegister, dstReg: TRegister): List[FinalIR] = {
-    FinalIR.Push("", List(r0)) ::
+  //  array declaration in assembly
+	// 	mov r0, #PointerSize * (Length + 1)
+	// 	bl malloc
+	// 	mov dstReg, r0
+  //  add dstReg, dstReg, #4
+  //  mov r1, #Length
+	// 	str r1, [dstReg, #-4]
+  def assembleArrayInit(arrLen: Int, dstReg: TRegister): List[FinalIR] = {
       FinalIR.Mov("", new ImmediateInt(POINTER_BYTE_SIZE * (arrLen + 1)), r0) ::
       FinalIR.BranchLink("", new BranchString("malloc")) ::
       FinalIR.Mov("", r0, getRealReg(dstReg)) ::
-      FinalIR.Pop("", List(r0)) ::
       FinalIR.Add("", Status(), getRealReg(dstReg), new ImmediateInt(POINTER_BYTE_SIZE), getRealReg(dstReg)) ::
-      FinalIR.Mov("", new ImmediateInt(arrLen), getRealReg(lenReg)) ::
-      FinalIR.Str("", getRealReg(lenReg), new ImmediateInt(-POINTER_BYTE_SIZE), getRealReg(dstReg)) :: List()
+      FinalIR.Mov("", new ImmediateInt(arrLen), r1) ::
+      FinalIR.Str("", getRealReg(dstReg), new ImmediateInt(-POINTER_BYTE_SIZE), r1) :: List()
   }
 
-  def assembleArray(arrayElemType: DeclarationType, elemsReg: List[TRegister], dstReg: TRegister): List[FinalIR] = {
-    List[FinalIR]()
-  }
-
+  // 	mov r0, #TypeSize
+  //  bl malloc
+  //  str elemReg [r0, 0]
+  //  str elemReg [arrReg, #Pos * 4]
   def assembleArrayElem(arrayElemType: DeclarationType, elemPos: Int, arrReg: TRegister, elemReg: TRegister): List[FinalIR] = {
-    FinalIR.Push("", List(getRealReg(elemReg))) ::
-      FinalIR.Push("", List(r0)) ::
       FinalIR.Mov("", ImmediateInt(getTypeSize(arrayElemType)), r0) ::
       FinalIR.BranchLink("", new BranchString("malloc")) ::
       FinalIR.Str("", r0, ImmediateInt(0), getRealReg(elemReg)) ::
-      FinalIR.Str(getInstructionType(arrayElemType), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos), getRealReg(elemReg)) ::
-      FinalIR.Mov("", r0, getRealReg(elemReg)) ::
-      FinalIR.Pop("", List(r0)) ::
-      FinalIR.Pop("", List(getRealReg(elemReg))) :: List()
+      FinalIR.Str(getInstructionType(arrayElemType), getRealReg(arrReg), new ImmediateInt(POINTER_BYTE_SIZE * elemPos), getRealReg(elemReg)) :: List()
   }
 
   def assembleLoadArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], dstReg: TRegister): List[FinalIR] = {
     addEndFunc("_arrLoad", new HelperFunctions().assemble_arrLoad())
     addEndFunc("_boundsCheck", new HelperFunctions().assemble_boundsCheck())
-    var regs = List(getRealReg(arrReg), getRealReg(dstReg))
-    regs = (regs ++ arrPos.map(a => getRealReg(a))).distinct.sortWith((s, t) => s < t)
     var output = List[FinalIR]()
-    output = output ++
-      (FinalIR.Push("", regs) ::
-        FinalIR.Push("", List(r0, r1, r2, r3)) :: List())
     arrPos.foreach(a => {
       output = output ++
-        (FinalIR.Mov("", r2, getRealReg(a)) ::
-          FinalIR.Mov("", r3, getRealReg(arrReg)) :: // arrLoad uses r0 = r3[r2]
+        (FinalIR.Mov("", getRealReg(a), r2) ::
+          FinalIR.Mov("", getRealReg(arrReg), r3) :: // arrLoad uses r0 = r3[r2]
           FinalIR.BranchLink("", new BranchString("_arrLoad")) ::
-          FinalIR.Mov("", getRealReg(dstReg), r0) :: List())
+          FinalIR.Mov("", r0, getRealReg(dstReg)) :: List())
     })
-    output ++
-      (FinalIR.Pop("", List(r0, r1, r2, r3)) ::
-        FinalIR.Pop("", regs) :: List())
+    output
   }
 
   def assembleStoreArrayElem(datatype: DeclarationType, arrReg: TRegister, arrPos: List[TRegister], srcReg: TRegister): List[FinalIR] = {
