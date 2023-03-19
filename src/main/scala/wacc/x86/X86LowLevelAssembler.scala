@@ -70,7 +70,20 @@ object X86LowLevelAssembler {
   }
 
   def strPreAssist(condition: String, src: LHSop, operand: LHSop, dst: Register): String = {
-    "mov" + condition + " [" + dst.toString + "], " + src.toString
+    var str = "mov" + condition + " "
+    operand match {
+      case X86ImmediateInt(x) => {
+        str = str + "[" + dst.toString // using qword ptr causes 'junk after expression'
+        if (x < 0) {
+          str = str + " - " + (x).abs + "]"
+        } else if (x > 0) {
+          str = str + " + " + (x).abs + "]"
+        } else {
+          str = str + "]"
+        }
+      }
+    }
+    str + ", " + src.toString
   }
   
   def assembleLdr(condition: String, src: Register, operand: LHSop, dst: Register): String = {
@@ -82,13 +95,14 @@ object X86LowLevelAssembler {
     var str = "mov" + condition + " " + dst.toString + ", " //src null issue
     operand match {
       case X86ImmediateInt(x) => {
-        str = str + "[" + src.toString + " "
+        str = str + "[" + src.toString // using qword ptr causes 'junk after expression'
         if (x < 0) {
-          str = str + "-"
+          str + " - " + (x).abs + "]"
+        } else if (x > 0) {
+          str + " + " + (x).abs + "]"
         } else {
-          str = str + "+"
+          str + "]"
         }
-        str + " " + (x).abs + "]"
       }
       case X86LabelString(x) => {
         "lea " + dst.toString + ", [rip + " + x + "]" //rip is instruction pointer

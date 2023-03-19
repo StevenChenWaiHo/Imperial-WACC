@@ -141,13 +141,13 @@ object X86HelperFunctions {
 
   def assemble_malloc(): List[FinalIR] = {
     assembleTAC(Label("_malloc")) ++
-    FinalIR.Push("", List(rbp)) ::
+    (FinalIR.Push("", List(rbp)) ::
       FinalIR.Mov("", rsp, rbp) ::
       FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
       FinalIR.BranchLink("", new X86BranchString("malloc@plt")) ::
       FinalIR.Mov("", rbp, rsp) ::
       FinalIR.Pop("", List(rbp)) ::
-      FinalIR.Ret()
+      FinalIR.Ret() :: List()) //not sure why only this needs to :: List()
   }
 
   def assemble_print(pType: String): List[FinalIR] = {
@@ -174,7 +174,7 @@ object X86HelperFunctions {
         FinalIR.Mov("", rsp, rbp) ::
         FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
         FinalIR.Mov("", rdi, rsi) ::
-        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdx) ::
+        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
         FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
         FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
         FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::
@@ -263,7 +263,7 @@ object X86HelperFunctions {
         FinalIR.Mov("", rsp, rbp) ::
         FinalIR.And("", rsp, new X86ImmediateInt(-16)) ::
         FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
-        FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
+        FinalIR.BranchLink("", new X86BranchString("puts@plt")) ::
         FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::
         FinalIR.BranchLink("", new X86BranchString("fflush@plt")) ::
         FinalIR.Mov("", rbp, rsp) ::
@@ -299,7 +299,7 @@ object X86HelperFunctions {
       (FinalIR.Ldr("", null, new X86LabelString(tLbl.name), rdx) ::
         assembleTAC(Label(".L_printb1"))) ++
       (FinalIR.Ldr("", rsi, new X86ImmediateInt(-POINTER_BYTE_SIZE), rdx) ::
-        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rax) ::
+        FinalIR.Ldr("", null, new X86LabelString(sLbl.name), rdi) ::
         FinalIR.Mov("", new X86ImmediateInt(0), rax) ::
         FinalIR.BranchLink("", new X86BranchString("printf@plt")) ::
         FinalIR.Mov("", new X86ImmediateInt(0), rdi) ::

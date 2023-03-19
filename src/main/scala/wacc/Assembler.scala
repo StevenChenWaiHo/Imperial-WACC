@@ -294,7 +294,7 @@ object Assembler {
   def assembleGetPairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, dstReg: TRegister): List[FinalIR] = {
     checkNull(pairReg) ++
     (FinalIR.Ldr("", getRealReg(pairReg), ImmediateInt(if (pairPos == PairElemT.Fst) 0 else POINTER_BYTE_SIZE), r1) ::
-    FinalIR.Ldr(getLdrInstructionType(datatype), r1, ImmediateInt(0), getRealReg(dstReg)) :: List())
+      FinalIR.Ldr(getLdrInstructionType(datatype), r1, ImmediateInt(0), getRealReg(dstReg)) :: List())
   }
 
   def assembleStorePairElem(datatype: DeclarationType, pairReg: TRegister, pairPos: PairElemT.Elem, srcReg: TRegister): List[FinalIR] = {
