@@ -1,3 +1,4 @@
+
 package wacc.Optimisations
 
 import wacc.TAC._
@@ -30,7 +31,7 @@ object Inlining{
   }
 
   def addInlineFuncToMap(funcTac: List[TAC]) : Unit = {
-    val inLineFuncTAClist = ListBuffer[TAC]()
+    var inLineFuncTAClist = ListBuffer[TAC]()
     val param = Stack[TRegister]()
     var name: Label = null
     var labelFlag = false
@@ -45,11 +46,12 @@ object Inlining{
           }
         }
         case BeginFuncTAC() => null
+        case EndFuncTAC() => null
         case PopParamTAC(datatype, tReg, index) => param.push(tReg)
         case cmd@CommandTAC(CmdT.Ret, tReg, opType) => {
           inLineFuncTAClist.addOne(AssignmentTAC(tReg, dstReg))
           // If return not the last line of the function
-          if (i != funcTac.length - 1){
+          if (i != funcTac.length - 2){
             labelFlag = true
             inLineFuncTAClist.addOne(GOTO(name))
           }
@@ -64,10 +66,9 @@ object Inlining{
     val tacList = ListBuffer[TAC]()
     tacList.addOne(Comments("Add inline function"))
     for (i <- 0 until args.length){
-      tacList.addOne(AssignmentTAC(args(i), inlineFunc.param.toList.reverse(i)))
+      tacList.addOne(AssignmentTAC(args(i), inlineFunc.param.toList(i)))
     }
     tacList.addAll(inlineFunc.tacList)
-    tacList.addOne(AssignmentTAC(inlineFunc.dstReg, dstReg))
     tacList.toList
   }
 
@@ -80,6 +81,27 @@ object Inlining{
     return true
   }
 
+  def insert_inlineFunc(tacList: List[TAC]) : ListBuffer[TAC] = {
+    // Insert inline func in each Call
+    val inlinedTacList = ListBuffer[TAC]()
+    tacList.foreach(tac => tac match {
+      case call@CallTAC(lbl, args, dstReg) => {
+        funcMap.get(lbl) match {
+          case Some(inlineFunc) => {
+            inlinedTacList.addAll(replaceCall(lbl, args, dstReg, inlineFunc))
+            if (inlineFunc.labelFlag){
+              inlinedTacList.addOne(lbl)
+            }
+            inlinedTacList.addOne(AssignmentTAC(inlineFunc.dstReg, dstReg))
+          }
+          case None => inlinedTacList.addOne(call)
+        }
+      }
+      case t => inlinedTacList.addOne(t)
+    })
+    inlinedTacList
+  }
+
   def inline_translateProgram(funcs: List[Func], s: Stat): List[TAC] = {
   newMap()
   // Initialise the main .data segment
@@ -89,7 +111,7 @@ object Inlining{
   var (tacList, reg) = delegateASTNode(s)
 
   // Translate funcs after main to TAC
-  val funcTAClist = ListBuffer[TAC]()
+  var funcTAClist = ListBuffer[TAC]()
   funcs.foreach(f => f match {
     case Func(returnType, ident, types, code) => {
       val funcTac = translateFunction(f)
@@ -103,22 +125,8 @@ object Inlining{
     }
   })
 
-  // Insert inline func in each Call
-  val inlinedTacList = ListBuffer[TAC]()
-  tacList.foreach(tac => tac match {
-    case call@CallTAC(lbl, args, dstReg) => {
-      funcMap.get(lbl) match {
-        case Some(inlineFunc) => {
-          inlinedTacList.addAll(replaceCall(lbl, args, dstReg, inlineFunc))
-          if (inlineFunc.labelFlag){
-            inlinedTacList.addOne(lbl)
-          }
-        }
-        case None => inlinedTacList.addOne(call)
-      }
-    }
-    case t => inlinedTacList.addOne(t)
-  })
+  val inlinedTacList = insert_inlineFunc(tacList)
+  funcTAClist = insert_inlineFunc(funcTAClist.toList)
 
   // Save main .data and .text segment
   getDataList().toList ++ 
